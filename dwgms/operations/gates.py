@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 import cmath
 import math
 from typing import Optional, Sequence, Union

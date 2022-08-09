@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 from .gates import *
 from .operations import Barrier, Measure, Operation
 

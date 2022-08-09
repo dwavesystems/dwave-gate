@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 import warnings
 from abc import ABCMeta, abstractmethod
 from typing import Hashable, Optional, Sequence, Union

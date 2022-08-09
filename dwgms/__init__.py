@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 from dwgms.circuit import Circuit, CircuitContext
 from dwgms.registers import ClassicalRegister, QuantumRegister
 

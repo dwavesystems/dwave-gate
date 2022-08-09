@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 """Using and appending operations."""
 from dwgms.circuit import Circuit
 from dwgms.operations.gates import Z, RY, CNOT, CX, Rotation

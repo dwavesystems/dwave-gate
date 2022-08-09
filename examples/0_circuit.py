@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 """Building, modifying and excecuting a circuit."""
 from dwgms.circuit import Circuit
 from dwgms.operations.gates import X, RX, CNOT

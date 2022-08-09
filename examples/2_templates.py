@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 """Creating and using templates."""
 from dwgms.circuit import Circuit
 from dwgms.operations import X, RY, RZ, Hadamard

@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 from pathlib import Path
 from types import TracebackType
 from typing import (

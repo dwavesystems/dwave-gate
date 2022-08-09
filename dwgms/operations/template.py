@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 import copy
 import functools
 from typing import Hashable, Sequence

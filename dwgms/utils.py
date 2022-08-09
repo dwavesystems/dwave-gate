@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 import inspect
 import uuid
 from typing import Any, Callable, Optional

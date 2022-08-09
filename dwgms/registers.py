@@ -1,3 +1,4 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 from abc import abstractmethod
 from collections.abc import Collection
 from typing import Hashable, Iterator, Optional, Sequence, Union
