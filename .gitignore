@@ -53,3 +53,7 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Cython
+*.so
+*.cpp
