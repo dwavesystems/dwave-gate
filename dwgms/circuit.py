@@ -1,22 +1,22 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
+from __future__ import annotations
+
+from functools import lru_cache
 from pathlib import Path
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    Hashable,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from typing import (TYPE_CHECKING, Dict, Hashable, Mapping, Optional, Sequence,
+                    Type, Union)
 
+import numpy as np
+
+from dwgms.qtools import build_controlled_unitary
 from dwgms.registers import ClassicalRegister, QuantumRegister
-from dwgms.utils import CircuitError, IntegerCounter, classproperty, generate_id
+from dwgms.utils import (CircuitError, IntegerCounter, classproperty,
+                         generate_id)
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
+
     from dwgms.operations.operations import Operation
 
 
@@ -80,17 +80,54 @@ class Circuit:
                 op.__class__(qubits=mapped_qubits)
 
     # TODO: exchange for something better; only here for testing matrix creation
-    # for custom operations
-    def build_unitary(self) -> "NDArray":
+    # for custom operations; controlled operations only works with single
+    # control and target; no support for any other multi-qubit gates
+    @lru_cache
+    def build_unitary(self) -> NDArray:
         """Builds the circuit unitary by multiplying together the operation matrices.
 
         Returns:
             NDArray: Unitary matrix representation of the circuit.
         """
-        res = self.circuit[-1].matrix
-        for c in self.circuit[-2::-1]:
-            res = c.matrix @ res
-        return res
+        state = np.eye(2 ** len(self.qubits))
+        # apply operations from first to last (the order in which they're
+        # applied within the context, stored sequentially in the circuit)
+        for op in self.circuit:
+            # check if controlled operation; cannot check isinstance
+            # 'Controlled' due to circular import issue
+            if hasattr(op, "control"):
+                state = self._apply_controlled_gate(
+                    state, op.control, op.target, op.target_operation
+                )
+            else:
+                state = self._apply_single_qubit_gate(state, op)
+        return state
+
+    def _apply_single_qubit_gate(self, state: NDArray, op: Operation) -> NDArray:
+        """Apply a single qubit operation to the state."""
+        if op.qubits[0] == self.qubits[0]:
+            mat = op.matrix
+        else:
+            mat = np.eye(2**op._num_qubits)
+
+        for qb in self.qubits[1:]:
+            if qb == op.qubits[0]:
+                mat = np.kron(mat, op.matrix)
+            else:
+                mat = np.kron(mat, np.eye(2**op._num_qubits))
+
+        return mat @ state
+
+    def _apply_controlled_gate(
+        self, state: NDArray, control: int, target: int, op: Operation
+    ) -> NDArray:
+        """Apply a controlled qubit gate to the state."""
+        control_idx = self.qubits.index(control)
+        target_idx = self.qubits.index(target)
+        controlled_unitary = build_controlled_unitary(
+            control_idx, target_idx, op.matrix, self.num_qubits
+        )
+        return controlled_unitary @ state
 
     @property
     def qregisters(self) -> Mapping[Hashable, QuantumRegister]:
@@ -128,7 +165,17 @@ class Circuit:
         return bits
 
     @property
-    def context(self) -> "CircuitContext":
+    def num_qubits(self) -> int:
+        """Number of qubits in the circuit."""
+        return len(self.qubits)
+
+    @property
+    def num_bits(self) -> int:
+        """Number of bits in the circuit."""
+        return len(self.bits)
+
+    @property
+    def context(self) -> CircuitContext:
         """Circuit context used to apply operations to the circuit."""
         if self._circuit_context is None:
             self._circuit_context = CircuitContext(circuit=self)
@@ -309,7 +356,7 @@ class Circuit:
         return qasm_string
 
     @classmethod
-    def from_qasm(cls, path: Union[str, Path]) -> "Circuit":
+    def from_qasm(cls, path: Union[str, Path]) -> Circuit:
         """Converts an OpenQASM string into a Circuit object."""
         raise NotImplementedError(
             "Converting OpenQASM to Circuit object not supported at the moment."
@@ -383,6 +430,6 @@ class CircuitContext:
         self.circuit.lock()
 
     @classproperty
-    def active_context(cls) -> "CircuitContext":
+    def active_context(cls) -> CircuitContext:
         """Current active context (usually ``self``)."""
         return cls._active_context
