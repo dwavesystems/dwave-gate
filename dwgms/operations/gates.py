@@ -7,6 +7,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from dwgms.operations.operations import Operation
+from dwgms.qtools import build_controlled_unitary
 from dwgms.utils import classproperty
 
 #####################################
@@ -232,12 +233,9 @@ class RX(ParametricOperation):
         theta = self.parameters[0]
         return f"rx({theta}) q[{self.qubits[0]}]"
 
-    @classproperty
+    @classproperty(self_required=True)
     def matrix(cls, self) -> NDArray:
         """The matrix representation of the Rotation-X operator."""
-        # get parameters if called as instance method
-        if self is None:
-            raise ValueError("Require parameter values to construct matrix.")
         theta = self.parameters[0]
 
         diag_0 = math.cos(theta / 2)
@@ -273,12 +271,9 @@ class RY(ParametricOperation):
         theta = self.parameters[0]
         return f"ry({theta}) q[{self.qubits[0]}]"
 
-    @classproperty
+    @classproperty(self_required=True)
     def matrix(cls, self) -> NDArray:
         """The matrix representation of the Rotation-Y operator."""
-        # get parameters if called as instance method
-        if self is None:
-            raise ValueError("Require parameter values to construct matrix.")
         theta = self.parameters[0]
 
         diag_0 = math.cos(theta / 2)
@@ -314,12 +309,9 @@ class RZ(ParametricOperation):
         theta = self.parameters[0]
         return f"rz({theta}) q[{self.qubits[0]}]"
 
-    @classproperty
+    @classproperty(self_required=True)
     def matrix(cls, self) -> NDArray:
         """The matrix representation of the Rotation-Z operator."""
-        # get parameters if called as instance method
-        if self is None:
-            raise ValueError("Require parameter values to construct matrix.")
         theta = self.parameters[0]
 
         term_0 = cmath.exp(-1j * theta / 2)
@@ -357,12 +349,9 @@ class Rotation(ParametricOperation):
         """
         return f"rz q[{self.qubits[0]}]\nry q[{self.qubits[0]}]\nrz q[{self.qubits[0]}]"
 
-    @classproperty
+    @classproperty(self_required=True)
     def matrix(cls, self) -> NDArray:
         """The matrix representation of the Rotation operator."""
-        # get parameters if called as instance method
-        if self is None:
-            raise ValueError("Require parameter values to construct matrix.")
         theta_0 = self.parameters[0]
         theta_1 = self.parameters[1]
         theta_2 = self.parameters[2]
@@ -384,18 +373,80 @@ class Rotation(ParametricOperation):
 #######################################
 
 
-class CX(Operation):
-    """Controlled-X (CNOT) operation.
+class Controlled(Operation):
+    """Generic controlled operation.
 
     Args:
-        qubits: Qubits on which the operation should be applied. Only
-            required when applying an operation within a circuit context.
+        op: Target operation which is applied to the target qubit.
+        control: Qubit on which the target operation is controlled.
+        target: Qubit on which the target operation is applied.
     """
 
     _num_qubits = 2
 
-    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None) -> None:
-        super(CX, self).__init__(qubits)
+    def __init__(
+        self, op: Operation, control: Optional[str] = None, target: Optional[str] = None
+    ) -> None:
+        self._control = control
+        self._target = target
+        self._target_operation = op
+
+        qubits = [control, target] if control and target else None
+        super(Controlled, self).__init__(qubits)
+
+    @classproperty
+    def matrix(cls) -> NDArray:
+        """The matrix representation of the controlled operation."""
+        target_unitary = cls.target_operation.matrix
+        # build standard 2-qubit controlled unitary
+        matrix = build_controlled_unitary(0, 1, target_unitary, num_qubits=2)
+        return matrix
+
+    @property
+    def control(self):
+        """Control qubit."""
+        return self._control
+
+    @property
+    def target(self):
+        """Target qubit."""
+        return self._target
+
+    @classproperty
+    def target_operation(cls, self):
+        """Target operation"""
+        if self is not None:
+            return self._target_operation
+
+        return cls._target_operation
+
+    def to_qasm(self):
+        """Converts the Controlled operation into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the Controlled X operation.
+        """
+        target_str = self.target_operation().to_qasm().split()[0]
+        return f"c{target_str} q[{self.control}],  q[{self.target}]"
+
+
+class CX(Controlled):
+    """Controlled-X (CNOT) operation.
+
+    Args:
+        control: Qubit on which the target operation ``X`` is controlled.
+        target: Qubit on which the target operation ``X`` is applied.
+    """
+
+    _num_qubits = 2
+    _target_operation = X
+
+    def __init__(
+        self, control: Optional[str] = None, target: Optional[str] = None
+    ) -> None:
+        super(CX, self).__init__(
+            op=self._target_operation, control=control, target=target
+        )
 
     def to_qasm(self) -> str:
         """Converts the Controlled X operation into an OpenQASM string.
@@ -405,25 +456,12 @@ class CX(Operation):
         """
         return f"cx q[{self.qubits[0]}],  q[{self.qubits[1]}]"
 
-    @classproperty
-    def matrix(cls) -> NDArray:
-        """The matrix representation of the Controlled-X operation."""
-        matrix = np.array(
-            [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-                [0.0, 0.0, 1.0, 0.0],
-            ]
-        )
-        return matrix
-
 
 CNOT = CX
 """Controlled-NOT operation (alias for CX operation)"""
 
 
-class CZ(Operation):
+class CZ(Controlled):
     """Controlled-Z operation.
 
     Args:
@@ -432,9 +470,14 @@ class CZ(Operation):
     """
 
     _num_qubits = 2
+    _target_operation = Z
 
-    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
-        super(CZ, self).__init__(qubits)
+    def __init__(
+        self, control: Optional[str] = None, target: Optional[str] = None
+    ) -> None:
+        super(CZ, self).__init__(
+            op=self._target_operation, control=control, target=target
+        )
 
     def to_qasm(self) -> str:
         """Converts the Controlled-Z operation into an OpenQASM string.
@@ -443,19 +486,6 @@ class CZ(Operation):
             str: OpenQASM string representation of the Controlled-Z operation.
         """
         return f"cz q[{self.qubits[0]}],  q[{self.qubits[1]}]"
-
-    @classproperty
-    def matrix(cls) -> NDArray:
-        """The matrix representation of the Controlled-Z operation."""
-        matrix = np.array(
-            [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, -1.0],
-            ]
-        )
-        return matrix
 
 
 class SWAP(Operation):
@@ -482,6 +512,7 @@ class SWAP(Operation):
     @classproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the SWAP operation."""
+        # TODO: add support for larger matrix states
         matrix = np.array(
             [
                 [1.0, 0.0, 0.0, 0.0],

@@ -7,7 +7,6 @@ from dwgms import Circuit
 from dwgms.registers import QuantumRegister
 from dwgms.utils import TemplateError, generate_id
 
-
 allowed_template_methods = [
     "circuit",
 ]

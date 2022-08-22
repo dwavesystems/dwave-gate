@@ -1,10 +1,15 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
+from __future__ import annotations
+
 import warnings
 from abc import ABCMeta, abstractmethod
-from typing import Hashable, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Hashable, Optional, Sequence, Union
 
 from dwgms.circuit import CircuitContext
-from dwgms.utils import classproperty
+from dwgms.utils import abstractclassproperty, classproperty
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 # IDEA: use a functional approach, instead of an object oriented approach, for
 # utility functions such as 'broadcast', 'decompose' and 'get_matrix'.
@@ -66,10 +71,10 @@ class Operation(metaclass=ABCLockedAttr):
         if isinstance(qubits, str) or not isinstance(qubits, Sequence):
             qubits = [qubits]
 
-        if len(qubits) != self._num_qubits:
+        if len(qubits) != self.num_qubits:
             raise ValueError(
                 f"Operation '{self.__class__.__name__} requires "
-                f"{self._num_qubits} qubits, got {len(qubits)}."
+                f"{self.num_qubits} qubits, got {len(qubits)}."
             )
 
         # cast to tuple for convention
@@ -135,6 +140,11 @@ class Operation(metaclass=ABCLockedAttr):
             return cls.__name__ + params
         return cls.__name__
 
+    @classproperty
+    def num_qubits(cls) -> int:
+        """Number of qubits that the operation supports."""
+        return cls._num_qubits
+
     @property
     def qubits(self) -> Sequence[Hashable]:
         """Qubits that the operation is applied to."""
@@ -158,22 +168,31 @@ class Operation(metaclass=ABCLockedAttr):
         """
         pass
 
+    @abstractclassproperty
+    def matrix(cls) -> NDArray:
+        """Returns the matrix representation of the operation.
 
-    # TODO: Doesn't work properly with parametric gates when called on an
-    # instance within a context (or any gate if called on an instance).
+        Returns:
+            NDArray: Matrix representation of the operation.
+        """
+        pass
+
     @classproperty
     def decomposition(cls, self) -> Sequence["Operation"]:
         """Returns the decomposition of operation."""
-        if not cls._decomposition:
+        if not getattr(cls, "_decomposition", None):
             raise NotImplementedError(
                 "Decomposition not implemented for the " f"'{cls.__name__}' operation."
             )
 
+        # if applying a decomposition, remove the applied (un-decomposed) gate first
+        if CircuitContext.active_context is not None:
+            del CircuitContext.active_context.circuit.circuit[-1]
+
         if self is not None:
             if self.parameters and not self.qubits:
                 return [
-                    op(self.parameters[i])
-                    for i, op in enumerate(cls._decomposition)
+                    op(self.parameters[i]) for i, op in enumerate(cls._decomposition)
                 ]
             if self.parameters and self.qubits:
                 return [
