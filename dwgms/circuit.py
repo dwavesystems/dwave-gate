@@ -108,13 +108,13 @@ class Circuit:
         if op.qubits[0] == self.qubits[0]:
             mat = op.matrix
         else:
-            mat = np.eye(2**op._num_qubits)
+            mat = np.eye(2**op.num_qubits)
 
         for qb in self.qubits[1:]:
             if qb == op.qubits[0]:
                 mat = np.kron(mat, op.matrix)
             else:
-                mat = np.kron(mat, np.eye(2**op._num_qubits))
+                mat = np.kron(mat, np.eye(2**op.num_qubits))
 
         return mat @ state
 

@@ -39,7 +39,7 @@ class Identity(Operation):
     @classproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the Identity operator."""
-        matrix = np.eye(2, dtype=np.float64)
+        matrix = np.eye(2, dtype=np.complex)
         return matrix
 
 
@@ -67,7 +67,7 @@ class X(Operation):
     @classproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the Pauli X operator."""
-        matrix = np.array([[0.0, 1.0], [1.0, 0.0]])
+        matrix = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=np.complex)
         return matrix
 
 
@@ -95,7 +95,7 @@ class Y(Operation):
     @classproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the Pauli Y operator."""
-        matrix = np.array([[0.0, -1.0j], [1.0j, 0.0]])
+        matrix = np.array([[0.0, -1.0j], [1.0j, 0.0]], dtype=np.complex)
         return matrix
 
 
@@ -123,7 +123,7 @@ class Z(Operation):
     @classproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the Pauli Z operator."""
-        matrix = np.array([[1.0, 0.0], [0.0, -1.0]])
+        matrix = np.array([[1.0, 0.0], [0.0, -1.0]], dtype=np.complex)
         return matrix
 
 
@@ -151,7 +151,9 @@ class Hadamard(Operation):
     @classproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the Hadamard operator."""
-        matrix = math.sqrt(2) / 2 * np.array([[1.0, 1.0], [1.0, -1.0]])
+        matrix = (
+            math.sqrt(2) / 2 * np.array([[1.0, 1.0], [1.0, -1.0]], dtype=np.complex)
+        )
         return matrix
 
 
@@ -240,7 +242,7 @@ class RX(ParametricOperation):
 
         diag_0 = math.cos(theta / 2)
         diag_1 = -1j * math.sin(theta / 2)
-        matrix = np.array([[diag_0, diag_1], [diag_1, diag_0]])
+        matrix = np.array([[diag_0, diag_1], [diag_1, diag_0]], dtype=np.complex)
         return matrix
 
 
@@ -278,7 +280,7 @@ class RY(ParametricOperation):
 
         diag_0 = math.cos(theta / 2)
         diag_1 = math.sin(theta / 2)
-        matrix = np.array([[diag_0, -diag_1], [diag_1, diag_0]])
+        matrix = np.array([[diag_0, -diag_1], [diag_1, diag_0]], dtype=np.complex)
         return matrix
 
 
@@ -316,7 +318,7 @@ class RZ(ParametricOperation):
 
         term_0 = cmath.exp(-1j * theta / 2)
         term_1 = cmath.exp(1j * theta / 2)
-        matrix = np.array([[term_0, 0.0], [0.0, term_1]])
+        matrix = np.array([[term_0, 0.0], [0.0, term_1]], dtype=np.complex)
         return matrix
 
 
@@ -364,7 +366,7 @@ class Rotation(ParametricOperation):
         term_2 = cmath.exp(1j * (theta_0 - theta_2) / 2) * msin
         term_3 = cmath.exp(1j * (theta_0 + theta_2) / 2) * mcos
 
-        matrix = np.array([[term_0, term_1], [term_2, term_3]])
+        matrix = np.array([[term_0, term_1], [term_2, term_3]], dtype=np.complex)
         return matrix
 
 
@@ -385,21 +387,27 @@ class Controlled(Operation):
     _num_qubits = 2
 
     def __init__(
-        self, op: Operation, control: Optional[str] = None, target: Optional[str] = None
+        self,
+        op: Operation,
+        control: Optional[Union[str, Sequence[str]]] = None,
+        target: Optional[Union[str, Sequence[str]]] = None,
     ) -> None:
-        self._control = control
-        self._target = target
+        self._control = [control] if isinstance(control, str) else control
+        self._target = [target] if isinstance(target, str) else target
         self._target_operation = op
 
-        qubits = [control, target] if control and target else None
+        qubits = control + target if control and target else None
         super(Controlled, self).__init__(qubits)
 
     @classproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the controlled operation."""
         target_unitary = cls.target_operation.matrix
-        # build standard 2-qubit controlled unitary
-        matrix = build_controlled_unitary(0, 1, target_unitary, num_qubits=2)
+        # build standard controlled unitary
+        control = range(getattr(cls, "_num_controls", 1))
+        target = range(getattr(cls, "_num_targets", 1))
+
+        matrix = build_controlled_unitary(control, target, target_unitary, num_qubits=2)
         return matrix
 
     @property
@@ -519,7 +527,8 @@ class SWAP(Operation):
                 [0.0, 0.0, 1.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0, 1.0],
-            ]
+            ],
+            dtype=np.complex,
         )
         return matrix
 

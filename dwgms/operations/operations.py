@@ -112,11 +112,11 @@ class Operation(metaclass=ABCLockedAttr):
             append = lambda start, end: cls(qubits[start:end])
 
         if method == "layered":
-            for i, _ in enumerate(qubits[: -cls._num_qubits + 1 or None]):
-                append(i, i + cls._num_qubits)
+            for i, _ in enumerate(qubits[: -cls.num_qubits + 1 or None]):
+                append(i, i + cls.num_qubits)
         elif method == "parallel":
-            for i, _ in enumerate(qubits[:: cls._num_qubits]):
-                start, end = cls._num_qubits * i, cls._num_qubits * (i + 1)
+            for i, _ in enumerate(qubits[:: cls.num_qubits]):
+                start, end = cls.num_qubits * i, cls.num_qubits * (i + 1)
                 if end <= len(qubits):
                     append(start, end)
         else:
@@ -143,7 +143,16 @@ class Operation(metaclass=ABCLockedAttr):
     @classproperty
     def num_qubits(cls) -> int:
         """Number of qubits that the operation supports."""
-        return cls._num_qubits
+        if hasattr(cls, "_num_qubits"):
+            return cls._num_qubits
+
+        if hasattr(cls, "_num_control") and hasattr(cls, "_num_target"):
+            return cls._num_control + cls._num_target
+
+        raise AttributeError(
+            f"Operations {cls.label} missing class attributes '_num_qubits' "
+            "or, if a controlled operation, '_num_control' and '_num_target'."
+        )
 
     @property
     def qubits(self) -> Sequence[Hashable]:
