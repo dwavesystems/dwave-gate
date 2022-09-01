@@ -1,27 +1,33 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
-from functools import lru_cache
+import uuid
 from pathlib import Path
 from types import TracebackType
-from typing import (TYPE_CHECKING, Dict, Hashable, Mapping, Optional, Sequence,
-                    Type, Union)
+from typing import (
+    TYPE_CHECKING,
+    ContextManager,
+    Dict,
+    Hashable,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
-import numpy as np
-
-from dwgms.qtools import build_controlled_unitary
+from dwgms.mixedproperty import mixedproperty
 from dwgms.registers import ClassicalRegister, QuantumRegister
-from dwgms.utils import (CircuitError, IntegerCounter, classproperty,
-                         generate_id)
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
-
-    from dwgms.operations.operations import Operation
-
+    from dwgms.operations.base import Operation
 
 # IDEA: support same qubit/bit label in multiple registers,
 # prefixing them with the register name e.g., `r192548::my_qubit`
+
+
+class CircuitError(Exception):
+    """Exception to be raised when there is an error with a Circuit."""
 
 
 class Circuit:
@@ -35,11 +41,10 @@ class Circuit:
     def __init__(
         self, num_qubits: Optional[int] = None, num_bits: Optional[int] = None
     ):
-        # NOTE: remove if (not) using counters
-        self.qubit_counter = IntegerCounter(prefix="q")
-        self.bit_counter = IntegerCounter(prefix="c")
+        # self.qubit_counter = IntegerCounter(prefix="q")
+        # self.bit_counter = IntegerCounter(prefix="c")
 
-        self._circuit: Sequence["Operation"] = []
+        self._circuit: Sequence[Operation] = []
         self._circuit_context: Optional[CircuitContext] = None
 
         # registers for quantum and classical bits
@@ -69,7 +74,10 @@ class Circuit:
             raise ValueError(
                 f"Circuit requires {len(self.qubits)} qubits, got {len(qubits)}."
             )
-        assert CircuitContext.active_context
+        if CircuitContext.active_context is None:
+            raise CircuitError(
+                "Can only apply circuit object inside a circuit context."
+            )
 
         qubit_map = dict(zip(self.qubits, qubits))
         for op in self.circuit:
@@ -78,56 +86,6 @@ class Circuit:
                 op.__class__(op.parameters, qubits=mapped_qubits)
             else:
                 op.__class__(qubits=mapped_qubits)
-
-    # TODO: exchange for something better; only here for testing matrix creation
-    # for custom operations; controlled operations only works with single
-    # control and target; no support for any other multi-qubit gates
-    @lru_cache
-    def build_unitary(self) -> NDArray:
-        """Builds the circuit unitary by multiplying together the operation matrices.
-
-        Returns:
-            NDArray: Unitary matrix representation of the circuit.
-        """
-        state = np.eye(2 ** len(self.qubits))
-        # apply operations from first to last (the order in which they're
-        # applied within the context, stored sequentially in the circuit)
-        for op in self.circuit:
-            # check if controlled operation; cannot check isinstance
-            # 'Controlled' due to circular import issue
-            if hasattr(op, "control"):
-                state = self._apply_controlled_gate(
-                    state, op.control, op.target, op.target_operation
-                )
-            else:
-                state = self._apply_single_qubit_gate(state, op)
-        return state
-
-    def _apply_single_qubit_gate(self, state: NDArray, op: Operation) -> NDArray:
-        """Apply a single qubit operation to the state."""
-        if op.qubits[0] == self.qubits[0]:
-            mat = op.matrix
-        else:
-            mat = np.eye(2**op.num_qubits)
-
-        for qb in self.qubits[1:]:
-            if qb == op.qubits[0]:
-                mat = np.kron(mat, op.matrix)
-            else:
-                mat = np.kron(mat, np.eye(2**op.num_qubits))
-
-        return mat @ state
-
-    def _apply_controlled_gate(
-        self, state: NDArray, control: int, target: int, op: Operation
-    ) -> NDArray:
-        """Apply a controlled qubit gate to the state."""
-        control_idx = self.qubits.index(control)
-        target_idx = self.qubits.index(target)
-        controlled_unitary = build_controlled_unitary(
-            control_idx, target_idx, op.matrix, self.num_qubits
-        )
-        return controlled_unitary @ state
 
     @property
     def qregisters(self) -> Mapping[Hashable, QuantumRegister]:
@@ -148,9 +106,40 @@ class Circuit:
         return self._cregisters
 
     @property
-    def circuit(self) -> Sequence["Operation"]:
+    def circuit(self) -> Sequence[Operation]:
         """Circuit containing the applied operations."""
         return self._circuit
+
+    def append(self, operation: Union[Sequence[Operation], Operation]) -> None:
+        """Appends an operation to the circuit.
+
+        Args:
+            operation: Operation or sequence of operations to append to the circuit.
+        """
+        if self.is_locked() == True:
+            raise CircuitError(
+                "Circuit is locked and no more operations can be appended. To "
+                "unlock the circuit, call 'Circuit.unlock()' first."
+            )
+
+        for q in operation.qubits:
+            if q not in self.qubits:
+                raise ValueError(f"Qubit {q} not in circuit.")
+
+        if not isinstance(operation, Sequence):
+            operation = [operation]
+
+        self._circuit.extend(operation)
+
+    def remove(self, op: Operation) -> None:
+        """Removes the operation from the circuit.
+
+        Args:
+            op: Operation to remove.
+        """
+        idx = self.circuit.index[op]
+        if idx is not None:
+            del self.circuit[idx]
 
     @property
     def qubits(self) -> Sequence[Hashable]:
@@ -228,9 +217,8 @@ class Circuit:
             qreg_label = list(self.qregisters)[0]
 
         if label is None:
-            # NOTE: switch if (not) using counters
-            # label = generate_id(prefix="q")
-            label = self.qubit_counter.next()
+            # label = self.qubit_counter.next()
+            label = "q" + str(self.num_qubits)
 
         # NOTE: duplicate qubit labels in different registers NOT allowed
         if label in self.qubits:
@@ -256,8 +244,6 @@ class Circuit:
             creg_label = list(self.cregisters)[0]
 
         if label is None:
-            # NOTE: switch if (not) using counters
-            # label = generate_id(prefix="c")
             label = self.bit_counter.next()
 
         # NOTE: only check label in the same register; duplicate in different registers allowed
@@ -276,18 +262,16 @@ class Circuit:
             label: Quantum register label (defaults to 'r' followed by a random integer ID number).
         """
         if label is None:
-            # NOTE: switch if (not) using counters
-            label = generate_id(prefix="r")
-            # label = f"c{len(self.qregisters)}"
+            # label = generate_id(prefix="r")
+            label = f"qreg{len(self.qregisters)}"
 
         if label in self._qregisters:
             raise ValueError(
                 f"Quantum register {label} already present in the circuit."
             )
 
-        # NOTE: switch if (not) using counters
-        # data = [generate_id(prefix="q") for _ in range(num_qubits)]
-        data = [self.qubit_counter.next() for i in range(num_qubits)]
+        # data = [self.qubit_counter.next() for i in range(num_qubits)]
+        data = ["q" + str(i) for i in range(num_qubits)]
         qreg = QuantumRegister(label=label, data=data)
 
         # TODO: freezing not currently supported
@@ -302,14 +286,17 @@ class Circuit:
             num_qubits: Number of bits in the classical register (defaults to 0, i.e., empty).
             label: Classical register label (defaults to 'r' followed by a random integer ID number).
         """
+        if label is None:
+            # label = generate_id(prefix="r")
+            label = f"creg{len(self.cregisters)}"
+
         if label in self._cregisters:
             raise ValueError(
                 f"Classical register {label} already present in the circuit"
             )
 
-        # NOTE: switch if (not) using counters
-        data = [generate_id(prefix="c") for _ in range(num_bits)]
         # data = [self.qubit_counter.next() for i in range(num_bits)]
+        data = ["c" + str(i) for i in range(num_bits)]
         creg = ClassicalRegister(label=label, data=data)
 
         # TODO: freezing not currently supported
@@ -362,27 +349,6 @@ class Circuit:
             "Converting OpenQASM to Circuit object not supported at the moment."
         )
 
-    def append(self, operation: Union[Sequence["Operation"], "Operation"]) -> None:
-        """Appends an operation to the circuit.
-
-        Args:
-            operation: Operation or sequence of operations to append to the circuit.
-        """
-        if self.is_locked() == True:
-            raise CircuitError(
-                "Circuit is locked and no more operations can be appended. To "
-                "unlock the circuit, call 'Circuit.unlock()' first."
-            )
-
-        for q in operation.qubits:
-            if q not in self.qubits:
-                raise ValueError(f"Qubit {q} not in circuit.")
-
-        if not isinstance(operation, Sequence):
-            operation = [operation]
-
-        self._circuit.extend(operation)
-
 
 class CircuitContext:
     """Class used to handle and store the active context.
@@ -396,11 +362,63 @@ class CircuitContext:
 
     def __init__(self, circuit: Circuit) -> None:
         self._circuit = circuit
+        self._frozen = False
 
     @property
     def circuit(self) -> Circuit:
         """Circuit attached to the context."""
         return self._circuit
+
+    @property
+    def frozen(self) -> bool:
+        "Whether the context is frozen and no operations can be appended."
+        return self._frozen
+
+    @mixedproperty
+    def freeze(cls) -> ContextManager:
+        """Freeze the context so that no operations are appended on initialization.
+
+        Returns a context manager for a context in which any initialized gates won't be
+        appended to the active circuit context.
+
+        Returns:
+            ContextManager: Manager for context withing no opperations are appended.
+
+        Raises:
+            CircuitError: If used outside of a circuit context.
+
+        Example:
+
+            .. code-block:: python
+
+                >>> from dwgms import Circuit
+                >>> from dwgms.operations import X, Y, Z
+
+                >>> circuit = Circuit(1)
+
+                >>> with circuit.context as q:
+                ...   X(q[0])  # will be appended to the circuit
+                ...   with circuit.context.freeze:
+                ...       Y(q[0])  # will NOT be appended to the circuit
+                ...   Z(q[0])  # will be appended to the circuit
+
+                >>> print(circuit)
+                <Operation: X, qubits=('q0',)>
+                <Operation: Z, qubits=('q0',)>
+        """
+
+        class FrozenContext:
+            def __enter__(self) -> None:
+                if cls.active_context is None:
+                    raise CircuitError(
+                        "Can only freeze active context. No active context found."
+                    )
+                cls.active_context._frozen = True
+
+            def __exit__(self, _, __, ___) -> None:
+                cls.active_context._frozen = False
+
+        return FrozenContext()
 
     def __enter__(self) -> QuantumRegister:
         """Enters the context and sets itself as active."""
@@ -429,7 +447,7 @@ class CircuitContext:
         CircuitContext._active_context = None
         self.circuit.lock()
 
-    @classproperty
+    @mixedproperty
     def active_context(cls) -> CircuitContext:
         """Current active context (usually ``self``)."""
         return cls._active_context

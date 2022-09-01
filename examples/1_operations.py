@@ -1,7 +1,7 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 """Using and appending operations."""
 from dwgms.circuit import Circuit
-from dwgms.operations.gates import Z, RY, CNOT, CX, Rotation
+from dwgms.operations import Z, RY, CNOT, CX, Rotation
 
 # Gates can be appended to the circuit (within a context) in several different
 # ways, as detailed below.
@@ -14,9 +14,9 @@ with circuit.context as q:
     # append parametric gates using qubit labels
     Rotation([0.1, 0.2, 0.3], "q0")
     # append multi-qubit gates using tuples
-    CNOT((q[0], q[1]))
+    CNOT(q[0], q[1])
     # append multi-qubit gates using slicing
-    CX(q[:2])
+    CX(*q[:2])
 
 # Note that CNOT and CX are the exact same gate, and that CNOT is only an alias
 # for CX (so they both are labelled as CX in the circuit).

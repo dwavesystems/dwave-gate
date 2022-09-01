@@ -1,7 +1,7 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 """Building, modifying and excecuting a circuit."""
 from dwgms.circuit import Circuit
-from dwgms.operations.gates import X, RX, CNOT
+from dwgms.operations import X, RX, CNOT
 
 # Create a circuit by defining the number of qubits (3) and the number of bits
 circuit = Circuit(3, 2)
@@ -32,6 +32,6 @@ with circuit.context as q:
 # We can also manually append a gate to the circuit, but first we need to unlock
 # the circuit, since it's automatically locked when exiting a context.
 circuit.unlock()
-circuit.append(CNOT(qubits=("q0", "q1")))
+circuit.append(CNOT(control="q0", target="q1"))
 
 print(circuit)
