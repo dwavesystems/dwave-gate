@@ -37,8 +37,6 @@ def compile_gate(gate_matrix, assume_unitary=True):
                 sub_states.add(state_j)
                 instructions[state_i].append((state_j, entry))
 
-    print(gate_matrix)
-    print(sub_states, instructions)
     return sub_states, instructions
 
 
@@ -71,13 +69,6 @@ def generate_op(
             [c.Value(amplitude_t, f"gate_value{i}{j}") for j in range(gate_matrix_size)]
             for i in range(gate_matrix_size)
         ]
-        print(
-            "gate_vals",
-            [
-                [(amplitude_t, f"gate_value{i}{j}") for j in range(gate_matrix_size)]
-                for i in range(gate_matrix_size)
-            ],
-        )
         inits.extend(
             [
                 c.Initializer(

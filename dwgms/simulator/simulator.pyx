@@ -49,7 +49,10 @@ def apply_instruction(num_qubits, state, op, targets, conjugate_gate=False):
         single_qubit(num_qubits, state, gate, target)
 
 
-def simulate(circuit):
+def simulate(circuit, mixed_state=False):
+    if mixed_state:
+        return _simulate_circuit_density_matrix(circuit)
+
     num_qubits = circuit.num_qubits
     state = np.zeros(1 << num_qubits, dtype=np.complex128)
     state[0] = 1
@@ -63,3 +66,22 @@ def simulate(circuit):
     bitstrings = [bin(i)[2:].zfill(num_qubits) for i in range(2 ** num_qubits)]
     swaps = {i: bitstrings.index(bitstrings[i][::-1]) for i in range(2 ** num_qubits)}
     return np.array([state[swaps[i]] for i in range(2 ** num_qubits)])
+
+
+# TODO: get working with big-endian (rather that little-endian) output states
+def _simulate_circuit_density_matrix(circuit):
+    num_qubits = circuit.num_qubits
+    num_virtual_qubits = 2 * num_qubits
+    state = np.zeros(1 << num_virtual_qubits, dtype=np.complex128)
+    state[0] = 1
+
+    for op in circuit.circuit:
+        # first apply the gate normally
+        targets = [circuit.qubits.index(qb) for qb in op.qubits]
+        apply_instruction(num_virtual_qubits, state, op, targets)
+        # then apply conjugate transpose to corresponding virtual qubit
+        virtual_targets = [t + num_qubits for t in targets]
+        apply_instruction(num_virtual_qubits, state, op, virtual_targets, conjugate_gate=True)
+    density_matrix = state.reshape((1 << num_qubits, 1 << num_qubits))
+
+    return density_matrix
