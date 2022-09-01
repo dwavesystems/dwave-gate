@@ -1,254 +1,470 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
-import warnings
-from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Hashable, Optional, Sequence, Union
+import cmath
+import math
+from typing import Optional, Sequence, Union
 
-from dwgms.circuit import CircuitContext
-from dwgms.utils import abstractclassproperty, classproperty
+import numpy as np
+from numpy.typing import NDArray
 
-if TYPE_CHECKING:
-    from numpy.typing import NDArray
+from dwgms.mixedproperty import mixedproperty
+from dwgms.operations.base import ControlledOperation, Operation, ParametricOperation
 
-# IDEA: use a functional approach, instead of an object oriented approach, for
-# utility functions such as 'broadcast', 'decompose' and 'get_matrix'.
-
-
-class ABCLockedAttr(ABCMeta):
-    """Metaclass to lock certain class attributes from being overwritten
-    with instance attributes. Used by the ``Operation`` abstract class."""
-
-    locked_attributes = [
-        "matrix",
-    ]
-
-    def __setattr__(self, attr, value) -> None:
-        if attr in self.locked_attributes:
-            raise ValueError(f"Cannot set class attribute '{attr}' to '{value}'.")
-
-        super(ABCLockedAttr, self).__setattr__(attr, value)
+#####################################
+# Non-parametric single-qubit gates #
+#####################################
 
 
-class Operation(metaclass=ABCLockedAttr):
-    """Class representing a classical or quantum operation.
+class Identity(Operation):
+    """Identity operator.
 
     Args:
         qubits: Qubits on which the operation should be applied. Only
             required when applying an operation within a circuit context.
     """
 
-    def __init__(
-        self, qubits: Optional[Union[Hashable, Sequence[Hashable]]] = None
-    ) -> None:
-        active_context = CircuitContext.active_context
+    _num_qubits = 1
 
-        if qubits is not None:
-            qubits = self._check_qubits(qubits)
+    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+        super(Identity, self).__init__(qubits)
 
-        elif active_context is not None:
-            raise TypeError(
-                "Qubits required when applying gate withing context. Did you "
-                "check that there are enough qubits in the quantum register?"
-            )
-
-        # must be set before appending operation to circuit
-        self._qubits = qubits
-
-        if active_context is not None:
-            active_context.circuit.append(self)
-
-    def _check_qubits(self, qubits: Sequence[Hashable]) -> Sequence[Hashable]:
-        """Asserts size and type of the qubit(s) and returns the correct type.
-
-        Args:
-            qubits: Qubits to check.
+    def to_qasm(self) -> str:
+        """Converts the identity operator into an OpenQASM string.
 
         Returns:
-            tuple: Sequence of qubits as a tuple.
+            str: OpenQASM string representation of the identity operator.
         """
-        # TODO: update to check for single qubit instead of str
-        if isinstance(qubits, str) or not isinstance(qubits, Sequence):
-            qubits = [qubits]
+        return f"id q[{self.qubits[0]}]"
 
-        if len(qubits) != self.num_qubits:
-            raise ValueError(
-                f"Operation '{self.__class__.__name__} requires "
-                f"{self.num_qubits} qubits, got {len(qubits)}."
-            )
-
-        # cast to tuple for convention
-        return tuple(qubits)
-
-    @classmethod
-    def broadcast(
-        cls,
-        qubits: Sequence[Hashable],
-        params: Sequence[complex] = None,
-        method: str = "layered",
-    ) -> None:
-        """Broadcasts an operation over one or more qubits.
-
-        Args:
-            qubits: Qubits to broadcast the operation over.
-            params: Operation parameters, if required by operation.
-            method: Which method to use for broadcasting (defaults to
-                ``"layered"``). Currently supports the following methods:
-
-                - layered: Applies the operation starting at the first qubit,
-                  incrementing by a single qubit per round; e.g., a 2-qubit gate
-                  applied to 3 qubits would apply it first to (0, 1), then (1, 2).
-                - parallel: Applies the operation starting at the first qubit,
-                  incrementing by the number of supported qubits for that gate;
-                  e.g., a 2-qubit gate applied to 5 qubits would apply it first
-                  to (0, 1), then (2, 3) and not apply anything to qubit 4.
-        Raises:
-            ValueError: If an unsupported method is requested.
-        """
-        # add parameters to operation call if required
-        if params:
-            append = lambda start, end: cls(params, qubits[start:end])
-        else:
-            append = lambda start, end: cls(qubits[start:end])
-
-        if method == "layered":
-            for i, _ in enumerate(qubits[: -cls.num_qubits + 1 or None]):
-                append(i, i + cls.num_qubits)
-        elif method == "parallel":
-            for i, _ in enumerate(qubits[:: cls.num_qubits]):
-                start, end = cls.num_qubits * i, cls.num_qubits * (i + 1)
-                if end <= len(qubits):
-                    append(start, end)
-        else:
-            raise ValueError(f"'{method}' style not supported.")
-
-    def __str__(self) -> str:
-        """Returns the operation representation."""
-        return repr(self)
-
-    def __repr__(self) -> str:
-        """Returns the representation of the Operation object."""
-        return (
-            f"<{self.__class__.__base__.__name__}: {self.label}, qubits={self.qubits}>"
-        )
-
-    @classproperty
-    def label(cls, self) -> str:
-        """Qubit operation label."""
-        if self and hasattr(self, "parameters"):
-            params = f"({self.parameters})"
-            return cls.__name__ + params
-        return cls.__name__
-
-    @classproperty
-    def num_qubits(cls) -> int:
-        """Number of qubits that the operation supports."""
-        if hasattr(cls, "_num_qubits"):
-            return cls._num_qubits
-
-        if hasattr(cls, "_num_control") and hasattr(cls, "_num_target"):
-            return cls._num_control + cls._num_target
-
-        raise AttributeError(
-            f"Operations {cls.label} missing class attributes '_num_qubits' "
-            "or, if a controlled operation, '_num_control' and '_num_target'."
-        )
-
-    @property
-    def qubits(self) -> Sequence[Hashable]:
-        """Qubits that the operation is applied to."""
-        return self._qubits
-
-    @qubits.setter
-    def qubits(self, qubits: Sequence[Hashable]) -> None:
-        """Set the qubits that the operation should be applied to."""
-        if self.qubits is not None:
-            warnings.warn(
-                f"Changing qubits on which '{self}' is applied from {self._qubits} to {qubits}"
-            )
-        self._qubits = self._check_qubits(qubits)
-
-    @abstractmethod
-    def to_qasm(self):
-        """Converts the operation into an OpenQASM string.
-
-        Returns:
-            str: OpenQASM string representation of the operation.
-        """
-        pass
-
-    @abstractclassproperty
+    @mixedproperty
     def matrix(cls) -> NDArray:
-        """Returns the matrix representation of the operation.
-
-        Returns:
-            NDArray: Matrix representation of the operation.
-        """
-        pass
-
-    @classproperty
-    def decomposition(cls, self) -> Sequence["Operation"]:
-        """Returns the decomposition of operation."""
-        if not getattr(cls, "_decomposition", None):
-            raise NotImplementedError(
-                "Decomposition not implemented for the " f"'{cls.__name__}' operation."
-            )
-
-        # if applying a decomposition, remove the applied (un-decomposed) gate first
-        if CircuitContext.active_context is not None:
-            del CircuitContext.active_context.circuit.circuit[-1]
-
-        if self is not None:
-            if self.parameters and not self.qubits:
-                return [
-                    op(self.parameters[i]) for i, op in enumerate(cls._decomposition)
-                ]
-            if self.parameters and self.qubits:
-                return [
-                    op(self.parameters[i], self.qubits[0])
-                    for i, op in enumerate(cls._decomposition)
-                ]
-            if not self.parameters and self.qubits:
-                return [op(self.qubits[0]) for op in cls._decomposition]
-        return cls._decomposition
+        """The matrix representation of the Identity operator."""
+        matrix = np.eye(2, dtype=np.complex)
+        return matrix
 
 
-class Measure(Operation):
-    """Class representing a measurement.
+class X(Operation):
+    """Pauli X operator.
 
     Args:
-        qubits: The qubits which should be measured. Only required when applying
-            an measurement within a circuit context.
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
     """
 
-    def __init__(self, qubits: Optional[Union[Hashable, Sequence[Hashable]]] = None):
-        super(Measure, self).__init__(qubits)
+    _num_qubits = 1
 
-    def to_qasm(self):
-        """Converts the measurement into an OpenQASM string.
+    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+        super(X, self).__init__(qubits)
+
+    def to_qasm(self) -> str:
+        """Converts the Pauli X operator into an OpenQASM string.
 
         Returns:
-            str: OpenQASM string representation of the measurement.
+            str: OpenQASM string representation of the Pauli X operator.
         """
-        return "measure"
+        return f"x q[{self.qubits[0]}]"
+
+    @mixedproperty
+    def matrix(cls) -> NDArray:
+        """The matrix representation of the Pauli X operator."""
+        matrix = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=np.complex)
+        return matrix
 
 
-class Barrier(Operation):
-    """Class representing a barrier operation.
+class Y(Operation):
+    """Pauli Y operator.
 
     Args:
-        qubits: Qubits on which the barrier operation should be applied.
-            Only required when applying a barrier operation within a circuit
-            context.
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
     """
 
-    def __init__(self, qubits: Optional[Union[Hashable, Sequence[Hashable]]] = None):
-        super(Barrier, self).__init__(qubits)
+    _num_qubits = 1
 
-    def to_qasm(self):
-        """Converts the barrier into an OpenQASM string.
+    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+        super(Y, self).__init__(qubits)
+
+    def to_qasm(self) -> str:
+        """Converts the Pauli Y operator into an OpenQASM string.
 
         Returns:
-            str: OpenQASM string representation of the barrier.
+            str: OpenQASM string representation of the Pauli Y operator.
         """
-        return "barrier"
+        return f"y q[{self.qubits[0]}]"
+
+    @mixedproperty
+    def matrix(cls) -> NDArray:
+        """The matrix representation of the Pauli Y operator."""
+        matrix = np.array([[0.0, -1.0j], [1.0j, 0.0]], dtype=np.complex)
+        return matrix
+
+
+class Z(Operation):
+    """Pauli Z operator.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_qubits = 1
+    # _decomposition = [Hadamard, X, Hadamard]
+
+    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+        super(Z, self).__init__(qubits)
+
+    def to_qasm(self) -> str:
+        """Converts the Pauli Z operator into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the Pauli Z operator.
+        """
+        return f"z q[{self.qubits[0]}]"
+
+    @mixedproperty
+    def matrix(cls) -> NDArray:
+        """The matrix representation of the Pauli Z operator."""
+        matrix = np.array([[1.0, 0.0], [0.0, -1.0]], dtype=np.complex)
+        return matrix
+
+
+class Hadamard(Operation):
+    """Hadamard operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_qubits = 1
+
+    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+        super(Hadamard, self).__init__(qubits)
+
+    def to_qasm(self) -> str:
+        """Converts the Hadamard operation into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the Hadamard operation.
+        """
+        return f"h q[{self.qubits[0]}]"
+
+    @mixedproperty
+    def matrix(cls) -> NDArray:
+        """The matrix representation of the Hadamard operator."""
+        matrix = (
+            math.sqrt(2) / 2 * np.array([[1.0, 1.0], [1.0, -1.0]], dtype=np.complex)
+        )
+        return matrix
+
+
+#################################
+# Parametric single-qubit gates #
+#################################
+
+
+class RX(ParametricOperation):
+    """Rotation-X operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+        parameters: Parameters for the operation. Required when constructing the
+            matrix representation of the operation.
+    """
+
+    _num_qubits = 1
+    _num_params = 1
+
+    def __init__(
+        self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None
+    ):
+        super(RX, self).__init__([theta], qubits)
+
+    def to_qasm(self) -> str:
+        """Converts the Rotation-X operation into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the Rotation-X operation.
+        """
+        theta = self.parameters[0]
+        return f"rx({theta}) q[{self.qubits[0]}]"
+
+    @mixedproperty(self_required=True)
+    def matrix(cls, self) -> NDArray:
+        """The matrix representation of the Rotation-X operator."""
+        theta = self.parameters[0]
+
+        diag_0 = math.cos(theta / 2)
+        diag_1 = -1j * math.sin(theta / 2)
+        matrix = np.array([[diag_0, diag_1], [diag_1, diag_0]], dtype=np.complex)
+        return matrix
+
+
+class RY(ParametricOperation):
+    """Rotation-Y operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+        parameters: Parameters for the operation. Required when constructing the
+            matrix representation of the operation.
+    """
+
+    _num_qubits = 1
+    _num_params = 1
+
+    def __init__(
+        self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None
+    ):
+        super(RY, self).__init__([theta], qubits)
+
+    def to_qasm(self) -> str:
+        """Converts the Rotation-Y operation into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the Rotation-Y operation.
+        """
+        theta = self.parameters[0]
+        return f"ry({theta}) q[{self.qubits[0]}]"
+
+    @mixedproperty(self_required=True)
+    def matrix(cls, self) -> NDArray:
+        """The matrix representation of the Rotation-Y operator."""
+        theta = self.parameters[0]
+
+        diag_0 = math.cos(theta / 2)
+        diag_1 = math.sin(theta / 2)
+        matrix = np.array([[diag_0, -diag_1], [diag_1, diag_0]], dtype=np.complex)
+        return matrix
+
+
+class RZ(ParametricOperation):
+    """Rotation-Z operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+        theta: Parameter for the operation. Required when constructing the
+            matrix representation of the operation.
+    """
+
+    _num_qubits = 1
+    _num_params = 1
+
+    def __init__(
+        self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None
+    ):
+        super(RZ, self).__init__([theta], qubits)
+
+    def to_qasm(self) -> str:
+        """Converts the Rotation-Z operation into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the Rotation-Z operation.
+        """
+        theta = self.parameters[0]
+        return f"rz({theta}) q[{self.qubits[0]}]"
+
+    @mixedproperty(self_required=True)
+    def matrix(cls, self) -> NDArray:
+        """The matrix representation of the Rotation-Z operator."""
+        theta = self.parameters[0]
+
+        term_0 = cmath.exp(-1j * theta / 2)
+        term_1 = cmath.exp(1j * theta / 2)
+        matrix = np.array([[term_0, 0.0], [0.0, term_1]], dtype=np.complex)
+        return matrix
+
+
+class Rotation(ParametricOperation):
+    """Rotation operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+        parameters: Parameters for the operation. Required when constructing the
+            matrix representation of the operation.
+    """
+
+    _num_qubits = 1
+    _num_params = 3
+    _decomposition = [RZ, RY, RZ]
+
+    def __init__(
+        self,
+        parameters: Sequence[float],
+        qubits: Optional[Union[str, Sequence[str]]] = None,
+    ) -> None:
+        super(Rotation, self).__init__(parameters, qubits)
+
+    def to_qasm(self) -> str:
+        """Converts the Rotation operation into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the Rotation operation.
+        """
+        return f"rz q[{self.qubits[0]}]\nry q[{self.qubits[0]}]\nrz q[{self.qubits[0]}]"
+
+    @mixedproperty(self_required=True)
+    def matrix(cls, self) -> NDArray:
+        """The matrix representation of the Rotation operator."""
+        beta, gamma, delta = self.parameters
+
+        mcos = math.cos(gamma / 2)
+        msin = math.sin(gamma / 2)
+
+        term_0 = cmath.exp(-0.5j * (beta + delta)) * mcos
+        term_1 = -cmath.exp(0.5j * (beta - delta)) * msin
+        term_2 = cmath.exp(-0.5j * (beta - delta)) * msin
+        term_3 = cmath.exp(0.5j * (beta + delta)) * mcos
+
+        matrix = np.array([[term_0, term_1], [term_2, term_3]], dtype=np.complex)
+        return matrix
+
+
+#######################################
+# Non-parametric multiple-qubit gates #
+#######################################
+
+
+class CX(ControlledOperation):
+    """Controlled-X (CNOT) operation.
+
+    Args:
+        control: Qubit on which the target operation ``X`` is controlled.
+        target: Qubit on which the target operation ``X`` is applied.
+    """
+
+    _num_qubits = 2
+    _target_operation = X
+
+    def __init__(
+        self, control: Optional[str] = None, target: Optional[str] = None
+    ) -> None:
+        super(CX, self).__init__(
+            op=self._target_operation, control=control, target=target
+        )
+
+    def to_qasm(self) -> str:
+        """Converts the Controlled X operation into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the Controlled X operation.
+        """
+        return f"cx q[{self.qubits[0]}],  q[{self.qubits[1]}]"
+
+
+CNOT = CX
+"""Controlled-NOT operation (alias for the CX operation)"""
+
+
+class CZ(ControlledOperation):
+    """Controlled-Z operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_qubits = 2
+    _target_operation = Z
+
+    def __init__(
+        self, control: Optional[str] = None, target: Optional[str] = None
+    ) -> None:
+        super(CZ, self).__init__(
+            op=self._target_operation, control=control, target=target
+        )
+
+    def to_qasm(self) -> str:
+        """Converts the Controlled-Z operation into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the Controlled-Z operation.
+        """
+        return f"cz q[{self.qubits[0]}],  q[{self.qubits[1]}]"
+
+
+class SWAP(Operation):
+    """SWAP operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_qubits = 2
+
+    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+        super(SWAP, self).__init__(qubits)
+
+    def to_qasm(self) -> str:
+        """Converts the SWAP operation into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the SWAP operation.
+        """
+        raise NotImplementedError("OpenQASM 2.0 does not support the SWAP gate.")
+
+    @mixedproperty
+    def matrix(cls) -> NDArray:
+        """The matrix representation of the SWAP operation."""
+        # TODO: add support for larger matrix states
+        matrix = np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+            dtype=np.complex,
+        )
+        return matrix
+
+
+class CSWAP(Operation):
+    """CSWAP operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_qubits = 3
+
+    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+        super(SWAP, self).__init__(qubits)
+
+    def to_qasm(self) -> str:
+        """Converts the SWAP operation into an OpenQASM string.
+
+        Returns:
+            str: OpenQASM string representation of the SWAP operation.
+        """
+        raise NotImplementedError("OpenQASM 2.0 does not support the CSWAP gate.")
+
+    @mixedproperty
+    def matrix(cls) -> NDArray:
+        """The matrix representation of the SWAP operation."""
+        # TODO: add support for larger matrix states
+        matrix = np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+            ],
+            dtype=np.complex,
+        )
+        return matrix
+
+
+###################################
+# Parametric multiple-qubit gates #
+###################################

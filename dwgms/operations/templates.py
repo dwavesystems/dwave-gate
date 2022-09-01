@@ -1,15 +1,24 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
+from __future__ import annotations
+
 import copy
 import functools
 from typing import Hashable, Sequence
 
-from dwgms import Circuit
+from dwgms.circuit import Circuit
 from dwgms.registers import QuantumRegister
-from dwgms.utils import TemplateError, generate_id
+from dwgms.tools.unitary import build_unitary
+
+# TODO: add support for decompositions and broadcasting to templates;
+# optimally, make templates inherit from 'Operation'
 
 allowed_template_methods = [
     "circuit",
 ]
+
+
+class TemplateError(Exception):
+    """Exception to be raised when there is an error with a Template."""
 
 
 class template:
@@ -20,7 +29,7 @@ class template:
 
     - A ``circuit`` method, only with ``self`` in the signature, which applies
       all the operations contained in the template. Any qubits and parameters
-      can be accessed via ``self.qubits`` and ``self.params`` respectively.
+      can be accessed via ``self.qubits`` and ``self.parameters`` respectively.
     - A ``num_qubits`` class attribute with the number of required qubits.
     - A ``num_params`` class attribute with the number of required parameters.
 
@@ -59,21 +68,21 @@ class template:
         self._cls.num_qubits = getattr(cls, "num_qubits", 1)
         self._cls.num_params = getattr(cls, "num_params", 0)
 
-        label = generate_id(prefix=f"{self._cls.__name__}Register")
-        self._qubits = QuantumRegister(label=label)
+        # template qubits are stored in a quantum register
+        self._qubits = QuantumRegister(label=f"{cls.__name__}Register")
 
         self._params = None
         self._matrix = None
         self._instancelike = False
 
-        self._cls.params = property(lambda _: self.params)
+        self._cls.params = property(lambda _: self.parameters)
         self._cls.qubits = property(lambda _: self.qubits)
 
-    def __call__(self, params=None, qubits=None) -> "template":
+    def __call__(self, parameters=None, qubits=None) -> template:
         """Calls the class and applied the custom circuit.
 
         Args:
-            params: Optional parameter(s) required by the circuit.
+            parameters: Optional parameter(s) required by the circuit.
             qubits: Qubits on which the operation should be applied. Only
                 required when applying an operation within a circuit context.
 
@@ -82,13 +91,15 @@ class template:
             stored as attributes.
         """
         template_copy = self.copy()
-        template_copy._params = params
+        template_copy._params = parameters
+
         if qubits is not None:
             qubits = self._check_qubits(qubits)
             template_copy._qubits.add(qubits)
-        template_copy._instancelike = True
 
+        template_copy._instancelike = True
         template_copy._cls().circuit()
+
         return template_copy
 
     def _check_qubits(self, qubits) -> Sequence[Hashable]:
@@ -114,7 +125,7 @@ class template:
         return tuple(qubits)
 
     @property
-    def params(self):
+    def parameters(self):
         """Parameters of the template."""
         return self._params
 
@@ -126,8 +137,8 @@ class template:
     @property
     def label(self):
         """Template operation label."""
-        if self.params is not None:
-            params = f"({', '.join(str(p) for p in self.params)})"
+        if self.parameters is not None:
+            params = f"({', '.join(str(p) for p in self.parameters)})"
             return self._cls.__name__ + params
         return self._cls.__name__
 
@@ -142,19 +153,19 @@ class template:
         if self._matrix is None:
             tmp_circuit = Circuit(self._cls.num_qubits)
             with tmp_circuit.context as q:
-                self(self.params, q)
+                self(self.parameters, q)
 
-            self._matrix = tmp_circuit.build_unitary()
+            self._matrix = build_unitary(tmp_circuit)
         return self._matrix
 
-    def copy(self) -> "template":
+    def copy(self) -> template:
         """Copies the templated operation.
 
         Returns:
             template: Copy of the templated operation.
         """
         new_copy = self.__class__(self._cls)
-        new_copy._cls._params = copy.deepcopy(self.params)
+        new_copy._cls._params = copy.deepcopy(self.parameters)
         new_copy._cls._qubits = copy.deepcopy(self.qubits)
         new_copy._matrix = copy.deepcopy(self._matrix)
         return new_copy

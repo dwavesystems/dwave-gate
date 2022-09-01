@@ -1,9 +1,8 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 """Creating and using templates."""
 from dwgms.circuit import Circuit
-from dwgms.operations import X, RY, RZ, Hadamard
-from dwgms.operations.gates import Rotation
-from dwgms.operations.template import template
+from dwgms.tools import build_unitary
+from dwgms.operations import X, RY, RZ, Hadamard, Rotation, template
 
 import numpy as np
 
@@ -16,7 +15,7 @@ with z_gate_circuit.context as q:
     Hadamard(q[0])
 
 # We can see that it's correct by printing it's unitary.
-print(z_gate_circuit.build_unitary())
+print(build_unitary(z_gate_circuit))
 
 # The above circuit can also be appended to other circuits.
 circuit = Circuit(5)
@@ -32,12 +31,12 @@ print(circuit)
 # gate implementation using only 'RZ' and 'RY' gates.
 @template
 class RotGate:
-    num_qubits = 2
+    num_qubits = 1
     num_params = 3
 
     def circuit(self):
         RZ(self.params[0], self.qubits[0])
-        RY(self.params[1], self.qubits[1])
+        RY(self.params[1], self.qubits[0])
         RZ(self.params[2], self.qubits[0])
 
 
