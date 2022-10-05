@@ -40,15 +40,26 @@ def compile_gate(gate_matrix, assume_unitary=True):
     return sub_states, instructions
 
 
-def generate_op(
+def generate_op_c_code(
     op_name,
     num_targets,
     num_controls,
     sparse_gate_mask=None,
     precompile_gate=None,
     dephasing_epsilon=0,
+    little_endian=True,
 ):
     amplitude_t = "std::complex<double>"
+
+    num_qubits = c.Value("uint64_t", "num_qubits")
+
+    def qubit_index(qubit):
+        if not little_endian:
+            return f"({num_qubits.name} - {qubit} - 1)"
+        return qubit
+
+    def shift(value, idx):
+        return f"({value} << {idx})"
 
     sub_states = set()
     instructions = {}
@@ -89,10 +100,9 @@ def generate_op(
             ]
         )
 
-    num_qubits = c.Value("int", "num_qubits")
     state_vector = c.Pointer(c.Value(amplitude_t, "state_vector"))
-    targets = [c.Value("int", f"target{i}") for i in range(num_targets)]
-    controls = [c.Value("int", f"control{i}") for i in range(num_controls)]
+    targets = [c.Value("uint64_t", f"target{i}") for i in range(num_targets)]
+    controls = [c.Value("uint64_t", f"control{i}") for i in range(num_controls)]
 
     idx = c.Value("uint64_t", "idx")
 
@@ -110,7 +120,7 @@ def generate_op(
 
     control_mask = c.Value("uint64_t", "control_mask")
     control_mask_init = " | ".join(
-        ["0"] + [f"(1 << {control.name})" for control in controls]
+        ["0"] + [shift(1, qubit_index(control.name)) for control in controls]
     )
 
     target_masks = {
@@ -120,7 +130,7 @@ def generate_op(
         state: " | ".join(
             ["0"]
             + [
-                f"({b} << {target.name})"
+                shift(b, qubit_index(target.name))
                 for b, target in zip(binary(state, num_targets), targets)
             ]
         )
@@ -153,7 +163,9 @@ def generate_op(
                 c.Initializer(num_states, f"1 << {num_qubits.name}"),
                 c.Initializer(
                     positions,
-                    "{" + ", ".join([v.name for v in (targets + controls)]) + "}",
+                    "{" + ", ".join([
+                        qubit_index(v.name) for v in (targets + controls)
+                    ]) + "}",
                 ),
                 c.Statement(
                     f"std::sort({positions.name}, {positions.name} + {num_targets + num_controls})"
@@ -221,10 +233,47 @@ def generate_op(
 
     # cython_gate_arg = "np.complex128_t* gate_matrix, " if precompile_gate is None else ""
     cython_qubit_args = ", ".join(
-        [f"int target{i}" for i in range(num_targets)]
-        + [f"int control{i}" for i in range(num_controls)]
+        [f"uint64_t target{i}" for i in range(num_targets)]
+        + [f"uint64_t control{i}" for i in range(num_controls)]
     )
-    cython_header = f'void c_{op_name} "{op_name}" (int num_qubits, np.complex128_t* state_vector, np.complex128_t* gate_matrix, {cython_qubit_args})'
+    cython_header = f"""
+    void c_{op_name} "{op_name}" (
+        uint64_t num_qubits,
+        np.complex128_t* state_vector,
+        np.complex128_t* gate_matrix,
+        {cython_qubit_args}
+    )"""
+
+    return dict(
+        function_definition=func,
+        cython_qubit_args=cython_qubit_args,
+        cython_header=cython_header,
+    )
+
+
+def generate_op(
+    op_name,
+    num_targets,
+    num_controls,
+    sparse_gate_mask=None,
+    precompile_gate=None,
+    dephasing_epsilon=0,
+):
+    c_codes = []
+    op_options = [
+        (True, f"{op_name}_little_endian"),
+        (False, f"{op_name}_big_endian"),
+    ]
+    for little_endian, full_op_name in op_options:
+        c_codes.append(generate_op_c_code(
+            full_op_name,
+            num_targets,
+            num_controls,
+            sparse_gate_mask=sparse_gate_mask,
+            precompile_gate=precompile_gate,
+            dephasing_epsilon=dephasing_epsilon,
+            little_endian=little_endian,
+        ))
 
     # cython_gate_arg = "complex[:,:] gate_matrix, " if precompile_gate is None else ""
     # gate_arg = "gate_matrix"
@@ -233,19 +282,39 @@ def generate_op(
         + [f"control{i}" for i in range(num_controls)]
     )
     cython_function = f"""
-cdef inline {op_name}(int num_qubits, complex[::1] state_vector, complex[:,:] gate_matrix, {cython_qubit_args}):
-    c_{op_name}(num_qubits, <np.complex128_t*>&state_vector[0], <np.complex128_t*>&gate_matrix[0, 0], {qubit_args})
+cdef inline {op_name}(
+    uint64_t num_qubits,
+    complex[::1] state_vector,
+    complex[:,:] gate_matrix,
+    {c_codes[0]["cython_qubit_args"]},
+    little_endian=True,
+):
+    if little_endian:
+        c_{op_options[0][1]}(
+            num_qubits,
+            <np.complex128_t*>&state_vector[0],
+            <np.complex128_t*>&gate_matrix[0, 0],
+            {qubit_args}
+        )
+    else:
+        c_{op_options[1][1]}(
+            num_qubits,
+            <np.complex128_t*>&state_vector[0],
+            <np.complex128_t*>&gate_matrix[0, 0],
+            {qubit_args}
+        )
 """
 
     return dict(
-        function_definition=func,
-        cython_header=cython_header,
+        function_definition="\n\n".join(str(c_code["function_definition"]) for c_code in c_codes),
+        cython_header="\n\n".join(c_code["cython_header"] for c_code in c_codes),
         cython_function=cython_function,
     )
 
 
 if __name__ == "__main__":
-    c_file = """// THIS FILE WAS AUTOMATICALLY GENERATED BY dwgms/simulator/operation_generation.py
+    c_file = """
+// THIS FILE WAS AUTOMATICALLY GENERATED BY dwgms/simulator/operation_generation.py
 #include <complex.h>
 #include <algorithm>
 
@@ -296,7 +365,8 @@ cdef extern from "./ops.h" nogil:
         f.write(c_file)
 
     cython_file = (
-        """# THIS FILE WAS AUTOMATICALLY GENERATED BY dwgms/simulator/operation_generation.py
+        """
+# THIS FILE WAS AUTOMATICALLY GENERATED BY dwgms/simulator/operation_generation.py
 cimport numpy as np
 from libc.stdint cimport uint64_t
 
