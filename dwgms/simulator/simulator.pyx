@@ -1,6 +1,7 @@
 #cython: language_level=3
 
 import numpy as np
+from dwgms.tools.circuit import Circuit
 
 from dwgms.simulator.ops cimport (
     apply_cswap,
@@ -67,16 +68,34 @@ def apply_instruction(
         single_qubit(num_qubits, state, gate, target, little_endian=little_endian)
 
 
-def simulate(circuit, mixed_state=False, little_endian=False):
+def simulate(
+    circuit: Circuit, mixed_state: bool = False, little_endian: bool = False
+) -> np.ndarray:
+    """Simulate the given circuit with either a state vector or density matrix
+    simulation.
+
+    Args:
+        circuit: The circuit to simulate.
+
+        mixed_state:
+            If true, use the full density matrix method to simulate the circuit.
+            Otherwise, simulate using the state vector method.
+
+        little_endian:
+            If true, return the state vector using little-endian indexing for
+            the qubits. Otherwise use big-endian.
+
+    Returns:
+        The resulting state vector or density matrix.
+
+    """
+        
     if mixed_state:
         return _simulate_circuit_density_matrix(circuit)
 
     num_qubits = circuit.num_qubits
     state = np.zeros(1 << num_qubits, dtype=np.complex128)
-    if little_endian:
-        state[0] = 1
-    else:
-        state[(1 << num_qubits) - 1] = 1
+    state[0] = 1
 
     for op in circuit.circuit:
         targets = [circuit.qubits.index(qb) for qb in op.qubits]
