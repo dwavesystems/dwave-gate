@@ -1,7 +1,7 @@
 #cython: language_level=3
 
 import numpy as np
-from dwgms.tools.circuit import Circuit
+from dwgms.circuit import Circuit
 
 from dwgms.simulator.ops cimport (
     apply_cswap,

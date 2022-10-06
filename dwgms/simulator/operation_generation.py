@@ -3,7 +3,8 @@ import cgen as c
 import numpy as np
 
 
-def binary(i, n):
+def binary(i: int, n: int) -> tuple[int, ...]:
+    """Return the bitstring of i (with n total bits) as a tuple."""
     return tuple((i >> j) & 1 for j in range(n))
 
 
@@ -247,7 +248,7 @@ def generate_op_c_code(
         ),
         c.Statement(
             "std::sort("
-                f"{positions.name}, {positions.name} + {num_targets + num_controls}"
+            f"{positions.name}, {positions.name} + {num_targets + num_controls}"
             ")"
         ),
 
@@ -467,7 +468,7 @@ cdef extern from "./ops.h" nogil:
     amp_damp0 = np.array([[1, 0], [0, np.sqrt(1 - eps)]])
     amp_damp1 = np.array([[0, np.sqrt(eps)], [0, 0]])
 
-    for name, num_targets, num_controls, kwargs in [
+    gate_defintions: List[Tuple[str, int, int, Dict]] = [
         ("single_qubit", 1, 0, {}),
         ("apply_gate_control", 1, 1, {}),
         ("apply_gate_two_control", 1, 2, {}),
@@ -477,7 +478,9 @@ cdef extern from "./ops.h" nogil:
         ("apply_dephase_1", 1, 0, dict(precompile_gate=dephase1)),
         ("apply_amp_damp_0", 1, 0, dict(precompile_gate=amp_damp0)),
         ("apply_amp_damp_1", 1, 0, dict(precompile_gate=amp_damp1)),
-    ]:
+    ]
+
+    for name, num_targets, num_controls, kwargs in gate_defintions:
         op = generate_op(name, num_targets, num_controls, **kwargs)
         c_file += str(op.function_definition) + "\n\n"
         cython_imports += op.cython_header + "\n\n"
