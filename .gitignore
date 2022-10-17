@@ -28,15 +28,17 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
-htmlcov/
+coverage_html/
 .tox/
 .coverage
 .coverage.*
 .cache
 nosetests.xml
 coverage.xml
+cov.xml
 *.cover
 .hypothesis/
+*.lcov
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -54,3 +56,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# IDEs/editors
+.vscode/
