@@ -40,7 +40,7 @@ class Identity(Operation):
     @mixedproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the Identity operator."""
-        matrix = np.eye(2, dtype=np.complex)
+        matrix = np.eye(2, dtype=complex)
         return matrix
 
 
@@ -68,7 +68,7 @@ class X(Operation):
     @mixedproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the Pauli X operator."""
-        matrix = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=np.complex)
+        matrix = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=complex)
         return matrix
 
 
@@ -96,7 +96,7 @@ class Y(Operation):
     @mixedproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the Pauli Y operator."""
-        matrix = np.array([[0.0, -1.0j], [1.0j, 0.0]], dtype=np.complex)
+        matrix = np.array([[0.0, -1.0j], [1.0j, 0.0]], dtype=complex)
         return matrix
 
 
@@ -109,7 +109,7 @@ class Z(Operation):
     """
 
     _num_qubits = 1
-    # _decomposition = [Hadamard, X, Hadamard]
+    _decomposition = ["Hadamard", "X", "Hadamard"]
 
     def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
         super(Z, self).__init__(qubits)
@@ -125,7 +125,7 @@ class Z(Operation):
     @mixedproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the Pauli Z operator."""
-        matrix = np.array([[1.0, 0.0], [0.0, -1.0]], dtype=np.complex)
+        matrix = np.array([[1.0, 0.0], [0.0, -1.0]], dtype=complex)
         return matrix
 
 
@@ -153,9 +153,7 @@ class Hadamard(Operation):
     @mixedproperty
     def matrix(cls) -> NDArray:
         """The matrix representation of the Hadamard operator."""
-        matrix = (
-            math.sqrt(2) / 2 * np.array([[1.0, 1.0], [1.0, -1.0]], dtype=np.complex)
-        )
+        matrix = math.sqrt(2) / 2 * np.array([[1.0, 1.0], [1.0, -1.0]], dtype=complex)
         return matrix
 
 
@@ -177,10 +175,8 @@ class RX(ParametricOperation):
     _num_qubits = 1
     _num_params = 1
 
-    def __init__(
-        self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None
-    ):
-        super(RX, self).__init__([theta], qubits)
+    def __init__(self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None):
+        super(RX, self).__init__(theta, qubits)
 
     def to_qasm(self) -> str:
         """Converts the Rotation-X operation into an OpenQASM string.
@@ -198,7 +194,7 @@ class RX(ParametricOperation):
 
         diag_0 = math.cos(theta / 2)
         diag_1 = -1j * math.sin(theta / 2)
-        matrix = np.array([[diag_0, diag_1], [diag_1, diag_0]], dtype=np.complex)
+        matrix = np.array([[diag_0, diag_1], [diag_1, diag_0]], dtype=complex)
         return matrix
 
 
@@ -215,10 +211,8 @@ class RY(ParametricOperation):
     _num_qubits = 1
     _num_params = 1
 
-    def __init__(
-        self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None
-    ):
-        super(RY, self).__init__([theta], qubits)
+    def __init__(self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None):
+        super(RY, self).__init__(theta, qubits)
 
     def to_qasm(self) -> str:
         """Converts the Rotation-Y operation into an OpenQASM string.
@@ -236,7 +230,7 @@ class RY(ParametricOperation):
 
         diag_0 = math.cos(theta / 2)
         diag_1 = math.sin(theta / 2)
-        matrix = np.array([[diag_0, -diag_1], [diag_1, diag_0]], dtype=np.complex)
+        matrix = np.array([[diag_0, -diag_1], [diag_1, diag_0]], dtype=complex)
         return matrix
 
 
@@ -253,10 +247,8 @@ class RZ(ParametricOperation):
     _num_qubits = 1
     _num_params = 1
 
-    def __init__(
-        self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None
-    ):
-        super(RZ, self).__init__([theta], qubits)
+    def __init__(self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None):
+        super(RZ, self).__init__(theta, qubits)
 
     def to_qasm(self) -> str:
         """Converts the Rotation-Z operation into an OpenQASM string.
@@ -274,7 +266,7 @@ class RZ(ParametricOperation):
 
         term_0 = cmath.exp(-1j * theta / 2)
         term_1 = cmath.exp(1j * theta / 2)
-        matrix = np.array([[term_0, 0.0], [0.0, term_1]], dtype=np.complex)
+        matrix = np.array([[term_0, 0.0], [0.0, term_1]], dtype=complex)
         return matrix
 
 
@@ -290,7 +282,7 @@ class Rotation(ParametricOperation):
 
     _num_qubits = 1
     _num_params = 3
-    _decomposition = [RZ, RY, RZ]
+    _decomposition = ["RZ", "RY", "RZ"]
 
     def __init__(
         self,
@@ -320,7 +312,7 @@ class Rotation(ParametricOperation):
         term_2 = cmath.exp(-0.5j * (beta - delta)) * msin
         term_3 = cmath.exp(0.5j * (beta + delta)) * mcos
 
-        matrix = np.array([[term_0, term_1], [term_2, term_3]], dtype=np.complex)
+        matrix = np.array([[term_0, term_1], [term_2, term_3]], dtype=complex)
         return matrix
 
 
@@ -337,15 +329,12 @@ class CX(ControlledOperation):
         target: Qubit on which the target operation ``X`` is applied.
     """
 
-    _num_qubits = 2
+    _num_control = 1
+    _num_target = 1
     _target_operation = X
 
-    def __init__(
-        self, control: Optional[str] = None, target: Optional[str] = None
-    ) -> None:
-        super(CX, self).__init__(
-            op=self._target_operation, control=control, target=target
-        )
+    def __init__(self, control: Optional[str] = None, target: Optional[str] = None) -> None:
+        super(CX, self).__init__(op=self._target_operation, control=control, target=target)
 
     def to_qasm(self) -> str:
         """Converts the Controlled X operation into an OpenQASM string.
@@ -368,15 +357,12 @@ class CZ(ControlledOperation):
             required when applying an operation within a circuit context.
     """
 
-    _num_qubits = 2
+    _num_control = 1
+    _num_target = 1
     _target_operation = Z
 
-    def __init__(
-        self, control: Optional[str] = None, target: Optional[str] = None
-    ) -> None:
-        super(CZ, self).__init__(
-            op=self._target_operation, control=control, target=target
-        )
+    def __init__(self, control: Optional[str] = None, target: Optional[str] = None) -> None:
+        super(CZ, self).__init__(op=self._target_operation, control=control, target=target)
 
     def to_qasm(self) -> str:
         """Converts the Controlled-Z operation into an OpenQASM string.
@@ -419,7 +405,7 @@ class SWAP(Operation):
                 [0.0, 1.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0, 1.0],
             ],
-            dtype=np.complex,
+            dtype=complex,
         )
         return matrix
 
@@ -460,7 +446,7 @@ class CSWAP(Operation):
                 [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
             ],
-            dtype=np.complex,
+            dtype=complex,
         )
         return matrix
 
