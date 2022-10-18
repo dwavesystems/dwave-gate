@@ -39,9 +39,7 @@ class Operation(metaclass=ABCLockedAttr):
             required when applying an operation within a circuit context.
     """
 
-    def __init__(
-        self, qubits: Optional[Union[Hashable, Sequence[Hashable]]] = None
-    ) -> None:
+    def __init__(self, qubits: Optional[Union[Hashable, Sequence[Hashable]]] = None) -> None:
         active_context = CircuitContext.active_context
 
         if qubits is not None:
@@ -55,6 +53,11 @@ class Operation(metaclass=ABCLockedAttr):
 
         if active_context is not None and active_context.frozen is False:
             active_context.circuit.append(self)
+
+    @abstractmixedproperty
+    def _num_qubits(cls):
+        """Abstract mixedproperty asserting the existence of a ``_num_qubits`` attribute."""
+        pass
 
     @classmethod
     def _check_qubits(cls, qubits: Sequence[Hashable]) -> Sequence[Hashable]:
@@ -72,8 +75,7 @@ class Operation(metaclass=ABCLockedAttr):
 
         if len(qubits) != cls.num_qubits:
             raise ValueError(
-                f"Operation '{cls.label}' requires "
-                f"{cls.num_qubits} qubits, got {len(qubits)}."
+                f"Operation '{cls.label}' requires " f"{cls.num_qubits} qubits, got {len(qubits)}."
             )
 
         # cast to tuple for convention
@@ -86,22 +88,13 @@ class Operation(metaclass=ABCLockedAttr):
             qubits: Qubits on which the operation should be applied. Only
                 required if not already declared in operation.
         """
-        cls = self.__class__
         qubits = qubits or self.qubits
+        self.__class__(qubits)
 
-        if qubits is None:
-            raise ValueError(
-                f"Operation '{cls.label}' requires "
-                f"{self.num_qubits} qubits, got none."
-            )
-
-        if CircuitContext.active_context is None:
-            raise TypeError("Qubits required when applying gate within context.")
-
-        if issubclass(cls, ParametricOperation):
-            cls(self.parameters, qubits)
-        else:
-            cls(qubits)
+    def __eq__(self, __o: object) -> bool:
+        """Returns whether two operations are considered equal."""
+        name_eq = __o.__class__.__name__ == self.__class__.__name__
+        return name_eq and __o.qubits == self.qubits
 
     def __str__(self) -> str:
         """Returns the operation representation."""
@@ -109,9 +102,7 @@ class Operation(metaclass=ABCLockedAttr):
 
     def __repr__(self) -> str:
         """Returns the representation of the Operation object."""
-        return (
-            f"<{self.__class__.__base__.__name__}: {self.label}, qubits={self.qubits}>"
-        )
+        return f"<{self.__class__.__base__.__name__}: {self.label}, qubits={self.qubits}>"
 
     @mixedproperty
     def label(cls, self) -> str:
@@ -122,8 +113,8 @@ class Operation(metaclass=ABCLockedAttr):
         return cls.__name__
 
     @mixedproperty
-    def decomposition(cls) -> str:
-        """Decomposition of operation."""
+    def decomposition(cls) -> Sequence[Hashable]:
+        """Decomposition of operation as list of operation labels."""
         if not getattr(cls, "_decomposition", None):
             raise NotImplementedError(
                 "Decomposition not implemented for the " f"'{cls.label}' operation."
@@ -133,16 +124,10 @@ class Operation(metaclass=ABCLockedAttr):
     @mixedproperty
     def num_qubits(cls) -> int:
         """Number of qubits that the operation supports."""
-        if hasattr(cls, "_num_qubits"):
+        if isinstance(cls._num_qubits, int):
             return cls._num_qubits
 
-        if hasattr(cls, "_num_control") and hasattr(cls, "_num_target"):
-            return cls._num_control + cls._num_target
-
-        raise AttributeError(
-            f"Operations {cls.label} missing class attributes '_num_qubits' "
-            "or, if a controlled operation, '_num_control' and '_num_target'."
-        )
+        raise AttributeError(f"Operations {cls.label} missing class attributes '_num_qubits'.")
 
     @property
     def qubits(self) -> Sequence[Hashable]:
@@ -157,37 +142,6 @@ class Operation(metaclass=ABCLockedAttr):
                 f"Changing qubits on which '{self}' is applied from {self._qubits} to {qubits}"
             )
         self._qubits = self._check_qubits(qubits)
-
-    @classmethod
-    def decompose(
-        cls,
-        parameters: Sequence[complex] = None,
-        qubits: Sequence[Hashable] = None,
-    ) -> Sequence[Union[Operation, Type[Operation]]]:
-        """Returns the decomposition of operation.
-
-        Args:
-            qubits: Qubits on which the operation should be applied.
-            parameters: Parameters for the operation.
-
-        Returns:
-            List[Operation, type]: Depending on whether the parmeters and/or qubits are passed
-            the function will return either a list of instance objects or classes.
-        """
-        if issubclass(cls, ParametricOperation):
-            if parameters:
-                parameters = cls._check_parameters(parameters)
-                if qubits:
-                    qubits = cls._check_qubits(qubits)
-                    return [
-                        op(parameters[i], qubits[0])
-                        for i, op in enumerate(cls.decomposition)
-                    ]
-                return [op(parameters[i]) for i, op in enumerate(cls.decomposition)]
-        if qubits:
-            qubits = cls._check_qubits(qubits)
-            return [op(qubits[0]) for op in cls.decomposition]
-        return cls.decomposition
 
     @classmethod
     def broadcast(
@@ -220,12 +174,10 @@ class Operation(metaclass=ABCLockedAttr):
         # add parameters to operation call if required
         if issubclass(cls, ParametricOperation):
             if not parameters:
-                raise ValueError(
-                    "Parmeters required for broadcasting parametric operation."
-                )
+                raise ValueError("Parmeters required for broadcasting parametric operation.")
             append = lambda start, end: cls(parameters, qubits[start:end])
         elif issubclass(cls, ControlledOperation):
-            num_control = len(getattr(cls, "_num_controls", [0]))
+            num_control = getattr(cls, "_num_control", 0)
             append = lambda start, end: cls(
                 qubits[start : start + num_control], qubits[start + num_control : end]
             )
@@ -280,12 +232,25 @@ class ParametricOperation(Operation):
         qubits: Optional[Union[str, Sequence[str]]] = None,
     ):
         self._parameters = self._check_parameters(parameters)
-        super().__init__(qubits)
+        super(ParametricOperation, self).__init__(qubits)
+
+    def __eq__(self, __o: object) -> bool:
+        """Returns whether two operations are considered equal."""
+        param_eq = __o.parameters == self.parameters
+        return param_eq and super(ParametricOperation, self).__eq__(__o)
 
     @property
     def parameters(self):
         """Parameters of the operation."""
         return self._parameters
+
+    @mixedproperty
+    def num_parameters(cls) -> int:
+        """Number of parameters that the operation requires."""
+        if hasattr(cls, "_num_params"):
+            return cls._num_params
+
+        raise AttributeError(f"Operations {cls.label} missing class attributes '_num_params'.")
 
     @classmethod
     def _check_parameters(cls, params):
@@ -310,17 +275,25 @@ class ParametricOperation(Operation):
         # cast to list for convention
         return list(params)
 
+    def __call__(self, qubits: Optional[Sequence[Hashable]] = None):
+        """Apply (or reapply) the operation within a context.
+
+        Args:
+            qubits: Qubits on which the operation should be applied. Only
+                required if not already declared in operation.
+        """
+        qubits = qubits or self.qubits
+        self.__class__(self.parameters, qubits)
+
 
 class ControlledOperation(Operation):
     """Generic controlled operation.
 
     Args:
         op: Target operation which is applied to the target qubit.
-        control: Qubit on which the target operation is controlled.
-        target: Qubit on which the target operation is applied.
+        control: Qubit(s) on which the target operation is controlled.
+        target: Qubit(s) on which the target operation is applied.
     """
-
-    _num_qubits = 2
 
     def __init__(
         self,
@@ -329,35 +302,97 @@ class ControlledOperation(Operation):
         target: Optional[Union[str, Sequence[str]]] = None,
     ) -> None:
         # control and target qubits are stored as lists
-        self._control = [control] if isinstance(control, str) else control
-        self._target = [target] if isinstance(target, str) else target
+        if isinstance(control, str) or not isinstance(control, Sequence):
+            self._control = [control]
+        else:
+            self._control = [control]
+
+        if isinstance(target, str) or not isinstance(target, Sequence):
+            self._target = [target]
+        else:
+            self._target = target
 
         self._target_operation = op
 
         # all qubits are stored in the 'qubits' attribute
-        qubits = self._control + self._target if control and target else None
+        qubits = self._control + self._target if self._control and self._target else None
         super(ControlledOperation, self).__init__(qubits)
 
+    def __call__(
+        self,
+        control: Optional[Sequence[Hashable]] = None,
+        target: Optional[Sequence[Hashable]] = None,
+    ):
+        """Apply (or reapply) the operation within a context.
+
+        Args:
+            control: Cpntrol qubits. Only required if not already declared in operation.
+            target: Target qubits on which the operation should be applied. Only
+                required if not already declared in operation.
+        """
+        control = control or self.control
+        target = target or self.target
+
+        self.__class__(control, target)
+
+    @abstractmixedproperty
+    def _num_control(cls):
+        """Abstract mixedproperty asserting the existence of a ``_num_control`` attribute."""
+
+    @abstractmixedproperty
+    def _num_target(cls):
+        """Abstract mixedproperty asserting the existence of a ``_num_target`` attribute."""
+
     @mixedproperty
-    def matrix(cls) -> NDArray:
+    def _num_qubits(cls) -> int:
+        """Realizing the ``_num_qubits`` mixedproperty so that only ``_num_control`` and
+        ``num_target`` attributes are required by subclasses."""
+        # BUG: Unless an instance check for ints is here, 'mixedproperty' will complain
+        # with 'TypeError: unsupported operand type(s) for +: 'function' and 'function''
+        if isinstance(cls.num_control, int) and isinstance(cls.num_target, int):
+            return cls.num_control + cls.num_target
+
+        raise AttributeError(
+            f"Operations {cls.label} missing class attributes '_num_control' and/or '_num_target'."
+        )
+
+    @mixedproperty
+    def matrix(cls, self) -> NDArray:
         """The matrix representation of the controlled operation."""
         target_unitary = cls.target_operation.matrix
-        # build standard controlled unitary
-        control = range(getattr(cls, "_num_controls", 1))
-        target = range(getattr(cls, "_num_targets", 1))
+        num_qubits = getattr(cls, "num_qubits", 2)
 
-        matrix = build_controlled_unitary(control, target, target_unitary, num_qubits=2)
+        if self:
+            control = self.control
+            target = self.target
+        else:
+            num_control = getattr(cls, "num_control", 1)
+
+            control = list(range(num_control))
+            target = list(range(num_control, num_qubits))
+
+        matrix = build_controlled_unitary(control, target, target_unitary, num_qubits=num_qubits)
         return matrix
 
     @property
-    def control(self):
-        """Control qubit."""
+    def control(self) -> Optional[Union[Hashable, Sequence[Hashable]]]:
+        """Control qubit(s)."""
         return self._control
 
     @property
-    def target(self):
-        """Target qubit."""
+    def target(self) -> Optional[Union[Hashable, Sequence[Hashable]]]:
+        """Target qubit(s)."""
         return self._target
+
+    @mixedproperty
+    def num_control(cls) -> int:
+        """Number of control qubit(s)."""
+        return cls._num_control
+
+    @mixedproperty
+    def num_target(cls) -> int:
+        """Number of target qubit(s)."""
+        return cls._num_target
 
     @mixedproperty
     def target_operation(cls, self):

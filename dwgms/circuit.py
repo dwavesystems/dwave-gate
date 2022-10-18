@@ -1,7 +1,6 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
-import uuid
 from pathlib import Path
 from types import TracebackType
 from typing import (
@@ -38,9 +37,7 @@ class Circuit:
         num_bits: Number of classical bits in the circuit.
     """
 
-    def __init__(
-        self, num_qubits: Optional[int] = None, num_bits: Optional[int] = None
-    ):
+    def __init__(self, num_qubits: Optional[int] = None, num_bits: Optional[int] = None):
         # self.qubit_counter = IntegerCounter(prefix="q")
         # self.bit_counter = IntegerCounter(prefix="c")
 
@@ -59,7 +56,7 @@ class Circuit:
 
         self._locked = False
 
-    def __call__(self, qubits: Sequence[Hashable]) -> None:
+    def __call__(self, *qubits, **kwargs) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
         Args:
@@ -67,23 +64,21 @@ class Circuit:
                 The qubits used in the circuit will be exchanged with the corresponding
                 ones (e.g., with the same index as) in the active context.
         """
-        # TODO: update to check for single qubit instead of str
-        if isinstance(qubits, str) or not isinstance(qubits, Sequence):
-            qubits = [qubits]
+        if "qubits" in kwargs:
+            qubits = kwargs.pop("qubits")
+
         if len(qubits) != len(self.qubits):
-            raise ValueError(
-                f"Circuit requires {len(self.qubits)} qubits, got {len(qubits)}."
-            )
+            raise ValueError(f"Circuit requires {len(self.qubits)} qubits, got {len(qubits)}.")
         if CircuitContext.active_context is None:
-            raise CircuitError(
-                "Can only apply circuit object inside a circuit context."
-            )
+            raise CircuitError("Can only apply circuit object inside a circuit context.")
 
         qubit_map = dict(zip(self.qubits, qubits))
         for op in self.circuit:
             mapped_qubits = [qubit_map[qb] for qb in op.qubits]
             if hasattr(op, "parameters"):
-                op.__class__(op.parameters, qubits=mapped_qubits)
+                op.__class__(*op.parameters, qubits=mapped_qubits)
+            elif hasattr(op, "control"):
+                op.__class__(*mapped_qubits)
             else:
                 op.__class__(qubits=mapped_qubits)
 
@@ -122,12 +117,13 @@ class Circuit:
                 "unlock the circuit, call 'Circuit.unlock()' first."
             )
 
-        for q in operation.qubits:
-            if q not in self.qubits:
-                raise ValueError(f"Qubit {q} not in circuit.")
-
         if not isinstance(operation, Sequence):
             operation = [operation]
+
+        for op in operation:
+            for q in op.qubits:
+                if q not in self.qubits:
+                    raise ValueError(f"Qubit '{q}' not in circuit.")
 
         self._circuit.extend(operation)
 
@@ -137,9 +133,12 @@ class Circuit:
         Args:
             op: Operation to remove.
         """
-        idx = self.circuit.index[op]
-        if idx is not None:
-            del self.circuit[idx]
+        try:
+            idx = self.circuit.index(op)
+        except ValueError as e:
+            raise ValueError(f"Operation '{op}' not in circuit.") from e
+
+        del self.circuit[idx]
 
     @property
     def qubits(self) -> Sequence[Hashable]:
@@ -199,9 +198,7 @@ class Circuit:
 
         self.unlock()
 
-    def add_qubit(
-        self, label: Hashable = None, qreg_label: Optional[Hashable] = None
-    ) -> None:
+    def add_qubit(self, label: Hashable = None, qreg_label: Optional[Hashable] = None) -> None:
         """Add a single qubit to a quantum register.
 
         Args:
@@ -214,21 +211,22 @@ class Circuit:
             if qreg_label not in self.qregisters:
                 self.add_qregister(label=qreg_label)
         else:
+            if not self.qregisters:
+                self.add_qregister()
             qreg_label = list(self.qregisters)[0]
 
         if label is None:
-            # label = self.qubit_counter.next()
             label = "q" + str(self.num_qubits)
 
         # NOTE: duplicate qubit labels in different registers NOT allowed
         if label in self.qubits:
             raise ValueError(
-                f"Qubit label '{label}' already in use in the quantum register '{self.qregisters[qreg_label].label}'."
+                f"Qubit label '{label}' already in use in quantum register '{self.qregisters[qreg_label].label}'."
             )
 
         self.qregisters[qreg_label].add(label)
 
-    def add_bit(self, label: Hashable, creg_label: Optional[Hashable] = None) -> None:
+    def add_bit(self, label: Hashable = None, creg_label: Optional[Hashable] = None) -> None:
         """Add a single bit to a classical register.
 
         Args:
@@ -239,17 +237,19 @@ class Circuit:
         """
         if creg_label is not None:
             if creg_label not in self.cregisters:
-                self.add_cregister(creg_label)
+                self.add_cregister(label=creg_label)
         else:
+            if not self.cregisters:
+                self.add_cregister()
             creg_label = list(self.cregisters)[0]
 
         if label is None:
-            label = self.bit_counter.next()
+            label = "c" + str(self.num_bits)
 
-        # NOTE: only check label in the same register; duplicate in different registers allowed
-        if label in self.cregisters[creg_label]:
+        # NOTE: duplicate qubit labels in different registers NOT allowed
+        if label in self.bits:
             raise ValueError(
-                f"Bit label '{label}' already in use in the classical register '{creg_label}'."
+                f"Bit label '{label}' already in use in classical register '{creg_label}'."
             )
 
         self.cregisters[creg_label].add(label)
@@ -259,18 +259,14 @@ class Circuit:
 
         Args:
             num_qubits: Number of qubits in the quantum register (defaults to 0, i.e., empty).
-            label: Quantum register label (defaults to 'r' followed by a random integer ID number).
+            label: Quantum register label (defaults to 'qreg' followed by a incrementing integer starting at 0).
         """
         if label is None:
-            # label = generate_id(prefix="r")
             label = f"qreg{len(self.qregisters)}"
 
         if label in self._qregisters:
-            raise ValueError(
-                f"Quantum register {label} already present in the circuit."
-            )
+            raise ValueError(f"Quantum register {label} already present in the circuit.")
 
-        # data = [self.qubit_counter.next() for i in range(num_qubits)]
         data = ["q" + str(i) for i in range(num_qubits)]
         qreg = QuantumRegister(label=label, data=data)
 
@@ -279,23 +275,19 @@ class Circuit:
 
         self._qregisters[label] = qreg
 
-    def add_cregister(self, num_bits: int = 1, label: Hashable = None) -> None:
+    def add_cregister(self, num_bits: int = 0, label: Hashable = None) -> None:
         """Adds a new classical register to the circuit.
 
         Args:
             num_qubits: Number of bits in the classical register (defaults to 0, i.e., empty).
-            label: Classical register label (defaults to 'r' followed by a random integer ID number).
+            label: Classical register label (defaults to 'creg' followed by a incrementing integer starting at 0).
         """
         if label is None:
-            # label = generate_id(prefix="r")
             label = f"creg{len(self.cregisters)}"
 
         if label in self._cregisters:
-            raise ValueError(
-                f"Classical register {label} already present in the circuit"
-            )
+            raise ValueError(f"Classical register {label} already present in the circuit")
 
-        # data = [self.qubit_counter.next() for i in range(num_bits)]
         data = ["c" + str(i) for i in range(num_bits)]
         creg = ClassicalRegister(label=label, data=data)
 
@@ -310,7 +302,6 @@ class Circuit:
 
     def __repr__(self) -> str:
         """Returns the representation of the Circuit object."""
-        qregs, cregs = len(self.qregisters), len(self.cregisters)
         qb, cb = len(self.qubits), len(self.bits)
         return f"<Circuit: qubits={qb}, bits={cb}, ops={len(self.circuit)}>"
 
@@ -410,9 +401,7 @@ class CircuitContext:
         class FrozenContext:
             def __enter__(self) -> None:
                 if cls.active_context is None:
-                    raise CircuitError(
-                        "Can only freeze active context. No active context found."
-                    )
+                    raise CircuitError("Can only freeze active context. No active context found.")
                 cls.active_context._frozen = True
 
             def __exit__(self, _, __, ___) -> None:
@@ -430,9 +419,7 @@ class CircuitContext:
         if self.active_context is None:
             CircuitContext._active_context = self
         else:
-            raise RuntimeError(
-                "Cannot enter context, another circuit context is already active."
-            )
+            raise RuntimeError("Cannot enter context, another circuit context is already active.")
         return self._circuit.qubits
 
     def __exit__(

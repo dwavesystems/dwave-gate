@@ -13,10 +13,14 @@ class Register(Collection):
     """
 
     def __init__(
-        self, label: Hashable, data: Optional[Sequence[Hashable]] = None
+        self, label: Hashable, data: Optional[Union[Hashable, Sequence[Hashable]]] = None
     ) -> None:
         self._label: str = label
-        self._data: Sequence[Hashable] = data or []
+        self._data = []
+
+        # add the data via the add function to check for duplicates
+        if data:
+            self.add(data)
 
     @property
     def label(self) -> Hashable:
@@ -88,7 +92,7 @@ class Register(Collection):
             labels = [labels]
 
         duplicate_labels = set(labels).intersection(self._data)
-        if len(duplicate_labels) != 0:
+        if len(duplicate_labels) != 0 or len(set(labels)) != len(labels):
             raise ValueError(f"Label(s) '{duplicate_labels}' already in use")
         self._data.extend(labels)
 
@@ -101,9 +105,7 @@ class QuantumRegister(Register):
         data: Sequence of qubits (defaults to empty).
     """
 
-    def __init__(
-        self, label: Hashable, data: Optional[Sequence[Hashable]] = None
-    ) -> None:
+    def __init__(self, label: Hashable, data: Optional[Sequence[Hashable]] = None) -> None:
         super().__init__(label, data)
 
     def to_qasm(self) -> str:
@@ -127,9 +129,7 @@ class ClassicalRegister(Register):
         data: Sequence of bits (defaults to empty).
     """
 
-    def __init__(
-        self, label: Hashable, data: Optional[Sequence[Hashable]] = None
-    ) -> None:
+    def __init__(self, label: Hashable, data: Optional[Sequence[Hashable]] = None) -> None:
         super().__init__(label, data)
 
     def to_qasm(self) -> str:

@@ -99,6 +99,9 @@ class mixedproperty:
 
         return self._callable(cls, instance)
 
+    def __set__(self, instance: Optional[object], value: Any) -> None:
+        raise AttributeError("can't set attribute")
+
 
 class abstractmixedproperty(mixedproperty):
     """Decorator class to support abstract ``mixedproperty`` methods.
