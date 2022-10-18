@@ -298,16 +298,16 @@ class ControlledOperation(Operation):
     def __init__(
         self,
         op: Operation,
-        control: Optional[Union[str, Sequence[str]]] = None,
-        target: Optional[Union[str, Sequence[str]]] = None,
+        control: Optional[Union[Hashable, Sequence[Hashable]]] = None,
+        target: Optional[Union[Hashable, Sequence[Hashable]]] = None,
     ) -> None:
         # control and target qubits are stored as lists
-        if isinstance(control, str) or not isinstance(control, Sequence):
+        if control is not None and (isinstance(control, str) or not isinstance(control, Sequence)):
             self._control = [control]
         else:
-            self._control = [control]
+            self._control = control
 
-        if isinstance(target, str) or not isinstance(target, Sequence):
+        if target is not None and (isinstance(target, str) or not isinstance(target, Sequence)):
             self._target = [target]
         else:
             self._target = target
