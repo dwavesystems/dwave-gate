@@ -282,7 +282,7 @@ class TestCircuit:
 
         circuit_2 = Circuit(3)
         with circuit_2.context as q:
-            circuit_1(q[0], q[2])
+            circuit_1((q[0], q[2]))
 
         assert circuit_2.circuit == [
             ops.X("q0"),
@@ -308,6 +308,30 @@ class TestCircuit:
             ops.RX(0.42, "q0"),
             ops.CX("q0", "q2"),
         ]
+
+    def test_call_with_invalid_kwarg(self):
+        """Test calling the circuit with an invalid kwarg."""
+        circuit_1 = Circuit(2)
+        operations = [ops.X("q0"), ops.Y("q1"), ops.RX(0.42, "q0"), ops.CX("q0", "q1")]
+        circuit_1.append(operations)
+
+        circuit_2 = Circuit(3)
+
+        with pytest.raises(TypeError, match="got unexpected keyword"):
+            with circuit_2.context as q:
+                circuit_1(peabits=(q[0], q[2]))
+
+    def test_call_with_too_many_args(self):
+        """Test calling the circuit with too many arguments."""
+        circuit_1 = Circuit(2)
+        operations = [ops.X("q0"), ops.Y("q1"), ops.RX(0.42, "q0"), ops.CX("q0", "q1")]
+        circuit_1.append(operations)
+
+        circuit_2 = Circuit(3)
+
+        with pytest.raises(TypeError, match="takes from 1 to 2 arguments"):
+            with circuit_2.context as q:
+                circuit_1(31, q[0], q[2])
 
     def test_call_single_qubit(self):
         """Test calling the circuit within a context to apply it to the active context
@@ -343,6 +367,62 @@ class TestCircuit:
             CircuitError, match="Can only apply circuit object inside a circuit context."
         ):
             circuit_1("q0")
+
+    def test_call_parametric_circuit(self):
+        """Test calling a parametric circuit."""
+        parametric_circuit = Circuit(1, parametric=True)
+        circuit = Circuit(2)
+
+        assert parametric_circuit.parametric
+
+        with parametric_circuit.context as (p, q):
+            ops.X(q[0])
+            ops.RY(p[0], q[0])
+            ops.RZ(3.3, q[0])
+
+        with circuit.context as q:
+            parametric_circuit([4.2], q[1])
+
+        assert circuit.circuit == [ops.X("q1"), ops.RY(4.2, "q1"), ops.RZ(3.3, "q1")]
+
+    def test_call_parametric_circuit_with_kwarg(self):
+        """Test calling a parametric circuit passing parameters as a kwarg."""
+        parametric_circuit = Circuit(1, parametric=True)
+        circuit = Circuit(2)
+
+        assert parametric_circuit.parametric
+
+        with parametric_circuit.context as (p, q):
+            ops.X(q[0])
+            ops.RY(p[0], q[0])
+            ops.RZ(3.3, q[0])
+
+        with circuit.context as q:
+            parametric_circuit(q[1], parameters=[4.2])
+
+        assert circuit.circuit == [ops.X("q1"), ops.RY(4.2, "q1"), ops.RZ(3.3, "q1")]
+
+    def test_num_parameters_non_parametric_circuit(self):
+        """Test that the ``num_parameters`` property returns the correct value when calling it on a
+        non-parametric circuit."""
+        circuit = Circuit(1, parametric=False)
+
+        assert not circuit.parametric
+        assert circuit.num_parameters == 0
+
+    def test_num_parameters(self):
+        """Test that the ``num_parameters`` property returns the correct value."""
+        parametric_circuit = Circuit(1, parametric=True)
+
+        assert parametric_circuit.parametric
+        assert parametric_circuit.num_parameters == 0
+
+        with parametric_circuit.context as (p, q):
+            ops.X(q[0])
+            ops.RY(p[0], q[0])
+            ops.RZ(p[1], q[0])
+
+        assert parametric_circuit.num_parameters == 2
 
 
 class TestCircuitContext:
