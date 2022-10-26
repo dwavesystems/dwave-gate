@@ -1,7 +1,7 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
-from dwgms.circuit import Circuit, CircuitContext
-from dwgms.mixedproperty import abstractmixedproperty, mixedproperty
-from dwgms.registers import ClassicalRegister, QuantumRegister
+from dwave.gate.circuit import Circuit, CircuitContext
+from dwave.gate.mixedproperty import abstractmixedproperty, mixedproperty
+from dwave.gate.registers import ClassicalRegister, QuantumRegister
 
 __version__ = "0.1.0"
 

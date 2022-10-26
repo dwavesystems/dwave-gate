@@ -10,7 +10,7 @@ import numpy as np
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike, NDArray
 
-    from dwgms.operations.base import Operation
+    from dwave.gate.operations.base import Operation
 
 
 #####################

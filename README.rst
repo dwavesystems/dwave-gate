@@ -19,13 +19,13 @@ Features
 Example Usage
 -------------
 
-Construct a two-qubit circuit using the ``dwgms.Circuit`` object, to which you can easily append
+Construct a two-qubit circuit using the ``dwave.gate.Circuit`` object, to which you can easily append
 operations using the circuits context-manager.
 
 .. code-block:: python
 
-    from dwgms import Circuit
-    import dwgms.operations as ops
+    from dwave.gate import Circuit
+    import dwave.gate.operations as ops
 
     circuit = Circuit(2)
     with circuit.context as q:
@@ -34,9 +34,9 @@ operations using the circuits context-manager.
         ops.CZ(q[0], q[1])
         ops.Hadamard(q[1])
 
-The above circuit can then be simulated using ``dwgms.simulator.simulate()``.
+The above circuit can then be simulated using ``dwave.gate.simulator.simulate()``.
 
->>> from dwgms.simulator import simulate
+>>> from dwave.gate.simulator import simulate
 >>> simulate(circuit)
 array([0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j])
 

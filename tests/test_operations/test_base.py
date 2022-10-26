@@ -3,9 +3,14 @@ import math
 import numpy as np
 import pytest
 
-import dwgms.operations.operations as ops
-from dwgms.circuit import Circuit
-from dwgms.operations.base import ABCLockedAttr, Operation, ParametricOperation, create_operation
+import dwave.gate.operations.operations as ops
+from dwave.gate.circuit import Circuit
+from dwave.gate.operations.base import (
+    ABCLockedAttr,
+    Operation,
+    ParametricOperation,
+    create_operation,
+)
 
 
 class TestLockedMetaclass:

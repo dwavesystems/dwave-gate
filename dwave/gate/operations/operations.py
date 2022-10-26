@@ -8,8 +8,8 @@ from typing import Optional, Sequence, Union
 import numpy as np
 from numpy.typing import NDArray
 
-from dwgms.mixedproperty import mixedproperty
-from dwgms.operations.base import ControlledOperation, Operation, ParametricOperation
+from dwave.gate.mixedproperty import mixedproperty
+from dwave.gate.operations.base import ControlledOperation, Operation, ParametricOperation
 
 #####################################
 # Non-parametric single-qubit gates #

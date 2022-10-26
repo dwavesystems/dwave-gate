@@ -1,7 +1,7 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 import pytest
 
-from dwgms.mixedproperty import mixedproperty
+from dwave.gate.mixedproperty import mixedproperty
 
 
 class MixedpropertyExample:

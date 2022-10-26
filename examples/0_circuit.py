@@ -1,7 +1,7 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 """Building, modifying and excecuting a circuit."""
-from dwgms.circuit import Circuit
-from dwgms.operations import X, RX, CNOT
+from dwave.gate.circuit import Circuit
+from dwave.gate.operations import X, RX, CNOT
 
 # Create a circuit by defining the number of qubits (3) and the number of bits
 circuit = Circuit(3, 2)

@@ -1,7 +1,7 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 import pytest
 
-from dwgms.registers import (
+from dwave.gate.registers import (
     ClassicalRegister,
     QuantumRegister,
     RegisterError,

@@ -4,9 +4,9 @@ import math
 import numpy as np
 import pytest
 
-import dwgms.operations as ops
-from dwgms import Circuit
-from dwgms.tools import build_controlled_unitary, build_unitary
+import dwave.gate.operations as ops
+from dwave.gate import Circuit
+from dwave.gate.tools import build_controlled_unitary, build_unitary
 
 
 class TestBuildUnitary:

@@ -6,15 +6,15 @@ from typing import Generator
 import numpy as np
 import pytest
 
-import dwgms.operations as ops
-from dwgms.circuit import Circuit
-from dwgms.operations.base import (
+import dwave.gate.operations as ops
+from dwave.gate.circuit import Circuit
+from dwave.gate.operations.base import (
     ControlledOperation,
     Operation,
     ParametricOperation,
     create_operation,
 )
-from dwgms.tools import build_unitary
+from dwave.gate.tools import build_unitary
 
 
 def get_operations(op_type: str = None) -> Generator:

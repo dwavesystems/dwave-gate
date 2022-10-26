@@ -6,10 +6,10 @@ import warnings
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Hashable, Optional, Sequence, Union
 
-from dwgms.circuit import Circuit, CircuitContext
-from dwgms.mixedproperty import abstractmixedproperty, mixedproperty
-from dwgms.registers import Variable
-from dwgms.tools.unitary import build_controlled_unitary, build_unitary
+from dwave.gate.circuit import Circuit, CircuitContext
+from dwave.gate.mixedproperty import abstractmixedproperty, mixedproperty
+from dwave.gate.registers import Variable
+from dwave.gate.tools.unitary import build_controlled_unitary, build_unitary
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
