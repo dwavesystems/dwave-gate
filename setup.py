@@ -44,8 +44,7 @@ extensions = [
 ]
 
 setup(
-    name="dwgms",
-    packages=find_packages(where="."),
+    name="dwave-gate",
     install_requires=[
         "numpy",
     ],

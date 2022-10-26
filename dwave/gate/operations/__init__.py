@@ -1,6 +1,6 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
-from dwgms.operations.base import Barrier, Measurement, Operation, create_operation
-from dwgms.operations.operations import *
+from dwave.gate.operations.base import Barrier, Measurement, Operation, create_operation
+from dwave.gate.operations.operations import *
 
 __all__ = [
     "Operation",

@@ -1,7 +1,7 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 """Using and appending operations."""
-from dwgms.circuit import Circuit
-from dwgms.operations import Z, RY, CNOT, CX, Rotation
+from dwave.gate.circuit import Circuit
+from dwave.gate.operations import Z, RY, CNOT, CX, Rotation
 
 # Gates can be appended to the circuit (within a context) in several different
 # ways, as detailed below.

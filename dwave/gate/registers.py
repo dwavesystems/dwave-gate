@@ -19,7 +19,7 @@ class Variable:
 
     @property
     def name(self) -> str:
-        """The variable label."""
+        """The variable name."""
         return self._name
 
     def __eq__(self, __o: object) -> bool:

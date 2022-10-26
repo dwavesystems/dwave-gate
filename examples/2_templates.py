@@ -1,8 +1,8 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 """Creating and using templates."""
-from dwgms.circuit import Circuit
-from dwgms.tools import build_unitary
-from dwgms.operations import X, RY, RZ, Hadamard, Rotation, template
+from dwave.gate.circuit import Circuit
+from dwave.gate.tools import build_unitary
+from dwave.gate.operations import X, RY, RZ, Hadamard, Rotation, template
 
 import numpy as np
 

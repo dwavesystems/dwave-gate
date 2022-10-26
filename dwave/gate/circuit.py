@@ -16,11 +16,16 @@ from typing import (
     Union,
 )
 
-from dwgms.mixedproperty import mixedproperty
-from dwgms.registers import ClassicalRegister, QuantumRegister, SelfIncrementingRegister, Variable
+from dwave.gate.mixedproperty import mixedproperty
+from dwave.gate.registers import (
+    ClassicalRegister,
+    QuantumRegister,
+    SelfIncrementingRegister,
+    Variable,
+)
 
 if TYPE_CHECKING:
-    from dwgms.operations.base import Operation
+    from dwave.gate.operations.base import Operation
 
 # IDEA: support same qubit/bit label in multiple registers,
 # prefixing them with the register name e.g., `r192548::my_qubit`
@@ -459,8 +464,8 @@ class CircuitContext:
 
             .. code-block:: python
 
-                >>> from dwgms import Circuit
-                >>> from dwgms.operations import X, Y, Z
+                >>> from dwave.gate import Circuit
+                >>> from dwave.gate.operations import X, Y, Z
 
                 >>> circuit = Circuit(1)
 

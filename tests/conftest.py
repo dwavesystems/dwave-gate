@@ -1,9 +1,9 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 import pytest
 
-import dwgms.operations as ops
-from dwgms.circuit import Circuit
-from dwgms.operations.base import ControlledOperation, Operation, ParametricOperation
+import dwave.gate.operations as ops
+from dwave.gate.circuit import Circuit
+from dwave.gate.operations.base import ControlledOperation, Operation, ParametricOperation
 
 
 @pytest.fixture(scope="function")

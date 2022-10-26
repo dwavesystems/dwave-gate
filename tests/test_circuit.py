@@ -1,10 +1,10 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 import pytest
 
-import dwgms.operations as ops
-from dwgms import CircuitContext
-from dwgms.circuit import Circuit, CircuitError
-from dwgms.registers import ClassicalRegister, QuantumRegister
+import dwave.gate.operations as ops
+from dwave.gate import CircuitContext
+from dwave.gate.circuit import Circuit, CircuitError
+from dwave.gate.registers import ClassicalRegister, QuantumRegister
 
 
 class TestCircuitError:

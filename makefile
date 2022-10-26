@@ -5,7 +5,7 @@ ISORT := $(shell which isort 2>/dev/null)
 PYTHON := python3
 
 report ?= html  # HTML is the default report type
-COVERAGE := --cov=dwgms --cov-report=$(report)
+COVERAGE := --cov=dwave.gate --cov-report=$(report)
 
 TESTRUNNER := -m pytest tests
 
@@ -44,8 +44,8 @@ format:
 ifndef ISORT
 	@echo "D-Wave Gate Model software uses isort to sort imports."
 endif
-	isort -l 100 --profile black ./dwgms ./tests
+	isort -l 100 --profile black ./dwave/gate ./tests
 ifndef BLACK
 	@echo "D-Wave Gate Model software uses the Black formatter."
 endif
-	black -l 100 ./dwgms ./tests
+	black -l 100 ./dwave/gate ./tests
