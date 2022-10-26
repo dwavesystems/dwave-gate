@@ -1,7 +1,6 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
-from dwgms.operations.base import Barrier, Measurement, Operation
+from dwgms.operations.base import Barrier, Measurement, Operation, create_operation
 from dwgms.operations.operations import *
-from dwgms.operations.templates import template
 
 __all__ = [
     "Operation",
@@ -20,5 +19,5 @@ __all__ = [
     "CNOT",
     "CZ",
     "SWAP",
-    "template",
+    "create_operation",
 ]

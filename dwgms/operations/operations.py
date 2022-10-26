@@ -421,7 +421,7 @@ class CSWAP(Operation):
     _num_qubits = 3
 
     def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
-        super(SWAP, self).__init__(qubits)
+        super(CSWAP, self).__init__(qubits)
 
     def to_qasm(self) -> str:
         """Converts the SWAP operation into an OpenQASM string.
