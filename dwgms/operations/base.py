@@ -1,19 +1,84 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
+import copy
 import warnings
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Hashable, Optional, Sequence, Type, Union
+from typing import TYPE_CHECKING, Hashable, Optional, Sequence, Union
 
-from dwgms.circuit import CircuitContext, CircuitError
+from dwgms.circuit import Circuit, CircuitContext
 from dwgms.mixedproperty import abstractmixedproperty, mixedproperty
-from dwgms.tools.unitary import build_controlled_unitary
+from dwgms.registers import Variable
+from dwgms.tools.unitary import build_controlled_unitary, build_unitary
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-# IDEA: use a functional approach, instead of an object oriented approach, for
-# utility functions such as 'broadcast', 'decompose' and 'get_matrix'.
+
+def create_operation(
+    circuit: Circuit, label: Hashable = None, superclass: Optional[type[Operation]] = None
+) -> type[Operation]:
+    """Create an operation from a circuit object.
+
+    Takes the circuit operations and creates a new custom operation class inheriting either directly
+    or indirectly from ``Operation``. The custrom operation will automatically implement the matrix
+    property which constructs and stores the matrix represenation.
+
+    Args:
+        circuit: Circuit object out of which to create an operation.
+        label: Label for the new operation. Usually the class name of the operation.
+        superclass: The class which the operation should inherit from. If ``None`` superclass will
+            be chosen based on circuit attributes. Must be or subclass ``Operation``.
+
+    Returns:
+        Type: Class inheriting from the ``Operation`` class.
+    """
+    if superclass is None:
+        if circuit.parametric:
+            superclass = ParametricOperation
+        else:
+            superclass = Operation
+
+    class CustomOperation(superclass):
+        _num_qubits = circuit.num_qubits
+        _num_params = circuit.num_parameters
+
+        def __init__(self, *args, **kwargs) -> None:
+            self._matrix = None
+            super(CustomOperation, self).__init__(*args, **kwargs)
+
+        def to_qasm(self):
+            pass
+
+        @mixedproperty
+        def matrix(cls, self):
+            """The matrix representation of the template operator.
+
+            Note that this property call constructs, and caches, the matrix lazily
+            by building the unitary based on the operations in the ``circuit``
+            methods.
+            """
+            circuit_copy = copy.deepcopy(circuit)
+            if circuit.parametric:
+                parameters = self.parameters.copy()
+
+                for i, op in enumerate(circuit_copy.circuit):
+                    for j, param in enumerate(op.parameters):
+                        if isinstance(param, Variable):
+                            circuit_copy.circuit[i].parameters[j] = parameters.pop(0)
+                        self._matrix
+
+            return build_unitary(circuit_copy)
+
+    if label:
+        CustomOperation.__name__ = label
+
+    # if circuit is parametric then ``self_required`` should be set to true in the mixedproperty
+    # decorator; can be done by accessing the property and updating the attribute
+    if circuit.parametric:
+        CustomOperation.__dict__["matrix"]._self_required = True
+
+    return CustomOperation
 
 
 class ABCLockedAttr(ABCMeta):
@@ -143,60 +208,6 @@ class Operation(metaclass=ABCLockedAttr):
             )
         self._qubits = self._check_qubits(qubits)
 
-    @classmethod
-    def broadcast(
-        cls,
-        qubits: Sequence[Hashable],
-        parameters: Sequence[complex] = None,
-        method: str = "layered",
-    ) -> None:
-        """Broadcasts an operation over one or more qubits.
-
-        Args:
-            qubits: Qubits to broadcast the operation over.
-            parameters: Operation parameters, if required by operation.
-            method: Which method to use for broadcasting (defaults to
-                ``"layered"``). Currently supports the following methods:
-
-                - layered: Applies the operation starting at the first qubit,
-                    incrementing by a single qubit per round; e.g., a 2-qubit gate
-                    applied to 3 qubits would apply it first to (0, 1), then (1, 2).
-                - parallel: Applies the operation starting at the first qubit,
-                    incrementing by the number of supported qubits for that gate;
-                    e.g., a 2-qubit gate applied to 5 qubits would apply it first
-                    to (0, 1), then (2, 3) and not apply anything to qubit 4.
-        Raises:
-            ValueError: If an unsupported method is requested.
-        """
-        if CircuitContext.active_context is None:
-            raise CircuitError("Can only broadcast gates within a circuit context.")
-
-        # add parameters to operation call if required
-        if issubclass(cls, ParametricOperation):
-            if not parameters:
-                raise ValueError("Parmeters required for broadcasting parametric operation.")
-            append = lambda start, end: cls(parameters, qubits[start:end])
-        elif issubclass(cls, ControlledOperation):
-            num_control = getattr(cls, "_num_control", 0)
-            append = lambda start, end: cls(
-                qubits[start : start + num_control], qubits[start + num_control : end]
-            )
-        elif issubclass(cls, Operation):
-            append = lambda start, end: cls(qubits[start:end])
-        else:
-            raise ValueError("Must be a class of type 'Operation'.")
-
-        if method == "layered":
-            for i, _ in enumerate(qubits[: -cls.num_qubits + 1 or None]):
-                append(i, i + cls.num_qubits)
-        elif method == "parallel":
-            for i, _ in enumerate(qubits[:: cls.num_qubits]):
-                start, end = cls.num_qubits * i, cls.num_qubits * (i + 1)
-                if end <= len(qubits):
-                    append(start, end)
-        else:
-            raise ValueError(f"'{method}' style not supported.")
-
     @abstractmethod
     def to_qasm(self):
         """Converts the operation into an OpenQASM string.
@@ -250,7 +261,7 @@ class ParametricOperation(Operation):
         if hasattr(cls, "_num_params"):
             return cls._num_params
 
-        raise AttributeError(f"Operations {cls.label} missing class attributes '_num_params'.")
+        raise AttributeError(f"Operations {cls.label} missing class attribute '_num_params'.")
 
     @classmethod
     def _check_parameters(cls, params):
@@ -315,7 +326,7 @@ class ControlledOperation(Operation):
         self._target_operation = op
 
         # all qubits are stored in the 'qubits' attribute
-        qubits = self._control + self._target if self._control and self._target else None
+        qubits = self._control + self._target if (self._control and self._target) else None
         super(ControlledOperation, self).__init__(qubits)
 
     def __call__(
@@ -361,13 +372,12 @@ class ControlledOperation(Operation):
         """The matrix representation of the controlled operation."""
         target_unitary = cls.target_operation.matrix
         num_qubits = getattr(cls, "num_qubits", 2)
+        num_control = getattr(cls, "num_control", 1)
 
         if self:
-            control = self.control
-            target = self.target
+            control = self.control or list(range(num_control))
+            target = self.target or list(range(num_control, num_qubits))
         else:
-            num_control = getattr(cls, "num_control", 1)
-
             control = list(range(num_control))
             target = list(range(num_control, num_qubits))
 
