@@ -1,23 +1,24 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 import inspect
 import math
 from random import random
-from typing import Generator
+from typing import Generator, Optional, Type
 
 import numpy as np
 import pytest
 
 import dwave.gate.operations as ops
-from dwave.gate.circuit import Circuit
+from dwave.gate.circuit import Circuit, ParametricCircuit
 from dwave.gate.operations.base import (
     ControlledOperation,
     Operation,
     ParametricOperation,
     create_operation,
 )
-from dwave.gate.tools import build_unitary
+from dwave.gate.tools.unitary import build_unitary
 
 
-def get_operations(op_type: str = None) -> Generator:
+def get_operations(op_type: Optional[str] = None) -> Generator:
     """Returns a generator for the operations.
 
     The returned generetor yields the corresponding operations declared in ``__all__`` in the
@@ -49,11 +50,13 @@ def get_operations(op_type: str = None) -> Generator:
             if inspect.isclass(op) and issubclass(op, Operation) and other:
                 yield op
 
-        elif inspect.isclass(op) and issubclass(op, type_map.get(op_type, Operation)):
+        elif inspect.isclass(op) and (
+            op_type is None or issubclass(op, type_map.get(op_type, Operation))
+        ):
             yield op
 
 
-def z_op() -> Operation:
+def z_op() -> Type[Operation]:
     """Helper function to create a custom Z operation, for testing the custom operations created by
     the ``create_operation`` function.
 
@@ -70,14 +73,14 @@ def z_op() -> Operation:
     return create_operation(circuit, label="CustomZ")
 
 
-def rot_op() -> Operation:
+def rot_op() -> Type[Operation]:
     """Helper function to create a custom Z operation, for testing the custom operations created by
     the ``create_operation`` function.
 
     Returns:
         Operation: Custom rotation operation.
     """
-    circuit = Circuit(1, parametric=True)
+    circuit = ParametricCircuit(1)
 
     with circuit.context as (p, q):
         ops.RZ(p[0], q[0])
@@ -104,7 +107,7 @@ class TestOperations:
             pytest.skip(reason="No decomposition implemented.")
 
         decomposition = [getattr(ops, op) for op in Op.decomposition]
-        qubits = [[f"q{i}" for i in range(op.num_qubits)] for op in decomposition]
+        qubits = [[empty_circuit.qubits[i] for i in range(op.num_qubits)] for op in decomposition]
 
         # if operation is parametric, then add parameters
         if issubclass(Op, ParametricOperation):
@@ -153,7 +156,7 @@ class TestCustomOperations:
         the ``_num_control`` class attribute."""
 
         class CustomOp(ControlledOperation):
-            _num_target = 1
+            _num_target: int = 1
 
         with pytest.raises(AttributeError, match="missing class attributes '_num_control'"):
             CustomOp.num_qubits
@@ -163,7 +166,7 @@ class TestCustomOperations:
         the ``_num_target`` class attribute."""
 
         class CustomOp(ControlledOperation):
-            _num_control = 1
+            _num_control: int = 1
 
         with pytest.raises(AttributeError, match="missing class attributes '_num_control'"):
             CustomOp.num_qubits
@@ -172,7 +175,7 @@ class TestCustomOperations:
         """Test the ``num_parameters`` attribute."""
 
         class CustomOp(ParametricOperation):
-            _num_params = 2
+            _num_params: int = 2
 
         assert CustomOp.num_parameters == 2
 

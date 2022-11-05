@@ -2,7 +2,7 @@
 import pytest
 
 import dwave.gate.operations as ops
-from dwave.gate.circuit import Circuit
+from dwave.gate.circuit import Circuit, ParametricCircuit
 from dwave.gate.operations.base import ControlledOperation, Operation, ParametricOperation
 
 
@@ -15,6 +15,18 @@ def two_qubit_circuit():
         ops.Hadamard(q[0])
         ops.CNOT(q[0], q[1])
         ops.Hadamard(q[1])
+
+    return circuit
+
+
+@pytest.fixture(scope="function")
+def two_qubit_parametric_circuit():
+    """ParametricCircuit with two qubits and two operation."""
+    circuit = ParametricCircuit(2)
+
+    with circuit.context as (p, q):
+        ops.RX(p[0], q[0])
+        ops.RY(p[1], q[1])
 
     return circuit
 
@@ -42,7 +54,7 @@ def two_qubit_op(monkeypatch):
 
     class DummyOp(Operation):
 
-        _num_qubits = 2
+        _num_qubits: int = 2
 
     monkeypatch.setattr(DummyOp, "__abstractmethods__", set())
 
@@ -55,8 +67,8 @@ def two_qubit_parametric_op(monkeypatch):
 
     class DummyOp(ParametricOperation):
 
-        _num_qubits = 2
-        _num_params = 1
+        _num_qubits: int = 2
+        _num_params: int = 1
 
     monkeypatch.setattr(DummyOp, "__abstractmethods__", set())
 
@@ -69,8 +81,8 @@ def two_qubit_controlled_op(monkeypatch):
 
     class DummyOp(ControlledOperation):
 
-        _num_control = 1
-        _num_target = 1
+        _num_control: int = 1
+        _num_target: int = 1
         _target_operation = ops.X
 
     monkeypatch.setattr(DummyOp, "__abstractmethods__", set())
