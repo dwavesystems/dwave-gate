@@ -6,7 +6,8 @@ import pytest
 
 import dwave.gate.operations as ops
 from dwave.gate import Circuit
-from dwave.gate.tools import build_controlled_unitary, build_unitary
+from dwave.gate.primitives import Qubit
+from dwave.gate.tools.unitary import build_controlled_unitary, build_unitary
 
 
 class TestBuildUnitary:
@@ -23,16 +24,16 @@ class TestBuildUnitary:
     @pytest.mark.parametrize(
         "operations, expected",
         [
-            ([ops.X("q0")], np.array([[0, 1], [1, 0]])),
-            ([ops.Y("q0")], np.array([[0, -1j], [1j, 0]])),
-            ([ops.Z("q0")], np.array([[1, 0], [0, -1]])),
-            ([ops.X("q0"), ops.Y("q0")], np.array([[-1j, 0], [0, 1j]])),
+            ([ops.X], np.array([[0, 1], [1, 0]])),
+            ([ops.Y], np.array([[0, -1j], [1j, 0]])),
+            ([ops.Z], np.array([[1, 0], [0, -1]])),
+            ([ops.X, ops.Y], np.array([[-1j, 0], [0, 1j]])),
             (
-                [ops.Hadamard("q0"), ops.X("q0")],
+                [ops.Hadamard, ops.X],
                 np.array([[math.sqrt(2), -math.sqrt(2)], [math.sqrt(2), math.sqrt(2)]]) / 2,
             ),
             (
-                [ops.X("q0"), ops.Hadamard("q0")],
+                [ops.X, ops.Hadamard],
                 np.array([[math.sqrt(2), math.sqrt(2)], [-math.sqrt(2), math.sqrt(2)]]) / 2,
             ),
         ],
@@ -40,15 +41,16 @@ class TestBuildUnitary:
     def test_single_qubit_circuit(self, operations, expected):
         """Test building a unitary from a single-qubit circuit"""
         circuit = Circuit(1)
-        circuit.append(operations)
+        circuit.append([op(circuit.qubits[0]) for op in operations])
 
         assert np.allclose(build_unitary(circuit), expected)
 
     @pytest.mark.parametrize(
-        "operations, expected",
+        "operations, qubits, expected",
         [
             (
-                [ops.X("q0")],
+                [ops.X],
+                [(0,)],
                 np.array(
                     [
                         [0.0, 0.0, 1.0, 0.0],
@@ -59,7 +61,8 @@ class TestBuildUnitary:
                 ),
             ),
             (
-                [ops.Y("q1"), ops.X("q0")],
+                [ops.Y, ops.X],
+                [(1,), (0,)],
                 np.array(
                     [
                         [0.0, 0.0, 0.0, -1.0j],
@@ -70,7 +73,8 @@ class TestBuildUnitary:
                 ),
             ),
             (
-                [ops.Hadamard("q0"), ops.CZ("q0", "q1"), ops.Hadamard("q0")],
+                [ops.Hadamard, ops.CZ, ops.Hadamard],
+                [(0,), (0, 1), (0,)],
                 np.array(
                     [
                         [1.0, 0.0, 0.0, 0.0],
@@ -82,10 +86,11 @@ class TestBuildUnitary:
             ),
         ],
     )
-    def test_multi_qubit_circuit(self, operations, expected):
+    def test_multi_qubit_circuit(self, operations, qubits, expected):
         """Test building a unitary from a multi-qubit circuit"""
         circuit = Circuit(2)
-        circuit.append(operations)
+        qb = map(lambda tup: (circuit.qubits[j] for j in tup), qubits)
+        circuit.append([op(*t) for op, t in zip(operations, qb)])
 
         assert np.allclose(build_unitary(circuit), expected)
 

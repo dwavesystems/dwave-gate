@@ -1,10 +1,11 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.
 import math
 
 import numpy as np
 import pytest
 
 import dwave.gate.operations.operations as ops
-from dwave.gate.circuit import Circuit
+from dwave.gate.circuit import Circuit, ParametricCircuit
 from dwave.gate.operations.base import (
     ABCLockedAttr,
     Operation,
@@ -71,9 +72,8 @@ class TestMatrixRepr:
             (ops.RZ(np.pi / 2), math.sqrt(2) / 2 * np.array([[1 - 1j, 0], [0, 1 + 1j]])),
             (ops.Rotation([np.pi / 2] * 3), math.sqrt(2) / 2 * np.array([[-1j, -1], [1, 1j]])),
             (ops.CX, np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])),
-            (ops.CX(0, 1), np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])),
             (ops.CNOT, np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])),
-            (ops.CX(1, 0), np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])),
+            # (ops.CX(1, 0), np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])),
             (ops.CZ, np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]])),
             (
                 ops.SWAP,
@@ -111,6 +111,21 @@ class TestMatrixRepr:
         if not isinstance(op, Operation):
             assert np.allclose(op().matrix, matrix)
 
+    @pytest.mark.parametrize(
+        "op, qubits, matrix",
+        [
+            (ops.CX, [0, 1], np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])),
+            (ops.CNOT, [0, 1], np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])),
+            (ops.CX, [1, 0], np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])),
+            (ops.CZ, [0, 1], np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]])),
+        ],
+    )
+    def test_controlled_matrix_repr(self, op, qubits, matrix, two_qubit_circuit):
+        """Test that controlled matrix representations are correct."""
+        two_qubit_circuit.unlock()
+        with two_qubit_circuit.context as q:
+            assert np.allclose(op(*[q[i] for i in qubits]).matrix, matrix)
+
 
 @pytest.mark.xfail(reason="Measurements are not implemented yet.")
 class TestMeasurement:
@@ -127,7 +142,7 @@ class TestCreateOperation:
 
     def test_parametric(self):
         """Test creating an operation out of a parametric circuit."""
-        circuit = Circuit(1, parametric=True)
+        circuit = ParametricCircuit(1)
 
         with circuit.context as (p, q):
             ops.RZ(p[0], q[0])
@@ -171,39 +186,17 @@ class TestCreateOperation:
 
         assert ZOp.label == "CustomOperation"
 
-    def test_superclass(self):
-        """Test creating a (forced) ``Operation``."""
-        circuit = Circuit(1)
-
-        with circuit.context as q:
-            ops.Hadamard(q[0])
-            ops.X(q[0])
-            ops.Hadamard(q[0])
-
-        ZOp = create_operation(circuit, superclass=Operation)
-        assert issubclass(ZOp, Operation)
-
-    def test_superclass_parametric(self):
-        """Test creating a (forced) ``ParametricOperation``."""
-        circuit = Circuit(1, parametric=True)
-
-        with circuit.context as (p, q):
-            ops.RZ(p[0], q[0])
-            ops.RY(p[1], q[0])
-            ops.RZ(p[2], q[0])
-
-        ZOp = create_operation(circuit, superclass=ParametricOperation)
-        assert issubclass(ZOp, ParametricOperation)
-
     def test_parametric_mix(self):
         """Test creating an operation out of a parametric circuit with some hard-coded
         parameters."""
-        circuit = Circuit(1, parametric=True)
+        circuit = ParametricCircuit(1)
 
         with circuit.context as (p, q):
             ops.RZ(0.1, q[0])
             ops.RY(p[0], q[0])
             ops.RZ(0.3, q[0])
+            ops.X(q[0])  # cover testing non-parametric ops in parametric circuits
+            ops.X(q[0])  # negate the previous X-gate to compare with Rotation-gate
 
         RotOp = create_operation(circuit, label="Rot")
         params = [0.2]
