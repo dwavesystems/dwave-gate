@@ -9,7 +9,13 @@ import numpy as np
 from numpy.typing import NDArray
 
 from dwave.gate.mixedproperty import mixedproperty
-from dwave.gate.operations.base import ControlledOperation, Operation, ParametricOperation
+from dwave.gate.operations.base import (
+    ABCLockedAttr,
+    ControlledOperation,
+    Operation,
+    ParametricOperation,
+)
+from dwave.gate.primitives import Qubit
 
 #####################################
 # Non-parametric single-qubit gates #
@@ -24,9 +30,9 @@ class Identity(Operation):
             required when applying an operation within a circuit context.
     """
 
-    _num_qubits = 1
+    _num_qubits: int = 1
 
-    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
         super(Identity, self).__init__(qubits)
 
     def to_qasm(self) -> str:
@@ -52,9 +58,9 @@ class X(Operation):
             required when applying an operation within a circuit context.
     """
 
-    _num_qubits = 1
+    _num_qubits: int = 1
 
-    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
         super(X, self).__init__(qubits)
 
     def to_qasm(self) -> str:
@@ -80,9 +86,9 @@ class Y(Operation):
             required when applying an operation within a circuit context.
     """
 
-    _num_qubits = 1
+    _num_qubits: int = 1
 
-    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
         super(Y, self).__init__(qubits)
 
     def to_qasm(self) -> str:
@@ -108,10 +114,10 @@ class Z(Operation):
             required when applying an operation within a circuit context.
     """
 
-    _num_qubits = 1
+    _num_qubits: int = 1
     _decomposition = ["Hadamard", "X", "Hadamard"]
 
-    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
         super(Z, self).__init__(qubits)
 
     def to_qasm(self) -> str:
@@ -137,9 +143,9 @@ class Hadamard(Operation):
             required when applying an operation within a circuit context.
     """
 
-    _num_qubits = 1
+    _num_qubits: int = 1
 
-    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
         super(Hadamard, self).__init__(qubits)
 
     def to_qasm(self) -> str:
@@ -172,11 +178,15 @@ class RX(ParametricOperation):
             matrix representation of the operation.
     """
 
-    _num_qubits = 1
-    _num_params = 1
+    _num_qubits: int = 1
+    _num_params: int = 1
 
-    def __init__(self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None):
-        super(RX, self).__init__(theta, qubits)
+    def __init__(
+        self,
+        theta: Union[float, Sequence[float]],
+        qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
+    ):
+        super(RX, self).__init__([theta] if isinstance(theta, float) else theta, qubits)
 
     def to_qasm(self) -> str:
         """Converts the Rotation-X operation into an OpenQASM string.
@@ -208,11 +218,15 @@ class RY(ParametricOperation):
             matrix representation of the operation.
     """
 
-    _num_qubits = 1
-    _num_params = 1
+    _num_qubits: int = 1
+    _num_params: int = 1
 
-    def __init__(self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None):
-        super(RY, self).__init__(theta, qubits)
+    def __init__(
+        self,
+        theta: Union[float, Sequence[float]],
+        qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
+    ):
+        super(RY, self).__init__([theta] if isinstance(theta, float) else theta, qubits)
 
     def to_qasm(self) -> str:
         """Converts the Rotation-Y operation into an OpenQASM string.
@@ -244,11 +258,15 @@ class RZ(ParametricOperation):
             matrix representation of the operation.
     """
 
-    _num_qubits = 1
-    _num_params = 1
+    _num_qubits: int = 1
+    _num_params: int = 1
 
-    def __init__(self, theta: float, qubits: Optional[Union[str, Sequence[str]]] = None):
-        super(RZ, self).__init__(theta, qubits)
+    def __init__(
+        self,
+        theta: Union[float, Sequence[float]],
+        qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
+    ):
+        super(RZ, self).__init__([theta] if isinstance(theta, float) else theta, qubits)
 
     def to_qasm(self) -> str:
         """Converts the Rotation-Z operation into an OpenQASM string.
@@ -280,14 +298,14 @@ class Rotation(ParametricOperation):
             matrix representation of the operation.
     """
 
-    _num_qubits = 1
-    _num_params = 3
+    _num_qubits: int = 1
+    _num_params: int = 3
     _decomposition = ["RZ", "RY", "RZ"]
 
     def __init__(
         self,
         parameters: Sequence[float],
-        qubits: Optional[Union[str, Sequence[str]]] = None,
+        qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
     ) -> None:
         super(Rotation, self).__init__(parameters, qubits)
 
@@ -329,12 +347,9 @@ class CX(ControlledOperation):
         target: Qubit on which the target operation ``X`` is applied.
     """
 
-    _num_control = 1
-    _num_target = 1
-    _target_operation = X
-
-    def __init__(self, control: Optional[str] = None, target: Optional[str] = None) -> None:
-        super(CX, self).__init__(op=self._target_operation, control=control, target=target)
+    _num_control: int = 1
+    _num_target: int = 1
+    _target_operation: type[Operation] = X
 
     def to_qasm(self) -> str:
         """Converts the Controlled X operation into an OpenQASM string.
@@ -357,12 +372,9 @@ class CZ(ControlledOperation):
             required when applying an operation within a circuit context.
     """
 
-    _num_control = 1
-    _num_target = 1
-    _target_operation = Z
-
-    def __init__(self, control: Optional[str] = None, target: Optional[str] = None) -> None:
-        super(CZ, self).__init__(op=self._target_operation, control=control, target=target)
+    _num_control: int = 1
+    _num_target: int = 1
+    _target_operation: type[Operation] = Z
 
     def to_qasm(self) -> str:
         """Converts the Controlled-Z operation into an OpenQASM string.
@@ -381,9 +393,9 @@ class SWAP(Operation):
             required when applying an operation within a circuit context.
     """
 
-    _num_qubits = 2
+    _num_qubits: int = 2
 
-    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
         super(SWAP, self).__init__(qubits)
 
     def to_qasm(self) -> str:
@@ -418,9 +430,9 @@ class CSWAP(Operation):
             required when applying an operation within a circuit context.
     """
 
-    _num_qubits = 3
+    _num_qubits: int = 3
 
-    def __init__(self, qubits: Optional[Union[str, Sequence[str]]] = None):
+    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
         super(CSWAP, self).__init__(qubits)
 
     def to_qasm(self) -> str:

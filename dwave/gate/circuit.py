@@ -1,13 +1,13 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
-from pathlib import Path
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     ContextManager,
     Dict,
     Hashable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -17,6 +17,7 @@ from typing import (
 )
 
 from dwave.gate.mixedproperty import mixedproperty
+from dwave.gate.primitives import Bit, Qubit
 from dwave.gate.registers import (
     ClassicalRegister,
     QuantumRegister,
@@ -26,9 +27,6 @@ from dwave.gate.registers import (
 
 if TYPE_CHECKING:
     from dwave.gate.operations.base import Operation
-
-# IDEA: support same qubit/bit label in multiple registers,
-# prefixing them with the register name e.g., `r192548::my_qubit`
 
 
 class CircuitError(Exception):
@@ -47,9 +45,8 @@ class Circuit:
         self,
         num_qubits: Optional[int] = None,
         num_bits: Optional[int] = None,
-        parametric: bool = False,
     ) -> None:
-        self._circuit: Sequence[Operation] = []
+        self._circuit: List[Operation] = []
         self._circuit_context: Optional[CircuitContext] = None
 
         # registers for quantum and classical bits
@@ -63,10 +60,6 @@ class Circuit:
             self.add_cregister(num_bits=num_bits)
 
         self._locked = False
-
-        self._parametric = parametric
-        if parametric:
-            self._parameter_register = SelfIncrementingRegister("preg")
 
     def __call__(self, *args, **kwargs) -> None:
         """Apply all the operations in the circuit within a circuit context.
@@ -88,69 +81,60 @@ class Circuit:
             TypeError: If an unexpected keyword argument is passed, or if an invalid number of
                 total arguments is passed (expects 1-2 arguments).
         """
-        qubits, parameters = self._extract_arguments(*args, **kwargs)
 
-        # TODO: update to check for single qubit instead of str
-        if isinstance(qubits, str) or not isinstance(qubits, Sequence):
-            qubits = tuple([qubits])
+        qubits, _ = self._extract_arguments(*args, **kwargs)
 
         if len(qubits) != len(self.qubits):
             raise ValueError(f"Circuit requires {len(self.qubits)} qubits, got {len(qubits)}.")
 
         if CircuitContext.active_context is None:
             raise CircuitError("Can only apply circuit object inside a circuit context.")
+        if CircuitContext.active_context.circuit is self:
+            raise TypeError("Cannot apply circuit in its own context.")
 
         qubit_map = dict(zip(self.qubits, qubits))
         for op in self.circuit:
-            mapped_qubits = [qubit_map[qb] for qb in op.qubits]
-            if hasattr(op, "parameters"):
-                self._apply_parametric_ops(op, parameters, mapped_qubits)
-            elif hasattr(op, "control"):
+            mapped_qubits = [qubit_map[qb] for qb in op.qubits or []]
+
+            # NOTE: avoid circular imports; needed to check operation type
+            from dwave.gate.operations.base import ControlledOperation, ParametricOperation
+
+            if isinstance(op, ParametricOperation):
+                for i, p in enumerate(op.parameters):
+                    if isinstance(p, Variable):
+                        op.parameters[i] = kwargs["parameters"].pop(0)
+                op.__class__(op.parameters, qubits=mapped_qubits)
+            elif isinstance(op, ControlledOperation):
                 op.__class__(*mapped_qubits)
             else:
                 op.__class__(qubits=mapped_qubits)
 
-    def _extract_arguments(self, *args, **kwargs) -> Tuple[Sequence[Hashable], Sequence[complex]]:
+    def _extract_arguments(
+        self, *args, **kwargs
+    ) -> Tuple[Sequence[Qubit], Optional[List[complex]]]:
         """Extracts the correct parameter and qubit arrays from args and kwargs.
 
         Looks for "parameters" and "qubits" in the arguments. Raises errors if unexpected keyword
         arguments are passed or an invalid number of arguments are passed.
         """
+        if not args and not kwargs:
+            return [], None
+
         # assert that args and/or kwargs only contain qubits and/or parameters
         invalid_kwargs = set(kwargs) - {"qubits", "parameters"}
         if invalid_kwargs:
             raise TypeError(f"__call__() got unexpected keyword argument {invalid_kwargs.pop()}")
+
         if len(args) + len(kwargs) > 2:
             raise TypeError(
                 f"__call__() takes from 1 to 2 arguments but {len(args) + len(kwargs)} were given"
             )
 
-        # if parameters in 'args', will always be the first arg (similar to 'ParametricOperation')
-        if (
-            len(args) == 2 or (len(args) == 1 and "qubits" in kwargs)
-        ) and "parameters" not in kwargs:
-            parameters = args[0]
-        elif len(args) <= 1 and "parameters" in kwargs:
-            parameters = kwargs["parameters"]
-        else:
-            parameters = None
+        qubits = kwargs.get("qubits", None) or args[0]
+        if isinstance(qubits, Qubit):
+            qubits = [qubits]
 
-        # if qubits are in 'args', will always be last (even if lonely)
-        qubits = kwargs.get("qubits", None) or args[-1]
-
-        return qubits, parameters
-
-    def _apply_parametric_ops(self, op, parameters, qubits):
-        """Replaces variable instances with parameter values and applies the gate to the
-        active circuit."""
-        applied_params = op.parameters.copy()
-        if parameters is not None:
-            for i, p in enumerate(applied_params):
-                if isinstance(p, Variable):
-                    idx = self._parameter_register.index(p)
-                    applied_params[i] = parameters[idx]
-
-        op.__class__(*applied_params, qubits=qubits)
+        return qubits, kwargs.get("parameters", None)
 
     @property
     def qregisters(self) -> Mapping[Hashable, QuantumRegister]:
@@ -171,7 +155,7 @@ class Circuit:
         return self._cregisters
 
     @property
-    def circuit(self) -> Sequence[Operation]:
+    def circuit(self) -> List[Operation]:
         """Circuit containing the applied operations."""
         return self._circuit
 
@@ -191,7 +175,7 @@ class Circuit:
             operation = [operation]
 
         for op in operation:
-            for q in op.qubits:
+            for q in op.qubits or []:
                 if q not in self.qubits:
                     raise ValueError(f"Qubit '{q}' not in circuit.")
 
@@ -211,18 +195,13 @@ class Circuit:
         del self.circuit[idx]
 
     @property
-    def parametric(self) -> bool:
-        """Whether the circuit has parameter variables."""
-        return self._parametric
-
-    @property
-    def qubits(self) -> Sequence[Hashable]:
+    def qubits(self) -> Sequence[Qubit]:
         """Qubits handled by the circuit."""
         qubits = [qb for qreg in self.qregisters.values() for qb in qreg]
         return qubits
 
     @property
-    def bits(self) -> Sequence[Hashable]:
+    def bits(self) -> Sequence[Bit]:
         """Classical bits handled by the circuit."""
         bits = [b for creg in self.cregisters.values() for b in creg]
         return bits
@@ -238,10 +217,15 @@ class Circuit:
         return len(self.bits)
 
     @property
+    def parametric(self) -> bool:
+        """Whether the circuit has parameter variables."""
+        # base circuit is never parametric
+        return False
+
+    @property
     def num_parameters(self) -> int:
         """Number of parameters in the circuit."""
-        if self.parametric:
-            return len(self._parameter_register)
+        # base circuit has no parameters
         return 0
 
     @property
@@ -275,17 +259,18 @@ class Circuit:
         self._circuit = []
         self._circuit_context = None
         if not keep_registers:
-            self._qregisters = None
-            self._cregisters = None
+            self._qregisters = dict()
+            self._cregisters = dict()
 
         self.unlock()
 
-    def add_qubit(self, label: Hashable = None, qreg_label: Optional[Hashable] = None) -> None:
-        """Add a single qubit to a quantum register.
+    def add_qubit(
+        self, qubit: Optional[Qubit] = None, qreg_label: Optional[Hashable] = None
+    ) -> None:
+        """Add a single qubit to a quantum register in the circuit.
 
         Args:
-            label: Label for the qubit (defaults to 'q' followed by an incrementing
-                integer, e.g., 'q0', 'q1', 'q42').
+            qubit: Qubit to add to the circuit. If ``None``, then a new qubit is created.
             qreg_label: Label for the quantum register to which the new qubit should be
                 appended (defaults to 'r' followed by a random integer ID number).
         """
@@ -297,23 +282,19 @@ class Circuit:
                 self.add_qregister()
             qreg_label = list(self.qregisters)[0]
 
-        if label is None:
-            label = "q" + str(self.num_qubits)
-
-        # NOTE: duplicate qubit labels in different registers NOT allowed
-        if label in self.qubits:
+        # NOTE: same qubit in different registers NOT allowed
+        if qubit in self.qubits:
             raise ValueError(
-                f"Qubit label '{label}' already in use in quantum register '{self.qregisters[qreg_label].label}'."
+                f"Qubit '{qubit}' already in use in quantum register '{self.qregisters[qreg_label].label}'."
             )
 
-        self.qregisters[qreg_label].add(label)
+        self.qregisters[qreg_label].add(qubit or Qubit(str(self.num_qubits)))
 
-    def add_bit(self, label: Hashable = None, creg_label: Optional[Hashable] = None) -> None:
+    def add_bit(self, bit: Optional[Bit] = None, creg_label: Optional[Hashable] = None) -> None:
         """Add a single bit to a classical register.
 
         Args:
-            label: Label for the bit (defaults to 'c' followed by an incrementing
-                integer, e.g., 'c0', 'c1', 'c42').
+            bit: Bit to add to the circuit. If ``None``, then a new bit is created.
             creg_label: Label for the classical register to which the new bit should be
                 appended (defaults to 'r' followed by a random integer ID number).
         """
@@ -325,16 +306,11 @@ class Circuit:
                 self.add_cregister()
             creg_label = list(self.cregisters)[0]
 
-        if label is None:
-            label = "c" + str(self.num_bits)
+        # NOTE: same bit in different registers NOT allowed
+        if bit in self.bits:
+            raise ValueError(f"Bit '{bit}' already in use in classical register '{creg_label}'.")
 
-        # NOTE: duplicate qubit labels in different registers NOT allowed
-        if label in self.bits:
-            raise ValueError(
-                f"Bit label '{label}' already in use in classical register '{creg_label}'."
-            )
-
-        self.cregisters[creg_label].add(label)
+        self.cregisters[creg_label].add(bit or Bit(str(self.num_bits)))
 
     def add_qregister(self, num_qubits: int = 0, label: Hashable = None) -> None:
         """Adds a new quantum register to the circuit.
@@ -349,11 +325,8 @@ class Circuit:
         if label in self._qregisters:
             raise ValueError(f"Quantum register {label} already present in the circuit.")
 
-        data = ["q" + str(i) for i in range(num_qubits)]
+        data = [Qubit(str(i)) for i in range(num_qubits)]
         qreg = QuantumRegister(label=label, data=data)
-
-        # TODO: freezing not currently supported
-        # qreg.freeze()
 
         self._qregisters[label] = qreg
 
@@ -370,11 +343,8 @@ class Circuit:
         if label in self._cregisters:
             raise ValueError(f"Classical register {label} already present in the circuit")
 
-        data = ["c" + str(i) for i in range(num_bits)]
+        data = [Bit(str(i)) for i in range(num_bits)]
         creg = ClassicalRegister(label=label, data=data)
-
-        # TODO: freezing not currently supported
-        # creg.freeze()
 
         self._cregisters[label] = creg
 
@@ -421,6 +391,52 @@ class Circuit:
         raise NotImplementedError(
             "Converting OpenQASM to Circuit object not supported at the moment."
         )
+
+
+class ParametricCircuit(Circuit):
+    """Class to build and manipulate parametric quantum circuits.
+
+    Args:
+        num_qubits: Number of qubits in the circuit.
+        num_bits: Number of classical bits in the circuit.
+    """
+
+    def __init__(self, num_qubits: Optional[int] = None, num_bits: Optional[int] = None) -> None:
+        self._parameter_register = SelfIncrementingRegister("preg")
+
+        super().__init__(num_qubits, num_bits)
+
+    def __call__(self, *args, **kwargs) -> None:
+        if "parameters" in kwargs:
+            parameters = kwargs.pop("parameters")
+        else:
+            parameters = args[0]
+            args = args[1:]
+
+        return super().__call__(*args, **kwargs, parameters=parameters)
+
+    def unlock(self) -> None:
+        self._parameter_register._frozen = False
+        return super().unlock()
+
+    @property
+    def parametric(self) -> bool:
+        """Whether the circuit has parameter variables."""
+        return bool(self._parameter_register)
+
+    @property
+    def num_parameters(self) -> int:
+        """Number of parameters in the circuit."""
+        return len(self._parameter_register)
+
+    @property
+    def context(self) -> ParametricCircuitContext:
+        """Circuit context used to apply operations to the circuit."""
+        if self._circuit_context is None:
+            self._circuit_context = ParametricCircuitContext(circuit=self)
+
+        assert isinstance(self._circuit_context, ParametricCircuitContext)
+        return self._circuit_context
 
 
 class CircuitContext:
@@ -493,7 +509,7 @@ class CircuitContext:
 
     def __enter__(
         self,
-    ) -> Union[Sequence[Hashable], Tuple[SelfIncrementingRegister, Sequence[Hashable]]]:
+    ) -> Sequence[Qubit]:
         """Enters the context and sets itself as active."""
         if self.circuit.is_locked() == True:
             raise CircuitError(
@@ -506,8 +522,6 @@ class CircuitContext:
         else:
             raise RuntimeError("Cannot enter context, another circuit context is already active.")
 
-        if self.circuit.parametric:
-            return (self.circuit._parameter_register, self.circuit.qubits)
         return self.circuit.qubits
 
     def __exit__(
@@ -523,6 +537,43 @@ class CircuitContext:
         self.circuit.lock()
 
     @mixedproperty
-    def active_context(cls) -> CircuitContext:
+    def active_context(cls) -> Optional[CircuitContext]:
         """Current active context (usually ``self``)."""
         return cls._active_context
+
+
+class ParametricCircuitContext(CircuitContext):
+    """Class used to handle and store the active context with parametric circuits.
+
+    Args:
+        circuit: Parametric circuit to which the context is attached.
+    """
+
+    def __init__(self, circuit: Circuit) -> None:
+        if not isinstance(circuit, ParametricCircuit):
+            raise TypeError("'ParametricCircuitContext' only works with 'ParametricCircuit'")
+
+        super().__init__(circuit)
+
+    def __enter__(
+        self,
+    ) -> Tuple[SelfIncrementingRegister, Sequence[Qubit]]:
+        """Enters the context and sets itself as active."""
+        # should always be a 'ParametricCircuit'; check in '__init__'
+        assert isinstance(self.circuit, ParametricCircuit)
+
+        q = super().__enter__()
+        return (self.circuit._parameter_register, q)
+
+    def __exit__(
+        self,
+        type: Optional[Type[BaseException]],
+        value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        """Exits the context and locks the circuit."""
+        # should always be a 'ParametricCircuit'; check in '__init__'
+        assert isinstance(self.circuit, ParametricCircuit)
+
+        self.circuit._parameter_register.freeze()
+        super().__exit__(type, value, traceback)

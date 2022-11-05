@@ -1,6 +1,7 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
+import functools
 import inspect
 from typing import Any, Callable, Optional
 
@@ -56,7 +57,7 @@ class mixedproperty:
                     return self._c
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self._self_required: bool = kwargs.pop("self_required", False)
         if args and isinstance(args[0], Callable):
             self.__call__(args[0])
@@ -66,6 +67,7 @@ class mixedproperty:
 
         Args:
             callable: Method decorated by the ``mixedproperty`` decorator."""
+        functools.update_wrapper(self, callable)
         self._callable = callable
         return self
 
@@ -84,10 +86,6 @@ class mixedproperty:
         Returns:
             Any: Output of the decorated method, if any.
         """
-        # if abstract method is called during class construction, return 'None'
-        if getattr(self._callable, "__isabstractmethod__", False):
-            return self._callable
-
         num_parameters = len(inspect.signature(self._callable).parameters)
 
         # if called on class while requiring access to 'self', return 'None'
@@ -101,18 +99,3 @@ class mixedproperty:
 
     def __set__(self, instance: Optional[object], value: Any) -> None:
         raise AttributeError("can't set attribute")
-
-
-class abstractmixedproperty(mixedproperty):
-    """Decorator class to support abstract ``mixedproperty`` methods.
-
-    Args:
-        callable: Method decorated by the ``abstractmixedproperty`` decorator.
-    """
-
-    __isabstractmethod__: bool = True
-    """Used internally by Python to keep track of abstract methods."""
-
-    def __init__(self, callable):
-        callable.__isabstractmethod__ = True
-        super().__init__(callable)
