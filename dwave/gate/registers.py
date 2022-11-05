@@ -1,58 +1,26 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from collections.abc import Collection
-from typing import Hashable, Iterator, Optional, Sequence, Union
+from typing import Generic, Hashable, Iterator, Optional, Sequence, TypeVar, Union
 
+from dwave.gate.primitives import Bit, Qubit, Variable
 
-class Variable:
-    """Variable parameter type.
-
-    Used as a placeholder for parameter values. Two variables with the same label are considered
-    equal (``Variable('a') == Variable('a')``) and have the same hash value, but not identical
-    (``Variable('a') is not Variable('a')``)
-
-    Args:
-        name: String used to represent the variable.
-    """
-
-    def __init__(self, name: str) -> None:
-        self._name = str(name)
-
-    @property
-    def name(self) -> str:
-        """The variable name."""
-        return self._name
-
-    def __eq__(self, __o: object) -> bool:
-        """Two variables are equal if they share the same label."""
-        if isinstance(__o, Variable):
-            return self.name == __o.name
-        return False
-
-    def __repr__(self) -> str:
-        """The representation of the variable is its label."""
-        return f"{{{self.name}}}"
-
-    def __hash__(self) -> int:
-        """The hash of the variable is determined by its label."""
-        return hash(self.name)
+Data = TypeVar("Data", bound=Hashable)
 
 
 class RegisterError(Exception):
     """Exception to be raised when there is an error with a Register."""
 
 
-class Register(Collection):
+class Register(Collection, Generic[Data]):
     """Register to store qubits and/or classical bits.
 
     Args:
-        label: Quantum or classical register label.
-        data: Sequence of qubits or bits (defaults to empty).
+        label: Label representing the label.
+        data: Sequence of hashable data items (defaults to empty).
     """
 
-    def __init__(
-        self, label: Hashable, data: Optional[Union[Hashable, Sequence[Hashable]]] = None
-    ) -> None:
-        self._label: str = label
+    def __init__(self, label: Hashable, data: Optional[Union[Data, Sequence[Data]]] = None) -> None:
+        self._label = label
         self._data = []
 
         self._frozen = False
@@ -67,7 +35,7 @@ class Register(Collection):
         return self._label
 
     @property
-    def data(self) -> Sequence[Hashable]:
+    def data(self) -> Sequence[Data]:
         """Sequence of qubits or bits."""
         return self._data
 
@@ -80,7 +48,7 @@ class Register(Collection):
         """Freezes the register so that no (qu)bits can be added or removed."""
         self._frozen = True
 
-    def __iter__(self) -> Iterator[Hashable]:
+    def __iter__(self) -> Iterator[Data]:
         """Iterate over the (qu)bits."""
         return self.data.__iter__()
 
@@ -88,7 +56,7 @@ class Register(Collection):
         """Return the length of the (qu)bit register."""
         return len(self.data)
 
-    def __getitem__(self, index: int) -> Hashable:
+    def __getitem__(self, index: int) -> Optional[Data]:
         """Return the item at a specified index.
 
         Note that a ``Register`` differs from a ``Sequence`` by returning
@@ -106,7 +74,7 @@ class Register(Collection):
         except IndexError:
             return None
 
-    def __contains__(self, item: Hashable) -> bool:
+    def __contains__(self, item: Data) -> bool:
         """Check if an item is contained in the register.
 
         Args:
@@ -125,7 +93,7 @@ class Register(Collection):
         """Returns the representation of the Register object."""
         return f"<{self.__class__.__name__}, data={self.data}>"
 
-    def index(self, item: object) -> Hashable:
+    def index(self, item: object) -> int:
         """Get the index of the passed item.
 
         Args:
@@ -154,7 +122,7 @@ class Register(Collection):
         self._data.extend(labels)
 
 
-class QuantumRegister(Register):
+class QuantumRegister(Register[Qubit]):
     """Quantum register to store qubits.
 
     Args:
@@ -162,7 +130,7 @@ class QuantumRegister(Register):
         data: Sequence of qubits (defaults to empty).
     """
 
-    def __init__(self, label: Hashable, data: Optional[Sequence[Hashable]] = None) -> None:
+    def __init__(self, label: Hashable, data: Optional[Sequence[Qubit]] = None) -> None:
         super().__init__(label, data)
 
     def to_qasm(self) -> str:
@@ -178,7 +146,7 @@ class QuantumRegister(Register):
         return super().freeze()
 
 
-class ClassicalRegister(Register):
+class ClassicalRegister(Register[Bit]):
     """Classical register to store qubits.
 
     Args:
@@ -186,7 +154,7 @@ class ClassicalRegister(Register):
         data: Sequence of bits (defaults to empty).
     """
 
-    def __init__(self, label: Hashable, data: Optional[Sequence[Hashable]] = None) -> None:
+    def __init__(self, label: Hashable, data: Optional[Sequence[Bit]] = None) -> None:
         super().__init__(label, data)
 
     def to_qasm(self) -> str:
@@ -216,14 +184,14 @@ class SelfIncrementingRegister(Register):
         data: Sequence of parameters or variables (defaults to empty).
     """
 
-    def __init__(self, label: Hashable, data: Optional[Sequence[Hashable]] = None) -> None:
+    def __init__(self, label: Hashable, data: Optional[Sequence[Data]] = None) -> None:
         super().__init__(label, data)
 
     def freeze(self) -> None:
         """Freezes the register so that no data can be added or removed."""
         return super().freeze()
 
-    def __getitem__(self, index: int) -> Hashable:
+    def __getitem__(self, index: int) -> Data:  # type: ignore
         """Return the parameter at a specified index.
 
         Warning, will _not_ raise an ``IndexError`` if attempting to access outside of the registers
@@ -237,5 +205,5 @@ class SelfIncrementingRegister(Register):
             Hashable: The parameter at the specified index.
         """
         if index >= len(self.data) and not self.frozen:
-            self.add([Variable(i) for i in range(len(self.data), index + 1)])
+            self.add([Variable(str(i)) for i in range(len(self.data), index + 1)])
         return self.data[index]

@@ -3,11 +3,23 @@ from __future__ import annotations
 
 import copy
 import warnings
-from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Hashable, Optional, Sequence, Union
+from abc import ABCMeta, abstractmethod, abstractproperty
+from itertools import chain
+from typing import (
+    TYPE_CHECKING,
+    Hashable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
+)
 
-from dwave.gate.circuit import Circuit, CircuitContext
-from dwave.gate.mixedproperty import abstractmixedproperty, mixedproperty
+from dwave.gate.circuit import Circuit, CircuitContext, ParametricCircuit
+from dwave.gate.mixedproperty import mixedproperty
+from dwave.gate.primitives import Qubit
 from dwave.gate.registers import Variable
 from dwave.gate.tools.unitary import build_controlled_unitary, build_unitary
 
@@ -15,9 +27,21 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-def create_operation(
-    circuit: Circuit, label: Hashable = None, superclass: Optional[type[Operation]] = None
-) -> type[Operation]:
+CustomOperation = TypeVar("CustomOperation", bound="Operation")
+CustomParametricOperation = TypeVar("CustomParametricOperation", bound="ParametricOperation")
+
+
+@overload
+def create_operation(circuit: ParametricCircuit, label: Hashable = None) -> type[CustomParametricOperation]:  # type: ignore
+    ...
+
+
+@overload
+def create_operation(circuit: Circuit, label: Hashable = None) -> type[CustomOperation]:  # type: ignore
+    ...
+
+
+def create_operation(circuit, label: Hashable = None) -> type[CustomOperation]:  # type: ignore
     """Create an operation from a circuit object.
 
     Takes the circuit operations and creates a new custom operation class inheriting either directly
@@ -27,19 +51,16 @@ def create_operation(
     Args:
         circuit: Circuit object out of which to create an operation.
         label: Label for the new operation. Usually the class name of the operation.
-        superclass: The class which the operation should inherit from. If ``None`` superclass will
-            be chosen based on circuit attributes. Must be or subclass ``Operation``.
 
     Returns:
         Type: Class inheriting from the ``Operation`` class.
     """
-    if superclass is None:
-        if circuit.parametric:
-            superclass = ParametricOperation
-        else:
-            superclass = Operation
+    if circuit.parametric:
+        superclass = ParametricOperation
+    else:
+        superclass = Operation
 
-    class CustomOperation(superclass):
+    class CustomOperation(superclass):  # type: ignore
         _num_qubits = circuit.num_qubits
         _num_params = circuit.num_parameters
 
@@ -51,8 +72,8 @@ def create_operation(
             pass
 
         @mixedproperty
-        def matrix(cls, self):
-            """The matrix representation of the template operator.
+        def matrix(cls, self) -> NDArray:
+            """The matrix representation of the custom operator.
 
             Note that this property call constructs, and caches, the matrix lazily
             by building the unitary based on the operations in the ``circuit``
@@ -63,10 +84,11 @@ def create_operation(
                 parameters = self.parameters.copy()
 
                 for i, op in enumerate(circuit_copy.circuit):
-                    for j, param in enumerate(op.parameters):
-                        if isinstance(param, Variable):
-                            circuit_copy.circuit[i].parameters[j] = parameters.pop(0)
-                        self._matrix
+                    if isinstance(op, ParametricOperation):
+                        for j, param in enumerate(op.parameters):
+                            if isinstance(param, Variable):
+                                circuit_copy.circuit[i].parameters[j] = parameters.pop(0)  # type: ignore
+                            self._matrix
 
             return build_unitary(circuit_copy)
 
@@ -104,7 +126,7 @@ class Operation(metaclass=ABCLockedAttr):
             required when applying an operation within a circuit context.
     """
 
-    def __init__(self, qubits: Optional[Union[Hashable, Sequence[Hashable]]] = None) -> None:
+    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None) -> None:
         active_context = CircuitContext.active_context
 
         if qubits is not None:
@@ -119,13 +141,8 @@ class Operation(metaclass=ABCLockedAttr):
         if active_context is not None and active_context.frozen is False:
             active_context.circuit.append(self)
 
-    @abstractmixedproperty
-    def _num_qubits(cls):
-        """Abstract mixedproperty asserting the existence of a ``_num_qubits`` attribute."""
-        pass
-
     @classmethod
-    def _check_qubits(cls, qubits: Sequence[Hashable]) -> Sequence[Hashable]:
+    def _check_qubits(cls, qubits: Union[Qubit, Sequence[Qubit]]) -> Tuple[Qubit, ...]:
         """Asserts size and type of the qubit(s) and returns the correct type.
 
         Args:
@@ -134,8 +151,7 @@ class Operation(metaclass=ABCLockedAttr):
         Returns:
             tuple: Sequence of qubits as a tuple.
         """
-        # TODO: update to check for single qubit instead of str
-        if isinstance(qubits, str) or not isinstance(qubits, Sequence):
+        if isinstance(qubits, Qubit):
             qubits = [qubits]
 
         if len(qubits) != cls.num_qubits:
@@ -146,7 +162,7 @@ class Operation(metaclass=ABCLockedAttr):
         # cast to tuple for convention
         return tuple(qubits)
 
-    def __call__(self, qubits: Optional[Sequence[Hashable]] = None):
+    def __call__(self, qubits: Optional[Sequence[Qubit]] = None) -> None:
         """Apply (or reapply) the operation within a context.
 
         Args:
@@ -156,7 +172,7 @@ class Operation(metaclass=ABCLockedAttr):
         qubits = qubits or self.qubits
         self.__class__(qubits)
 
-    def __eq__(self, __o: object) -> bool:
+    def __eq__(self, __o: Operation) -> bool:
         """Returns whether two operations are considered equal."""
         name_eq = __o.__class__.__name__ == self.__class__.__name__
         return name_eq and __o.qubits == self.qubits
@@ -174,17 +190,18 @@ class Operation(metaclass=ABCLockedAttr):
         """Qubit operation label."""
         if self and hasattr(self, "parameters"):
             params = f"({self.parameters})"
-            return cls.__name__ + params
-        return cls.__name__
+            return cls.__name__ + params  # type: ignore
+        return cls.__name__  # type: ignore
 
     @mixedproperty
-    def decomposition(cls) -> Sequence[Hashable]:
+    def decomposition(cls) -> List[str]:
         """Decomposition of operation as list of operation labels."""
-        if not getattr(cls, "_decomposition", None):
+        decomposition = getattr(cls, "_decomposition", None)
+        if not decomposition:
             raise NotImplementedError(
                 "Decomposition not implemented for the " f"'{cls.label}' operation."
             )
-        return cls._decomposition
+        return decomposition
 
     @mixedproperty
     def num_qubits(cls) -> int:
@@ -194,13 +211,17 @@ class Operation(metaclass=ABCLockedAttr):
 
         raise AttributeError(f"Operations {cls.label} missing class attributes '_num_qubits'.")
 
+    @abstractproperty
+    def _num_qubits(cls) -> int:  # type: ignore
+        """Abstract mixedproperty asserting the existence of a ``_num_qubits`` attribute."""
+
     @property
-    def qubits(self) -> Sequence[Hashable]:
+    def qubits(self) -> Optional[Tuple[Qubit, ...]]:
         """Qubits that the operation is applied to."""
         return self._qubits
 
     @qubits.setter
-    def qubits(self, qubits: Sequence[Hashable]) -> None:
+    def qubits(self, qubits: Sequence[Qubit]) -> None:
         """Set the qubits that the operation should be applied to."""
         if self.qubits is not None:
             warnings.warn(
@@ -215,16 +236,14 @@ class Operation(metaclass=ABCLockedAttr):
         Returns:
             str: OpenQASM string representation of the operation.
         """
-        pass
 
-    @abstractmixedproperty
-    def matrix(cls) -> NDArray:
+    @abstractproperty
+    def matrix(cls) -> NDArray:  # type: ignore
         """Returns the matrix representation of the operation.
 
         Returns:
             NDArray: Matrix representation of the operation.
         """
-        pass
 
 
 class ParametricOperation(Operation):
@@ -240,12 +259,12 @@ class ParametricOperation(Operation):
     def __init__(
         self,
         parameters: Sequence[complex],
-        qubits: Optional[Union[str, Sequence[str]]] = None,
+        qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
     ):
         self._parameters = self._check_parameters(parameters)
         super(ParametricOperation, self).__init__(qubits)
 
-    def __eq__(self, __o: object) -> bool:
+    def __eq__(self, __o: ParametricOperation) -> bool:
         """Returns whether two operations are considered equal."""
         param_eq = __o.parameters == self.parameters
         return param_eq and super(ParametricOperation, self).__eq__(__o)
@@ -258,23 +277,27 @@ class ParametricOperation(Operation):
     @mixedproperty
     def num_parameters(cls) -> int:
         """Number of parameters that the operation requires."""
-        if hasattr(cls, "_num_params"):
+        if isinstance(cls._num_params, int):
             return cls._num_params
 
         raise AttributeError(f"Operations {cls.label} missing class attribute '_num_params'.")
 
+    @abstractproperty
+    def _num_params(cls) -> int:  # type: ignore
+        """Abstract mixedproperty asserting the existence of a ``_num_qubits`` attribute."""
+
     @classmethod
-    def _check_parameters(cls, params):
+    def _check_parameters(cls, params: Sequence[complex]) -> List[complex]:
         """Asserts the size and type of the parameter(s) and returns the
         correct type.
 
         Args:
-            params: Parameters to check.
+            params: Numeric parameters to check.
 
         Returns:
             list: Sequence of parameters as a list.
         """
-        if isinstance(params, str) or not isinstance(params, Sequence):
+        if not isinstance(params, Sequence):
             params = [params]
 
         if len(params) != cls._num_params:
@@ -286,7 +309,7 @@ class ParametricOperation(Operation):
         # cast to list for convention
         return list(params)
 
-    def __call__(self, qubits: Optional[Sequence[Hashable]] = None):
+    def __call__(self, qubits: Optional[Sequence[Qubit]] = None):
         """Apply (or reapply) the operation within a context.
 
         Args:
@@ -301,38 +324,38 @@ class ControlledOperation(Operation):
     """Generic controlled operation.
 
     Args:
-        op: Target operation which is applied to the target qubit.
         control: Qubit(s) on which the target operation is controlled.
         target: Qubit(s) on which the target operation is applied.
     """
 
     def __init__(
         self,
-        op: Operation,
-        control: Optional[Union[Hashable, Sequence[Hashable]]] = None,
-        target: Optional[Union[Hashable, Sequence[Hashable]]] = None,
+        control: Optional[Union[Qubit, Sequence[Qubit]]] = None,
+        target: Optional[Union[Qubit, Sequence[Qubit]]] = None,
     ) -> None:
-        # control and target qubits are stored as lists
-        if control is not None and (isinstance(control, str) or not isinstance(control, Sequence)):
-            self._control = [control]
-        else:
-            self._control = control
 
-        if target is not None and (isinstance(target, str) or not isinstance(target, Sequence)):
-            self._target = [target]
+        if control:
+            self._control = tuple([control] if isinstance(control, Qubit) else control)
         else:
-            self._target = target
+            self._control = None
 
-        self._target_operation = op
+        if target:
+            self._target = tuple([target] if isinstance(target, Qubit) else target)
+        else:
+            self._target = None
 
         # all qubits are stored in the 'qubits' attribute
-        qubits = self._control + self._target if (self._control and self._target) else None
+        if self.control and self.target:
+            qubits = tuple(chain.from_iterable((self.control, self.target)))
+        else:
+            qubits = None
+
         super(ControlledOperation, self).__init__(qubits)
 
     def __call__(
         self,
-        control: Optional[Sequence[Hashable]] = None,
-        target: Optional[Sequence[Hashable]] = None,
+        control: Optional[Sequence[Qubit]] = None,
+        target: Optional[Sequence[Qubit]] = None,
     ):
         """Apply (or reapply) the operation within a context.
 
@@ -344,15 +367,19 @@ class ControlledOperation(Operation):
         control = control or self.control
         target = target or self.target
 
-        self.__class__(control, target)
+        self.__class__(control, target)  # type: ignore
 
-    @abstractmixedproperty
+    @abstractproperty
     def _num_control(cls):
         """Abstract mixedproperty asserting the existence of a ``_num_control`` attribute."""
 
-    @abstractmixedproperty
+    @abstractproperty
     def _num_target(cls):
         """Abstract mixedproperty asserting the existence of a ``_num_target`` attribute."""
+
+    @abstractproperty
+    def _target_operation(cls):
+        """Abstract mixedproperty asserting the existence of a ``_target_operation`` attribute."""
 
     @mixedproperty
     def _num_qubits(cls) -> int:
@@ -374,42 +401,47 @@ class ControlledOperation(Operation):
         num_qubits = getattr(cls, "num_qubits", 2)
         num_control = getattr(cls, "num_control", 1)
 
-        if self:
-            control = self.control or list(range(num_control))
-            target = self.target or list(range(num_control, num_qubits))
+        if CircuitContext.active_context and self.control and self.target:
+            control_idx = [
+                CircuitContext.active_context.circuit.qubits.index(c) for c in self.control
+            ]
+            target_idx = [
+                CircuitContext.active_context.circuit.qubits.index(t) for t in self.target
+            ]
         else:
-            control = list(range(num_control))
-            target = list(range(num_control, num_qubits))
+            control_idx = list(range(num_control))
+            target_idx = list(range(num_control, num_qubits))
 
-        matrix = build_controlled_unitary(control, target, target_unitary, num_qubits=num_qubits)
+        matrix = build_controlled_unitary(
+            control_idx, target_idx, target_unitary, num_qubits=num_qubits
+        )
         return matrix
 
     @property
-    def control(self) -> Optional[Union[Hashable, Sequence[Hashable]]]:
+    def control(self) -> Optional[Tuple[Qubit]]:
         """Control qubit(s)."""
         return self._control
 
     @property
-    def target(self) -> Optional[Union[Hashable, Sequence[Hashable]]]:
+    def target(self) -> Optional[Tuple[Qubit]]:
         """Target qubit(s)."""
         return self._target
 
     @mixedproperty
     def num_control(cls) -> int:
         """Number of control qubit(s)."""
+        assert cls._num_control
         return cls._num_control
 
     @mixedproperty
     def num_target(cls) -> int:
         """Number of target qubit(s)."""
+        assert cls._num_target
         return cls._num_target
 
     @mixedproperty
-    def target_operation(cls, self):
+    def target_operation(cls):
         """Target operation"""
-        if self is not None:
-            return self._target_operation
-
         return cls._target_operation
 
     def to_qasm(self):
@@ -430,9 +462,6 @@ class Measurement(Operation):
             an measurement within a circuit context.
     """
 
-    def __init__(self, qubits: Optional[Union[Hashable, Sequence[Hashable]]] = None):
-        super(Measurement, self).__init__(qubits)
-
     def to_qasm(self):
         """Converts the measurement into an OpenQASM string.
 
@@ -450,9 +479,6 @@ class Barrier(Operation):
             Only required when applying a barrier operation within a circuit
             context.
     """
-
-    def __init__(self, qubits: Optional[Union[Hashable, Sequence[Hashable]]] = None):
-        super(Barrier, self).__init__(qubits)
 
     def to_qasm(self):
         """Converts the barrier into an OpenQASM string.

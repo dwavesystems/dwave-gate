@@ -10,7 +10,7 @@ import numpy as np
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike, NDArray
 
-    from dwave.gate.operations.base import Operation
+    from dwave.gate.operations.base import ControlledOperation, Operation
 
 
 #####################
@@ -54,13 +54,13 @@ def _apply_single_qubit_gate(state: NDArray, op: Operation, qubits) -> NDArray:
     Returns:
         NDArray:
     """
-    if op.qubits[0] == qubits[0]:
+    if op.qubits and op.qubits[0] == qubits[0]:
         mat = op.matrix
     else:
         mat = np.eye(2**op.num_qubits)
 
     for qb in qubits[1:]:
-        if qb == op.qubits[0]:
+        if op.qubits and qb == op.qubits[0]:
             mat = np.kron(mat, op.matrix)
         else:
             mat = np.kron(mat, np.eye(2**op.num_qubits))
@@ -68,7 +68,7 @@ def _apply_single_qubit_gate(state: NDArray, op: Operation, qubits) -> NDArray:
     return mat @ state
 
 
-def _apply_controlled_gate(state: NDArray, op: Operation, qubits) -> NDArray:
+def _apply_controlled_gate(state: NDArray, op: ControlledOperation, qubits) -> NDArray:
     """Apply a controlled qubit gate to the state.
 
     Args:
@@ -80,8 +80,8 @@ def _apply_controlled_gate(state: NDArray, op: Operation, qubits) -> NDArray:
     Returns:
         NDArray: Resulting state vector after application.
     """
-    control_idx = [qubits.index(c) for c in op.control]
-    target_idx = [qubits.index(t) for t in op.target]
+    control_idx = [qubits.index(c) for c in op.control or []]
+    target_idx = [qubits.index(t) for t in op.target or []]
     controlled_unitary = build_controlled_unitary(
         control_idx, target_idx, op.target_operation.matrix, len(qubits)
     )
@@ -118,10 +118,11 @@ def build_controlled_unitary(
     if not set(control).isdisjoint(target):
         raise ValueError("Control qubits and target qubit cannot be the same.")
 
-    if isinstance(num_qubits, int) and num_qubits <= max(control + target):
+    max_ = max(itertools.chain.from_iterable((control, target)))
+    if isinstance(num_qubits, int) and num_qubits <= max_:
         raise ValueError(
             f"Total number of qubits {num_qubits} must be larger or equal "
-            f"to the largest qubit index {max(control + target)}."
+            f"to the largest qubit index {max_}."
         )
 
     # TODO: add support for multiple targets
@@ -129,7 +130,7 @@ def build_controlled_unitary(
         raise NotImplementedError("Multiple target not currently supported.")
 
     # if None, set number of qubits to the max control/target value + 1
-    num_qubits = num_qubits or max(control + target) + 1
+    num_qubits = num_qubits or max_ + 1
 
     state = np.eye(2**num_qubits, dtype=dtype)
 
