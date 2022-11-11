@@ -24,8 +24,8 @@ operations using the circuits context-manager.
 
 .. code-block:: python
 
-    from dwave.gate import Circuit
     import dwave.gate.operations as ops
+    from dwave.gate import Circuit
 
     circuit = Circuit(2)
     with circuit.context as q:

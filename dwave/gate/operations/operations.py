@@ -44,9 +44,9 @@ class Identity(Operation):
         return f"id q[{self.qubits[0]}]"
 
     @mixedproperty
-    def matrix(cls) -> NDArray:
+    def matrix(cls) -> NDArray[np.complex128]:
         """The matrix representation of the Identity operator."""
-        matrix = np.eye(2, dtype=complex)
+        matrix = np.eye(2, dtype=np.complex128)
         return matrix
 
 
@@ -72,9 +72,9 @@ class X(Operation):
         return f"x q[{self.qubits[0]}]"
 
     @mixedproperty
-    def matrix(cls) -> NDArray:
+    def matrix(cls) -> NDArray[np.complex128]:
         """The matrix representation of the Pauli X operator."""
-        matrix = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=complex)
+        matrix = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=np.complex128)
         return matrix
 
 
@@ -100,9 +100,9 @@ class Y(Operation):
         return f"y q[{self.qubits[0]}]"
 
     @mixedproperty
-    def matrix(cls) -> NDArray:
+    def matrix(cls) -> NDArray[np.complex128]:
         """The matrix representation of the Pauli Y operator."""
-        matrix = np.array([[0.0, -1.0j], [1.0j, 0.0]], dtype=complex)
+        matrix = np.array([[0.0, -1.0j], [1.0j, 0.0]], dtype=np.complex128)
         return matrix
 
 
@@ -129,9 +129,9 @@ class Z(Operation):
         return f"z q[{self.qubits[0]}]"
 
     @mixedproperty
-    def matrix(cls) -> NDArray:
+    def matrix(cls) -> NDArray[np.complex128]:
         """The matrix representation of the Pauli Z operator."""
-        matrix = np.array([[1.0, 0.0], [0.0, -1.0]], dtype=complex)
+        matrix = np.array([[1.0, 0.0], [0.0, -1.0]], dtype=np.complex128)
         return matrix
 
 
@@ -157,9 +157,9 @@ class Hadamard(Operation):
         return f"h q[{self.qubits[0]}]"
 
     @mixedproperty
-    def matrix(cls) -> NDArray:
+    def matrix(cls) -> NDArray[np.complex128]:
         """The matrix representation of the Hadamard operator."""
-        matrix = math.sqrt(2) / 2 * np.array([[1.0, 1.0], [1.0, -1.0]], dtype=complex)
+        matrix = math.sqrt(2) / 2 * np.array([[1.0, 1.0], [1.0, -1.0]], dtype=np.complex128)
         return matrix
 
 
@@ -198,13 +198,13 @@ class RX(ParametricOperation):
         return f"rx({theta}) q[{self.qubits[0]}]"
 
     @mixedproperty(self_required=True)
-    def matrix(cls, self) -> NDArray:
+    def matrix(cls, self) -> NDArray[np.complex128]:
         """The matrix representation of the Rotation-X operator."""
         theta = self.parameters[0]
 
         diag_0 = math.cos(theta / 2)
         diag_1 = -1j * math.sin(theta / 2)
-        matrix = np.array([[diag_0, diag_1], [diag_1, diag_0]], dtype=complex)
+        matrix = np.array([[diag_0, diag_1], [diag_1, diag_0]], dtype=np.complex128)
         return matrix
 
 
@@ -238,13 +238,13 @@ class RY(ParametricOperation):
         return f"ry({theta}) q[{self.qubits[0]}]"
 
     @mixedproperty(self_required=True)
-    def matrix(cls, self) -> NDArray:
+    def matrix(cls, self) -> NDArray[np.complex128]:
         """The matrix representation of the Rotation-Y operator."""
         theta = self.parameters[0]
 
         diag_0 = math.cos(theta / 2)
         diag_1 = math.sin(theta / 2)
-        matrix = np.array([[diag_0, -diag_1], [diag_1, diag_0]], dtype=complex)
+        matrix = np.array([[diag_0, -diag_1], [diag_1, diag_0]], dtype=np.complex128)
         return matrix
 
 
@@ -278,13 +278,13 @@ class RZ(ParametricOperation):
         return f"rz({theta}) q[{self.qubits[0]}]"
 
     @mixedproperty(self_required=True)
-    def matrix(cls, self) -> NDArray:
+    def matrix(cls, self) -> NDArray[np.complex128]:
         """The matrix representation of the Rotation-Z operator."""
         theta = self.parameters[0]
 
         term_0 = cmath.exp(-1j * theta / 2)
         term_1 = cmath.exp(1j * theta / 2)
-        matrix = np.array([[term_0, 0.0], [0.0, term_1]], dtype=complex)
+        matrix = np.array([[term_0, 0.0], [0.0, term_1]], dtype=np.complex128)
         return matrix
 
 
@@ -318,7 +318,7 @@ class Rotation(ParametricOperation):
         return f"rz q[{self.qubits[0]}]\nry q[{self.qubits[0]}]\nrz q[{self.qubits[0]}]"
 
     @mixedproperty(self_required=True)
-    def matrix(cls, self) -> NDArray:
+    def matrix(cls, self) -> NDArray[np.complex128]:
         """The matrix representation of the Rotation operator."""
         beta, gamma, delta = self.parameters
 
@@ -330,7 +330,7 @@ class Rotation(ParametricOperation):
         term_2 = cmath.exp(-0.5j * (beta - delta)) * msin
         term_3 = cmath.exp(0.5j * (beta + delta)) * mcos
 
-        matrix = np.array([[term_0, term_1], [term_2, term_3]], dtype=complex)
+        matrix = np.array([[term_0, term_1], [term_2, term_3]], dtype=np.complex128)
         return matrix
 
 
@@ -407,7 +407,7 @@ class SWAP(Operation):
         raise NotImplementedError("OpenQASM 2.0 does not support the SWAP gate.")
 
     @mixedproperty
-    def matrix(cls) -> NDArray:
+    def matrix(cls) -> NDArray[np.complex128]:
         """The matrix representation of the SWAP operation."""
         # TODO: add support for larger matrix states
         matrix = np.array(
@@ -417,7 +417,7 @@ class SWAP(Operation):
                 [0.0, 1.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0, 1.0],
             ],
-            dtype=complex,
+            dtype=np.complex128,
         )
         return matrix
 
@@ -444,7 +444,7 @@ class CSWAP(Operation):
         raise NotImplementedError("OpenQASM 2.0 does not support the CSWAP gate.")
 
     @mixedproperty
-    def matrix(cls) -> NDArray:
+    def matrix(cls) -> NDArray[np.complex128]:
         """The matrix representation of the SWAP operation."""
         # TODO: add support for larger matrix states
         matrix = np.array(
@@ -458,7 +458,7 @@ class CSWAP(Operation):
                 [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
             ],
-            dtype=complex,
+            dtype=np.complex128,
         )
         return matrix
 
