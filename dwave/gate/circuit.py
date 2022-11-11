@@ -84,9 +84,6 @@ class Circuit:
 
         qubits, _ = self._extract_arguments(*args, **kwargs)
 
-        if len(qubits) != len(self.qubits):
-            raise ValueError(f"Circuit requires {len(self.qubits)} qubits, got {len(qubits)}.")
-
         if CircuitContext.active_context is None:
             raise CircuitError("Can only apply circuit object inside a circuit context.")
         if CircuitContext.active_context.circuit is self:
@@ -117,9 +114,6 @@ class Circuit:
         Looks for "parameters" and "qubits" in the arguments. Raises errors if unexpected keyword
         arguments are passed or an invalid number of arguments are passed.
         """
-        if not args and not kwargs:
-            return [], None
-
         # assert that args and/or kwargs only contain qubits and/or parameters
         invalid_kwargs = set(kwargs) - {"qubits", "parameters"}
         if invalid_kwargs:
@@ -130,9 +124,16 @@ class Circuit:
                 f"__call__() takes from 1 to 2 arguments but {len(args) + len(kwargs)} were given"
             )
 
-        qubits = kwargs.get("qubits", None) or args[0]
+        if args or kwargs:
+            qubits = kwargs.get("qubits", None) or args[0]
+        else:
+            qubits = []
+
         if isinstance(qubits, Qubit):
             qubits = [qubits]
+
+        if len(qubits) != len(self.qubits):
+            raise ValueError(f"Circuit requires {len(self.qubits)} qubits, got {len(qubits)}.")
 
         return qubits, kwargs.get("parameters", None)
 
@@ -256,11 +257,11 @@ class Circuit:
                 including those created at initialization (defaults to
                 ``True``).
         """
-        self._circuit = []
+        self._circuit.clear()
         self._circuit_context = None
         if not keep_registers:
-            self._qregisters = dict()
-            self._cregisters = dict()
+            self._qregisters.clear()
+            self._cregisters.clear()
 
         self.unlock()
 
@@ -416,6 +417,7 @@ class ParametricCircuit(Circuit):
         return super().__call__(*args, **kwargs, parameters=parameters)
 
     def unlock(self) -> None:
+        """Unlocks the circuit allowing for further operations to be applied."""
         self._parameter_register._frozen = False
         return super().unlock()
 

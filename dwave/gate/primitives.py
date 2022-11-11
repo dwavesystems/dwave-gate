@@ -24,10 +24,10 @@ class Qubit:
         """The qubit's unique identification number."""
         return self._id
 
-    def __eq__(self, __o: object) -> bool:
+    def __eq__(self, object: object) -> bool:
         """Two qubits are equal if they share the same id."""
-        if isinstance(__o, Qubit):
-            return self.id == __o.id
+        if isinstance(object, Qubit):
+            return self.id == object.id
         return False
 
     def __repr__(self) -> str:
@@ -60,10 +60,10 @@ class Bit:
         """The bit's unique identification number."""
         return self._id
 
-    def __eq__(self, __o: object) -> bool:
+    def __eq__(self, object: object) -> bool:
         """Two bits are equal if they share the same id."""
-        if isinstance(__o, Bit):
-            return self.id == __o.id
+        if isinstance(object, Bit):
+            return self.id == object.id
         return False
 
     def __repr__(self) -> str:
@@ -94,10 +94,10 @@ class Variable:
         """The variable name."""
         return self._name
 
-    def __eq__(self, __o: object) -> bool:
+    def __eq__(self, object: object) -> bool:
         """Two variables are equal if they share the same label."""
-        if isinstance(__o, Variable):
-            return self.name == __o.name
+        if isinstance(object, Variable):
+            return self.name == object.name
         return False
 
     def __repr__(self) -> str:

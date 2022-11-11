@@ -172,10 +172,10 @@ class Operation(metaclass=ABCLockedAttr):
         qubits = qubits or self.qubits
         self.__class__(qubits)
 
-    def __eq__(self, __o: Operation) -> bool:
+    def __eq__(self, op: Operation) -> bool:
         """Returns whether two operations are considered equal."""
-        name_eq = __o.__class__.__name__ == self.__class__.__name__
-        return name_eq and __o.qubits == self.qubits
+        name_eq = op.__class__.__name__ == self.__class__.__name__
+        return name_eq and op.qubits == self.qubits
 
     def __str__(self) -> str:
         """Returns the operation representation."""
@@ -264,10 +264,10 @@ class ParametricOperation(Operation):
         self._parameters = self._check_parameters(parameters)
         super(ParametricOperation, self).__init__(qubits)
 
-    def __eq__(self, __o: ParametricOperation) -> bool:
+    def __eq__(self, op: ParametricOperation) -> bool:
         """Returns whether two operations are considered equal."""
-        param_eq = __o.parameters == self.parameters
-        return param_eq and super(ParametricOperation, self).__eq__(__o)
+        param_eq = op.parameters == self.parameters
+        return param_eq and super(ParametricOperation, self).__eq__(op)
 
     @property
     def parameters(self):
