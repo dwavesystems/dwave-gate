@@ -7,7 +7,7 @@ from typing import Generator, Optional, Type
 import numpy as np
 import pytest
 
-import dwave.gate.operations as ops
+import dwave.gate.operations.operations as ops
 from dwave.gate.circuit import Circuit, ParametricCircuit
 from dwave.gate.operations.base import (
     ControlledOperation,

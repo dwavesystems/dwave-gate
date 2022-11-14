@@ -1,3 +1,11 @@
+# Confidential & Proprietary Information: D-Wave Systems Inc.\
+
+__all__ = [
+    "Qubit",
+    "Bit",
+    "Variable",
+]
+
 from typing import Hashable
 
 from dwave.gate.tools.counters import IDCounter

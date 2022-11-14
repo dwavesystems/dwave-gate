@@ -1,6 +1,15 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
+__all__ = [
+    "Operation",
+    "ParametricOperation",
+    "ControlledOperation",
+    "Measurement",
+    "Barrier",
+    "create_operation",
+]
+
 import copy
 import warnings
 from abc import ABCMeta, abstractmethod, abstractproperty

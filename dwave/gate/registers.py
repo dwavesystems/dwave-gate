@@ -1,4 +1,13 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
+
+__all__ = [
+    "RegisterError",
+    "Register",
+    "QuantumRegister",
+    "ClassicalRegister",
+    "SelfIncrementingRegister",
+]
+
 from collections.abc import Collection
 from typing import Generic, Hashable, Iterator, Optional, Sequence, TypeVar, Union
 
