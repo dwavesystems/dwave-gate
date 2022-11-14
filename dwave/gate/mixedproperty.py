@@ -1,6 +1,10 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
+__all__ = [
+    "mixedproperty",
+]
+
 import functools
 import inspect
 from typing import Any, Callable, Optional

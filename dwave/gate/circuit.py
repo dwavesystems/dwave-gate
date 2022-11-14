@@ -1,6 +1,14 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
+__all__ = [
+    "CircuitError",
+    "Circuit",
+    "ParametricCircuit",
+    "CircuitContext",
+    "ParametricCircuitContext",
+]
+
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,

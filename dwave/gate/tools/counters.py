@@ -1,4 +1,9 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
+
+__all__ = [
+    "IDCounter",
+]
+
 import itertools
 import warnings
 from typing import Optional

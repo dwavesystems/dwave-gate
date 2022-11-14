@@ -1,6 +1,22 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
+__all__ = [
+    "Identity",
+    "X",
+    "Y",
+    "Z",
+    "Hadamard",
+    "RX",
+    "RY",
+    "RZ",
+    "Rotation",
+    "CX",
+    "CNOT",
+    "CZ",
+    "SWAP",
+]
+
 import cmath
 import math
 from typing import Optional, Sequence, Union
@@ -10,7 +26,6 @@ from numpy.typing import NDArray
 
 from dwave.gate.mixedproperty import mixedproperty
 from dwave.gate.operations.base import (
-    ABCLockedAttr,
     ControlledOperation,
     Operation,
     ParametricOperation,

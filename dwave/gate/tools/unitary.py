@@ -1,6 +1,11 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 from __future__ import annotations
 
+__all__ = [
+    "build_unitary",
+    "build_controlled_unitary",
+]
+
 import itertools
 from functools import lru_cache
 from typing import TYPE_CHECKING, Optional, Sequence, Union

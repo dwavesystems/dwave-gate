@@ -1,16 +1,7 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
-from dwave.gate.circuit import Circuit, CircuitContext, ParametricCircuit, ParametricCircuitContext
-from dwave.gate.mixedproperty import mixedproperty
-from dwave.gate.registers import ClassicalRegister, QuantumRegister
+from dwave.gate.circuit import *
+from dwave.gate.mixedproperty import *
+from dwave.gate.registers import *
+from dwave.gate.primitives import *
 
 __version__ = "0.1.0"
-
-__all__ = [
-    "Circuit",
-    "ParametricCircuit",
-    "CircuitContext",
-    "ParametricCircuitContext",
-    "QuantumRegister",
-    "ClassicalRegister",
-    "mixedproperty",
-]
