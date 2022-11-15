@@ -36,9 +36,9 @@ class build_ext_compiler_check(build_ext):
 
 extensions = [
     Extension(
-        name='dwgms.simulator.simulator',
-        sources=['dwgms/simulator/simulator.pyx'],
-        include_dirs=["dwgms/simulator/"],
+        name='dwave.gate.simulator.simulator',
+        sources=['dwave/gate/simulator/simulator.pyx'],
+        include_dirs=["dwave/gate/simulator/"],
         language='c++',
     ),
 ]

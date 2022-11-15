@@ -1,9 +1,13 @@
 #cython: language_level=3
 
-import numpy as np
-from dwgms.circuit import Circuit
+__all__ = [
+    "simulate",
+]
 
-from dwgms.simulator.ops cimport (
+import numpy as np
+from dwave.gate.circuit import Circuit
+
+from dwave.gate.simulator.ops cimport (
     apply_cswap,
     apply_gate_control,
     apply_gate_two_control,
@@ -89,7 +93,7 @@ def simulate(
         The resulting state vector or density matrix.
 
     """
-        
+
     if mixed_state:
         return _simulate_circuit_density_matrix(circuit)
 

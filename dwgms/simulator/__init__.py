@@ -1,3 +1,1 @@
-from dwgms.simulator.simulator import simulate  # type: ignore
-
-__all__ = ["simulate"]
+from dwave.gate.simulator.simulator import *
