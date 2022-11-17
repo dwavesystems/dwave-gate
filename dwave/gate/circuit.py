@@ -357,49 +357,114 @@ class Circuit:
 
         self._cregisters[label] = creg
 
-    def __str__(self) -> str:
-        """Returns the circuit as an OpenQASM string."""
-        return "\n".join([str(op) for op in self.circuit])
-
     def __repr__(self) -> str:
         """Returns the representation of the Circuit object."""
         qb, cb = len(self.qubits), len(self.bits)
         return f"<Circuit: qubits={qb}, bits={cb}, ops={len(self.circuit)}>"
 
-    def to_qasm(self, version: str = "2.0") -> str:
+    def find_qubit(self, qubit: Qubit, qreg_label: bool = False) -> Tuple[Hashable, int]:
+        """Returns the register where a qubit contained and its index in the register.
+
+        Args:
+            qubit: The qubit to find.
+            qreg_label: Whether to return the containing quantum register label (``True``)
+                or its index (``False``) in the ``self.qregisters`` dictionary.
+
+        Returns:
+            tuple: Tuple containing the quantum register label and the index of the qubit in that
+            register.
+
+        Raises:
+            ValueError: If the qubit is not found in any register.
+        """
+        for i, (label, qreg) in enumerate(self.qregisters.items()):
+            if qubit in qreg:
+                idx = qreg.index(qubit)
+                if qreg_label:
+                    return (label, idx)
+                return (i, idx)
+
+        raise ValueError(f"Qubit {qubit} not found in any register.")
+
+    def find_bit(self, bit: Bit, creg_label: bool = False) -> Tuple[Hashable, int]:
+        """Returns the register where a bit contained and its index in the register.
+
+        Args:
+            bit: The bit to find.
+            creg_label: Whether to return the containing classical register label (``True``)
+                or its index (``False``) in the ``self.cregisters`` dictionary.
+
+        Returns:
+            tuple: Tuple containing the classical register label and the index of the bit in that
+            register.
+
+        Raises:
+            ValueError: If the bit is not found in any register.
+        """
+        for i, (label, creg) in enumerate(self.cregisters.items()):
+            if bit in creg:
+                idx = creg.index(bit)
+                if creg_label:
+                    return (label, idx)
+                return (i, idx)
+
+        raise ValueError(f"Bit {bit} not found in any register.")
+
+    def to_qasm(self, version: str = "2.0", **kwargs) -> str:
         """Converts the Circuit into an OpenQASM string.
 
         Args:
             version: OpenQASM version (currently only supports 2.0).
 
+        Keyword args:
+            reg_labels: Whether to use the qregister labels (``True``) given or to simplify them
+                and simply use standard OpenQASM 2.0 labels, ``q0``, ``q1``, etc., instead
+                (``False``). Defaults to ``False``.
+            gate_definitions: Whether to add definitions for gates that are not part of the
+                OpenQASM standard library file ``qelib1.inc``. Defaults to ``False``.
+
         Returns:
             str: OpenQASM string representation of the circuit.
         """
         if version != "2.0":
-            raise NotImplementedError("Only version 2.0 is supported at the moment.")
+            raise NotImplementedError("Only OpenQASM 2.0 is supported at the moment.")
 
-        qasm_string = 'OPENQASM 2.0;\ninclude "qelib1.inc";\n'
-        for l, q in self.qregisters.items():
-            qasm_string += q.to_qasm()
+        reg_labels = kwargs.get("reg_labels", False)
+        gate_definitions = kwargs.get("gate_definitions", False)
 
-        for l, c in self.cregisters.items():
-            qasm_string += c.to_qasm()
+        header_str = 'OPENQASM 2.0;\ninclude "qelib1.inc";\n'
 
-        qasm_string += "\n"
+        qasm_str = ""
+        # add quantum registers (only add index if more than one register)
+        if len(self.qregisters) == 1:
+            qasm_str += list(self.qregisters.values())[0].to_qasm(qreg_label=reg_labels) + ";\n"
+        else:
+            for i, (_, qreg) in enumerate(self.qregisters.items()):
+                qasm_str += qreg.to_qasm(qreg_label=reg_labels, idx=i) + ";\n"
 
-        for i, ts in enumerate(self._time_slices):
-            qasm_string += f"// time-slice {i}\n"
-            for inst in ts.instructions:
-                qasm_string += inst.to_qasm(qmapping=self.qubits, cmapping=self.bits)
+        # add classical registers (only add index if more than one register)
+        if len(self.cregisters) == 1:
+            qasm_str += list(self.cregisters.values())[0].to_qasm(creg_label=reg_labels) + ";\n"
+        else:
+            for i, (_, creg) in enumerate(self.cregisters.items()):
+                qasm_str += creg.to_qasm(creg_label=reg_labels, idx=i) + ";\n"
 
-        return qasm_string
+        # add blank line between register declarations and gates
+        qasm_str += "\n"
 
-    @classmethod
-    def from_qasm(cls, path: Union[str, Path]) -> Circuit:
-        """Converts an OpenQASM string into a Circuit object."""
-        raise NotImplementedError(
-            "Converting OpenQASM to Circuit object not supported at the moment."
-        )
+        mapping = {}
+        for qb in self.qubits:
+            label, idx = self.find_qubit(qb, qreg_label=reg_labels)
+            if not reg_labels:
+                label = f"q{label}" if len(self.qregisters) != 1 else "q"
+            mapping[qb] = label, idx
+
+        for op in self.circuit:
+            if gate_definitions and hasattr(op, "_qasm_decl"):
+                header_str += "\n" + getattr(op, "_qasm_decl") + "\n"
+            qasm_str += op.to_qasm(mapping) + ";\n"
+
+        return header_str.strip() + "\n\n" + qasm_str.strip()
 
 
 class ParametricCircuit(Circuit):
@@ -447,6 +512,13 @@ class ParametricCircuit(Circuit):
 
         assert isinstance(self._circuit_context, ParametricCircuitContext)
         return self._circuit_context
+
+    def to_qasm(self) -> str:
+        """Converts the Circuit into an OpenQASM string.
+
+        Note, not supported for parametric circuits.
+        """
+        raise CircuitError("Parametric circuits cannot be transpiled into OpenQASM.")
 
 
 class CircuitContext:

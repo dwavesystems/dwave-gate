@@ -149,7 +149,7 @@ class TestCreateOperation:
             ops.RY(p[1], q[0])
             ops.RZ(p[2], q[0])
 
-        RotOp = create_operation(circuit, label="Rot")
+        RotOp = create_operation(circuit, name="Rot")
         params = [0.23, 0.34, 0.45]
         rot_op = RotOp(params)
 
@@ -168,7 +168,7 @@ class TestCreateOperation:
             ops.X(q[0])
             ops.Hadamard(q[0])
 
-        ZOp = create_operation(circuit, label="Z")
+        ZOp = create_operation(circuit, name="Z")
 
         assert np.allclose(ZOp.matrix, ops.Z.matrix)
         assert ZOp.label == "Z"
@@ -198,7 +198,7 @@ class TestCreateOperation:
             ops.X(q[0])  # cover testing non-parametric ops in parametric circuits
             ops.X(q[0])  # negate the previous X-gate to compare with Rotation-gate
 
-        RotOp = create_operation(circuit, label="Rot")
+        RotOp = create_operation(circuit, name="Rot")
         params = [0.2]
         rot_op = RotOp(params)
 

@@ -18,6 +18,7 @@ from typing import (
     TYPE_CHECKING,
     Hashable,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -41,16 +42,16 @@ CustomParametricOperation = TypeVar("CustomParametricOperation", bound="Parametr
 
 
 @overload
-def create_operation(circuit: ParametricCircuit, label: Hashable = None) -> type[CustomParametricOperation]:  # type: ignore
+def create_operation(circuit: ParametricCircuit, name: Optional[str] = None) -> type[CustomParametricOperation]:  # type: ignore
     ...
 
 
 @overload
-def create_operation(circuit: Circuit, label: Hashable = None) -> type[CustomOperation]:  # type: ignore
+def create_operation(circuit: Circuit, name: Optional[str] = None) -> type[CustomOperation]:  # type: ignore
     ...
 
 
-def create_operation(circuit, label: Hashable = None) -> type[CustomOperation]:  # type: ignore
+def create_operation(circuit, name: Optional[str] = None) -> type[CustomOperation]:  # type: ignore
     """Create an operation from a circuit object.
 
     Takes the circuit operations and creates a new custom operation class inheriting either directly
@@ -59,7 +60,8 @@ def create_operation(circuit, label: Hashable = None) -> type[CustomOperation]: 
 
     Args:
         circuit: Circuit object out of which to create an operation.
-        label: Label for the new operation. Usually the class name of the operation.
+        name: Name for the new operation. Usually the class name of the operation. Defaults to
+            ``"CustomOperation"`` if no other name is given.
 
     Returns:
         Type: Class inheriting from the ``Operation`` class.
@@ -77,8 +79,24 @@ def create_operation(circuit, label: Hashable = None) -> type[CustomOperation]: 
             self._matrix = None
             super(CustomOperation, self).__init__(*args, **kwargs)
 
-        def to_qasm(self):
-            pass
+        def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+            """Converts the custom operation into an OpenQASM string.
+
+            Note, the custom operation must be defined by the user before being used,
+            using the lowecase representation of the name as the custom gate name.
+
+            Returns:
+                str: OpenQASM string representation of the customn operation.
+            """
+            if isinstance(name, str):
+                new_name = name.lower()
+            else:
+                new_name = self.__class__.__name__.lower()
+
+            if self.qubits:
+                qubits = ", ".join(self._map_qubits(mapping))
+                return f"{new_name} {qubits}"
+            return new_name
 
         @mixedproperty
         def matrix(cls, self) -> NDArray:
@@ -101,8 +119,8 @@ def create_operation(circuit, label: Hashable = None) -> type[CustomOperation]: 
 
             return build_unitary(circuit_copy)
 
-    if label:
-        CustomOperation.__name__ = label
+    if name:
+        CustomOperation.__name__ = name
 
     # if circuit is parametric then ``self_required`` should be set to true in the mixedproperty
     # decorator; can be done by accessing the property and updating the attribute
@@ -170,6 +188,23 @@ class Operation(metaclass=ABCLockedAttr):
 
         # cast to tuple for convention
         return tuple(qubits)
+
+    def _map_qubits(
+        self, mapping: Optional[Mapping[Hashable, Tuple[str, int]]] = None
+    ) -> Sequence[str]:
+        """Returns an OpenQASM 2.0 string representation of the operations qubits.
+
+        Args:
+            mapping: A mapping between the operations qubits and the qubits in the circuit. Must
+                have qubits as keys and tuples, with the containing quantum register label and the
+                qubits index within that register, as values.
+
+        Returns:
+            list: The OpenQASM 2.0 string representations of the operations qubits.
+        """
+        if mapping and self.qubits:
+            return [f"{mapping[qb][0]}[{mapping[qb][1]}]" for qb in self.qubits]
+        return [f"q[{i}]" for i in range(self.num_qubits)]
 
     def __call__(self, qubits: Optional[Sequence[Qubit]] = None) -> None:
         """Apply (or reapply) the operation within a context.
@@ -239,7 +274,7 @@ class Operation(metaclass=ABCLockedAttr):
         self._qubits = self._check_qubits(qubits)
 
     @abstractmethod
-    def to_qasm(self):
+    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the operation into an OpenQASM string.
 
         Returns:
@@ -453,15 +488,6 @@ class ControlledOperation(Operation):
         """Target operation"""
         return cls._target_operation
 
-    def to_qasm(self):
-        """Converts the Controlled operation into an OpenQASM string.
-
-        Returns:
-            str: OpenQASM string representation of the Controlled X operation.
-        """
-        target_str = self.target_operation().to_qasm().split()[0]
-        return f"c{target_str} q[{self.control}],  q[{self.target}]"
-
 
 class Measurement(Operation):
     """Class representing a measurement.
@@ -470,14 +496,6 @@ class Measurement(Operation):
         qubits: The qubits which should be measured. Only required when applying
             an measurement within a circuit context.
     """
-
-    def to_qasm(self):
-        """Converts the measurement into an OpenQASM string.
-
-        Returns:
-            str: OpenQASM string representation of the measurement.
-        """
-        return "measure"
 
 
 class Barrier(Operation):
@@ -488,11 +506,3 @@ class Barrier(Operation):
             Only required when applying a barrier operation within a circuit
             context.
     """
-
-    def to_qasm(self):
-        """Converts the barrier into an OpenQASM string.
-
-        Returns:
-            str: OpenQASM string representation of the barrier.
-        """
-        return "barrier"

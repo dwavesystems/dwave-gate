@@ -54,6 +54,88 @@ class TestCircuit:
         assert [b.label for b in circuit.bits] == ["0", "1", "2"]
         assert isinstance(circuit.cregisters["creg0"], ClassicalRegister)
 
+    def test_find_qubit(self):
+        """Test finding a qubit in a circuit."""
+        circuit = Circuit()
+        circuit.add_qregister(label="fruits")
+        circuit.add_qregister(label="gemstones")
+
+        kumquat_qubit = Qubit("kumquat")
+        circuit.add_qubit(Qubit("dummy_qubit"), "fruits")
+        circuit.add_qubit(kumquat_qubit, "fruits")
+        emerald_qubit = Qubit("emerald")
+        circuit.add_qubit(emerald_qubit, "gemstones")
+
+        qreg_label, idx = circuit.find_qubit(kumquat_qubit, qreg_label=True)
+        assert qreg_label == "fruits"
+        assert idx == 1  # after 'dummy_qubit'
+
+        qreg_label, idx = circuit.find_qubit(emerald_qubit, qreg_label=True)
+        assert qreg_label == "gemstones"
+        assert idx == 0  # only qubit in register
+
+    def test_find_qubit_no_label(self):
+        """Test finding a qubit in a circuit returning the register index."""
+        circuit = Circuit()
+        circuit.add_qregister()  # first qreg
+        circuit.add_qregister(label="fruits")  # second qreg
+
+        qubit = Qubit("apple")
+        circuit.add_qubit(qubit, "fruits")
+
+        qreg_idx, idx = circuit.find_qubit(qubit, qreg_label=False)
+        assert qreg_idx == 1
+        assert idx == 0
+
+    def test_find_qubit_not_found(self):
+        """Test that the correct exception is raised when qubit is not found."""
+        circuit = Circuit()
+        circuit.add_qregister()
+
+        with pytest.raises(ValueError, match="not found in any register"):
+            circuit.find_qubit(Qubit("apple"), qreg_label=False)
+
+    def test_find_bit_not_found(self):
+        """Test that the correct exception is raised when bit is not found."""
+        circuit = Circuit()
+        circuit.add_cregister()
+
+        with pytest.raises(ValueError, match="not found in any register"):
+            circuit.find_bit(Bit("apple"), creg_label=False)
+
+    def test_find_bit_no_label(self):
+        """Test finding a qubit in a circuit returning the register index."""
+        circuit = Circuit()
+        circuit.add_cregister()  # first qreg
+        circuit.add_cregister(label="fruits")  # second qreg
+
+        bit = Bit("apple")
+        circuit.add_bit(bit, "fruits")
+
+        creg_idx, idx = circuit.find_bit(bit, creg_label=False)
+        assert creg_idx == 1
+        assert idx == 0
+
+    def test_find_bit(self):
+        """Test finding a bit in a circuit."""
+        circuit = Circuit()
+        circuit.add_cregister(label="fruits")
+        circuit.add_cregister(label="gemstones")
+
+        kumquat_bit = Bit("kumquat")
+        circuit.add_bit(Bit("dummy_bit"), "fruits")
+        circuit.add_bit(kumquat_bit, "fruits")
+        emerald_bit = Bit("emerald")
+        circuit.add_bit(emerald_bit, "gemstones")
+
+        creg_label, idx = circuit.find_bit(kumquat_bit, creg_label=True)
+        assert creg_label == "fruits"
+        assert idx == 1  # after 'dummy_bit'
+
+        creg_label, idx = circuit.find_bit(emerald_bit, creg_label=True)
+        assert creg_label == "gemstones"
+        assert idx == 0  # only qubit in register
+
     def test_representation(self):
         """Test represenation of a circuit."""
         circuit = Circuit(2)

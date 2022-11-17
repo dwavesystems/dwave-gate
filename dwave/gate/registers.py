@@ -142,13 +142,17 @@ class QuantumRegister(Register[Qubit]):
     def __init__(self, label: Hashable, data: Optional[Sequence[Qubit]] = None) -> None:
         super().__init__(label, data)
 
-    def to_qasm(self) -> str:
+    def to_qasm(self, qreg_label: bool = False, idx: Optional[int] = None) -> str:
         """Converts the quantum register into an OpenQASM string.
 
         Returns:
             str: OpenQASM string representation of the circuit.
         """
-        return f"qreg {self._label}[{len(self)}]; \n"
+        if qreg_label:
+            return f"qreg {str(self.label)}[{len(self)}]"
+
+        idx_str = str(idx) if idx is not None else ""
+        return f"qreg q{idx_str}[{len(self)}]"
 
     def freeze(self) -> None:
         """Freezes the register so that no (qu)bits can be added or removed."""
@@ -166,13 +170,17 @@ class ClassicalRegister(Register[Bit]):
     def __init__(self, label: Hashable, data: Optional[Sequence[Bit]] = None) -> None:
         super().__init__(label, data)
 
-    def to_qasm(self) -> str:
+    def to_qasm(self, creg_label: bool = False, idx: Optional[int] = None) -> str:
         """Converts the classical register into an OpenQASM string.
 
         Returns:
             str: OpenQASM string representation of the circuit.
         """
-        return f"creg {self._label}[{len(self)}]; \n"
+        if creg_label:
+            return f"creg {str(self.label)}[{len(self)}]"
+
+        idx_str = str(idx) if idx is not None else ""
+        return f"creg c{idx_str}[{len(self)}]"
 
     def freeze(self) -> None:
         """Freezes the register so that no (qu)bits can be added or removed."""

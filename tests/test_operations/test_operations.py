@@ -70,7 +70,7 @@ def z_op() -> Type[Operation]:
         ops.X(q[0])
         ops.Hadamard(q[0])
 
-    return create_operation(circuit, label="CustomZ")
+    return create_operation(circuit, name="CustomZ")
 
 
 def rot_op() -> Type[Operation]:
@@ -87,7 +87,7 @@ def rot_op() -> Type[Operation]:
         ops.RY(p[1], q[0])
         ops.RZ(p[2], q[0])
 
-    return create_operation(circuit, label="CustomRot")
+    return create_operation(circuit, name="CustomRot")
 
 
 @pytest.mark.parametrize("Op", list(get_operations()) + [z_op(), rot_op()])
