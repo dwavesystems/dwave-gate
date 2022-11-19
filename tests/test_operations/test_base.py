@@ -6,12 +6,7 @@ import pytest
 
 import dwave.gate.operations.operations as ops
 from dwave.gate.circuit import Circuit, ParametricCircuit
-from dwave.gate.operations.base import (
-    ABCLockedAttr,
-    Operation,
-    ParametricOperation,
-    create_operation,
-)
+from dwave.gate.operations.base import ABCLockedAttr, Operation, create_operation
 
 
 class TestLockedMetaclass:
@@ -98,6 +93,65 @@ class TestMatrixRepr:
                         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
                         [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
                         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+                    ]
+                ),
+            ),
+            (
+                ops.CCNOT,
+                np.array(
+                    [
+                        [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+                        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+                    ]
+                ),
+            ),
+            (
+                ops.CRX(np.pi / 2),
+                np.array(
+                    [
+                        [1.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, math.sqrt(2) / 2, math.sqrt(2) / 2 * -1j],
+                        [0.0, 0.0, math.sqrt(2) / 2 * -1j, math.sqrt(2) / 2],
+                    ]
+                ),
+            ),
+            (
+                ops.CRY(np.pi / 2),
+                np.array(
+                    [
+                        [1.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, math.sqrt(2) / 2 * 1.0, -math.sqrt(2) / 2],
+                        [0.0, 0.0, math.sqrt(2) / 2 * 1.0, math.sqrt(2) / 2 * 1.0],
+                    ]
+                ),
+            ),
+            (
+                ops.CRZ(np.pi / 2),
+                np.array(
+                    [
+                        [1.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, math.sqrt(2) / 2 * (1 - 1j), 0.0],
+                        [0.0, 0.0, 0.0, math.sqrt(2) / 2 * (1 + 1j)],
+                    ]
+                ),
+            ),
+            (
+                ops.CRotation([np.pi / 2] * 3),
+                np.array(
+                    [
+                        [1.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, math.sqrt(2) / 2 * -1j, math.sqrt(2) / 2 * -1.0],
+                        [0.0, 0.0, math.sqrt(2) / 2 * 1.0, math.sqrt(2) / 2 * 1j],
                     ]
                 ),
             ),

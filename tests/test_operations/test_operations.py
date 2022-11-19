@@ -12,6 +12,7 @@ from dwave.gate.circuit import Circuit, ParametricCircuit
 from dwave.gate.operations.base import (
     ControlledOperation,
     Operation,
+    ParametricControlledOperation,
     ParametricOperation,
     create_operation,
 )
@@ -35,6 +36,7 @@ def get_operations(op_type: Optional[str] = None) -> Generator:
     type_map = {
         "parametric": ParametricOperation,
         "controlled": ControlledOperation,
+        "parametriccontrolled": ParametricControlledOperation,
     }
 
     for opstr in ops.__all__:
@@ -51,7 +53,7 @@ def get_operations(op_type: Optional[str] = None) -> Generator:
                 yield op
 
         elif inspect.isclass(op) and (
-            op_type is None or issubclass(op, type_map.get(op_type, Operation))
+            op_type is None or op.__mro__[1] == type_map.get(op_type, Operation)
         ):
             yield op
 
@@ -196,7 +198,7 @@ class TestParametricOperations:
 
     def test_initialize_operation(self, ParamOp):
         """Test initializing a parametric operation."""
-        params = [f"p{i}" for i in range(ParamOp.num_parameters)]
+        params = list(range(ParamOp.num_parameters))
         qubits = tuple(f"q{i}" for i in range(ParamOp.num_qubits))
         label = ParamOp.label
 
@@ -219,7 +221,7 @@ class TestParametricOperations:
 
     def test_initializing_gate_in_context(self, empty_circuit, ParamOp):
         """Test initializing parametric operation within a context."""
-        params = [f"p{i}" for i in range(ParamOp.num_parameters)]
+        params = list(range(ParamOp.num_parameters))
 
         empty_circuit.add_qregister(ParamOp.num_qubits)
         with empty_circuit.context as q:
@@ -230,7 +232,7 @@ class TestParametricOperations:
     def test_initializing_gate_in_context_without_qubits(self, empty_circuit, ParamOp):
         """Test that the correct error is raised when initializing a parametric operation inside a
         context without declaring qubits."""
-        params = [f"p{i}" for i in range(ParamOp.num_parameters)]
+        params = list(range(ParamOp.num_parameters))
 
         empty_circuit.add_qregister(ParamOp.num_qubits)
         with pytest.raises(TypeError, match="Qubits required when applying gate within context."):
@@ -240,7 +242,7 @@ class TestParametricOperations:
     def test_initializing_gate_with_invalid_qubits(self, empty_circuit, ParamOp):
         """Test that the correct error is raised when initializing a parametric operation inside a
         context on non-existing qubits."""
-        params = [f"p{i}" for i in range(ParamOp.num_parameters)]
+        params = list(range(ParamOp.num_parameters))
 
         empty_circuit.add_qregister(ParamOp.num_qubits + 9)
         with pytest.raises(
@@ -251,7 +253,7 @@ class TestParametricOperations:
 
     def test_applying_operation_instance(self, empty_circuit, ParamOp):
         """Test applying an instance of a parametric operation within a context."""
-        params = [f"p{i}" for i in range(ParamOp.num_parameters)]
+        params = list(range(ParamOp.num_parameters))
 
         empty_circuit.add_qregister(ParamOp.num_qubits)
 
@@ -264,7 +266,7 @@ class TestParametricOperations:
     def test_applying_operation_instance_deferred(self, empty_circuit, ParamOp):
         """Test applying an instance of a parametric operation within a context, but deferring qubit
         declaration till application."""
-        params = [f"p{i}" for i in range(ParamOp.num_parameters)]
+        params = list(range(ParamOp.num_parameters))
 
         empty_circuit.add_qregister(ParamOp.num_qubits)
 
@@ -276,7 +278,7 @@ class TestParametricOperations:
 
     def test_set_qubits(self, ParamOp):
         """Test changing the qubits of a parametric operation instance."""
-        params = [f"p{i}" for i in range(ParamOp.num_parameters)]
+        params = list(range(ParamOp.num_parameters))
         qubits = tuple(f"custom_qubit{i}" for i in range(ParamOp.num_qubits))
 
         op = ParamOp(params)
@@ -287,7 +289,7 @@ class TestParametricOperations:
 
     def test_warning_set_qubits(self, ParamOp):
         """Test that the correct warning is raised when changing already set qubits."""
-        params = [f"p{i}" for i in range(ParamOp.num_parameters)]
+        params = list(range(ParamOp.num_parameters))
         qubits_0 = tuple(f"q{i}" for i in range(ParamOp.num_qubits))
         qubits_1 = tuple(f"custom_qubit{i}" for i in range(ParamOp.num_qubits))
 
@@ -298,7 +300,7 @@ class TestParametricOperations:
 
     def test_set_invalid_qubits(self, ParamOp):
         """Test that the correct error is raised when setting an invalid number of qubits."""
-        params = [f"p{i}" for i in range(ParamOp.num_parameters)]
+        params = list(range(ParamOp.num_parameters))
         # create too many qubits, num_qubits + 6
         qubits = tuple(f"custom_qubit{i}" for i in range(ParamOp.num_qubits + 6))
 
@@ -323,6 +325,20 @@ class TestControlledOperations:
         label = ControlledOp.label
 
         op = ControlledOp(control, target)
+
+        assert op.control == control
+        assert op.target == target
+        assert op.label == label
+
+    def test_initialize_operation_qubits_as_kwargs(self, ControlledOp):
+        """Test initializing a controlled operation passing qubits as kwargs."""
+        control = tuple(f"c{i}" for i in range(ControlledOp.num_control))
+        target = tuple(f"t{i}" for i in range(ControlledOp.num_control))
+        qubits = control + target
+
+        label = ControlledOp.label
+
+        op = ControlledOp(qubits=qubits)
 
         assert op.control == control
         assert op.target == target
@@ -381,6 +397,98 @@ class TestControlledOperations:
             op(control, target)
 
         assert empty_circuit.circuit == [ControlledOp(control, target)]
+
+
+@pytest.mark.parametrize("ParametricControlledOp", list(get_operations("parametriccontrolled")))
+class TestParametricControlledOperations:
+    """Unit tests for all parametric controlled operations."""
+
+    def test_initialize_operation(self, ParametricControlledOp):
+        """Test initializing a parametric controlled operation."""
+        params = [f"p{i}" for i in range(ParametricControlledOp.num_parameters)]
+        control = tuple(f"c{i}" for i in range(ParametricControlledOp.num_control))
+        target = tuple(f"t{i}" for i in range(ParametricControlledOp.num_control))
+        label = ParametricControlledOp.label
+
+        op = ParametricControlledOp(params, control, target)
+
+        assert op.control == control
+        assert op.target == target
+        assert op.label == f"{label}({op.parameters})"
+
+    def test_initializing_gate_in_context(self, empty_circuit, ParametricControlledOp):
+        """Test initializing a parametric controlled operation within a context."""
+        params = [f"p{i}" for i in range(ParametricControlledOp.num_parameters)]
+
+        empty_circuit.add_qregister(ParametricControlledOp.num_qubits)
+        with empty_circuit.context as q:
+            op = ParametricControlledOp(
+                params,
+                q[: ParametricControlledOp.num_control],
+                q[ParametricControlledOp.num_control :],
+            )
+
+        assert empty_circuit.circuit == [op]
+
+    def test_initializing_gate_in_context_without_qubits(
+        self, empty_circuit, ParametricControlledOp
+    ):
+        """Test that the correct error is raised when initializing a parametric controlled operation inside a
+        context without declaring qubits."""
+        params = [f"p{i}" for i in range(ParametricControlledOp.num_parameters)]
+
+        empty_circuit.add_qregister(ParametricControlledOp.num_qubits)
+        with pytest.raises(TypeError, match="Qubits required when applying gate within context."):
+            with empty_circuit.context:
+                ParametricControlledOp(params)
+
+    def test_initializing_gate_with_invalid_qubits(self, empty_circuit, ParametricControlledOp):
+        """Test that the correct error is raised when initializing a parametric controlled operation inside a
+        context on non-existing qubits."""
+        params = [f"p{i}" for i in range(ParametricControlledOp.num_parameters)]
+
+        empty_circuit.add_qregister(ParametricControlledOp.num_qubits + 9)
+        with pytest.raises(
+            ValueError,
+            match=f"requires {ParametricControlledOp.num_qubits} qubits, got {ParametricControlledOp.num_qubits + 9}.",
+        ):
+            with empty_circuit.context as q:
+                ParametricControlledOp(
+                    params,
+                    q[: ParametricControlledOp.num_control],
+                    q[ParametricControlledOp.num_control :],
+                )
+
+    def test_applying_operation_instance(self, empty_circuit, ParametricControlledOp):
+        """Test applying an instance of a parametric controlled operation within a context."""
+        params = [f"p{i}" for i in range(ParametricControlledOp.num_parameters)]
+
+        empty_circuit.add_qregister(ParametricControlledOp.num_qubits)
+
+        control = empty_circuit.qubits[: ParametricControlledOp.num_control]
+        target = empty_circuit.qubits[ParametricControlledOp.num_control :]
+
+        op = ParametricControlledOp(params, control, target)
+        with empty_circuit.context:
+            op()
+
+        assert empty_circuit.circuit == [op]
+
+    def test_applying_operation_instance_deferred(self, empty_circuit, ParametricControlledOp):
+        """Test applying an instance of a controlled operation within a context, but deferring qubit
+        declaration till application."""
+        params = [f"p{i}" for i in range(ParametricControlledOp.num_parameters)]
+
+        empty_circuit.add_qregister(ParametricControlledOp.num_qubits)
+
+        control = empty_circuit.qubits[: ParametricControlledOp.num_control]
+        target = empty_circuit.qubits[ParametricControlledOp.num_control :]
+
+        op = ParametricControlledOp(params)
+        with empty_circuit.context:
+            op(control, target)
+
+        assert empty_circuit.circuit == [ParametricControlledOp(params, control, target)]
 
 
 @pytest.mark.parametrize("Op", list(get_operations("other")) + [z_op()])

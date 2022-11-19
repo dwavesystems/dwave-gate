@@ -22,6 +22,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Type,
     TypeVar,
     Union,
     overload,
@@ -42,16 +43,16 @@ CustomParametricOperation = TypeVar("CustomParametricOperation", bound="Parametr
 
 
 @overload
-def create_operation(circuit: ParametricCircuit, name: Optional[str] = None) -> type[CustomParametricOperation]:  # type: ignore
+def create_operation(circuit: ParametricCircuit, name: Optional[str] = None) -> Type[CustomParametricOperation]:  # type: ignore
     ...
 
 
 @overload
-def create_operation(circuit: Circuit, name: Optional[str] = None) -> type[CustomOperation]:  # type: ignore
+def create_operation(circuit: Circuit, name: Optional[str] = None) -> Type[CustomOperation]:  # type: ignore
     ...
 
 
-def create_operation(circuit, name: Optional[str] = None) -> type[CustomOperation]:  # type: ignore
+def create_operation(circuit, name: Optional[str] = None) -> Type[CustomOperation]:  # type: ignore
     """Create an operation from a circuit object.
 
     Takes the circuit operations and creates a new custom operation class inheriting either directly
@@ -64,7 +65,7 @@ def create_operation(circuit, name: Optional[str] = None) -> type[CustomOperatio
             ``"CustomOperation"`` if no other name is given.
 
     Returns:
-        Type: Class inheriting from the ``Operation`` class.
+        type: Class inheriting from the ``Operation`` class.
     """
     if circuit.parametric:
         superclass = ParametricOperation
@@ -302,11 +303,11 @@ class ParametricOperation(Operation):
 
     def __init__(
         self,
-        parameters: Sequence[complex],
+        parameters: Union[complex, Sequence[complex]],
         qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
     ):
         self._parameters = self._check_parameters(parameters)
-        super(ParametricOperation, self).__init__(qubits)
+        super(ParametricOperation, self).__init__(qubits=qubits)
 
     def __eq__(self, op: ParametricOperation) -> bool:
         """Returns whether two operations are considered equal."""
@@ -331,7 +332,7 @@ class ParametricOperation(Operation):
         """Abstract mixedproperty asserting the existence of a ``_num_qubits`` attribute."""
 
     @classmethod
-    def _check_parameters(cls, params: Sequence[complex]) -> List[complex]:
+    def _check_parameters(cls, params: Union[complex, Sequence[complex]]) -> List[complex]:
         """Asserts the size and type of the parameter(s) and returns the
         correct type.
 
@@ -370,31 +371,41 @@ class ControlledOperation(Operation):
     Args:
         control: Qubit(s) on which the target operation is controlled.
         target: Qubit(s) on which the target operation is applied.
+
+    Keyword args:
+        qubits: All qubits on which the operation is applied. If ``qubits`` is passed, it takes
+            precedence over ``control`` and ``target``, and replaces those two attributes using
+            the operations ``_num_control`` and ``_num_target`` class attributes.
     """
 
     def __init__(
         self,
         control: Optional[Union[Qubit, Sequence[Qubit]]] = None,
         target: Optional[Union[Qubit, Sequence[Qubit]]] = None,
+        **kwargs,
     ) -> None:
-
-        if control:
-            self._control = tuple([control] if isinstance(control, Qubit) else control)
+        qubits = kwargs.pop("qubits") if "qubits" in kwargs else False
+        if qubits:
+            self._control = qubits[: self._num_control]
+            self._target = qubits[self._num_control :]
         else:
-            self._control = None
+            if control:
+                self._control = tuple([control] if isinstance(control, Qubit) else control)
+            else:
+                self._control = None
 
-        if target:
-            self._target = tuple([target] if isinstance(target, Qubit) else target)
-        else:
-            self._target = None
+            if target:
+                self._target = tuple([target] if isinstance(target, Qubit) else target)
+            else:
+                self._target = None
 
-        # all qubits are stored in the 'qubits' attribute
-        if self.control and self.target:
-            qubits = tuple(chain.from_iterable((self.control, self.target)))
-        else:
-            qubits = None
+            # all qubits are stored in the 'qubits' attribute
+            if self.control and self.target:
+                qubits = tuple(chain.from_iterable((self.control, self.target)))
+            else:
+                qubits = None
 
-        super(ControlledOperation, self).__init__(qubits)
+        super().__init__(qubits=qubits, **kwargs)
 
     def __call__(
         self,
@@ -404,7 +415,7 @@ class ControlledOperation(Operation):
         """Apply (or reapply) the operation within a context.
 
         Args:
-            control: Cpntrol qubits. Only required if not already declared in operation.
+            control: Control qubits. Only required if not already declared in operation.
             target: Target qubits on which the operation should be applied. Only
                 required if not already declared in operation.
         """
@@ -414,15 +425,15 @@ class ControlledOperation(Operation):
         self.__class__(control, target)  # type: ignore
 
     @abstractproperty
-    def _num_control(cls):
+    def _num_control(cls) -> int:  # type: ignore
         """Abstract mixedproperty asserting the existence of a ``_num_control`` attribute."""
 
     @abstractproperty
-    def _num_target(cls):
+    def _num_target(cls) -> int:  # type: ignore
         """Abstract mixedproperty asserting the existence of a ``_num_target`` attribute."""
 
     @abstractproperty
-    def _target_operation(cls):
+    def _target_operation(cls) -> Type[Operation]:  # type: ignore
         """Abstract mixedproperty asserting the existence of a ``_target_operation`` attribute."""
 
     @mixedproperty
@@ -441,7 +452,11 @@ class ControlledOperation(Operation):
     @mixedproperty
     def matrix(cls, self) -> NDArray:
         """The matrix representation of the controlled operation."""
-        target_unitary = cls.target_operation.matrix
+        if hasattr(self, "_target_matrix"):
+            target_unitary = self._target_matrix
+        else:
+            target_unitary = cls.target_operation.matrix
+
         num_qubits = getattr(cls, "num_qubits", 2)
         num_control = getattr(cls, "num_control", 1)
 
@@ -484,9 +499,60 @@ class ControlledOperation(Operation):
         return cls._num_target
 
     @mixedproperty
-    def target_operation(cls):
+    def target_operation(cls) -> Type[Operation]:
         """Target operation"""
         return cls._target_operation
+
+
+class ParametricControlledOperation(ControlledOperation, ParametricOperation):
+    """Generic parametric controlled operation.
+
+    Args:
+        parameters: Parameters for the operation. Required when constructing the
+            matrix representation of the operation.
+        control: Qubit(s) on which the target operation is controlled.
+        target: Qubit(s) on which the target operation is applied.
+
+    Keyword args:
+        qubits: All qubits on which the operation is applied. If ``qubits`` is passed, it takes
+            precedence over ``control`` and ``target``, and replaces those two attributes using
+            the operations ``_num_control`` and ``_num_target`` class attributes.
+    """
+
+    def __init__(
+        self,
+        parameters: Union[complex, Sequence[complex]],
+        control: Optional[Union[Qubit, Sequence[Qubit]]] = None,
+        target: Optional[Union[Qubit, Sequence[Qubit]]] = None,
+        **kwargs,
+    ):
+        # ControlledOperation.__init__(self, control, target, **kwargs)
+        super().__init__(control, target, parameters=parameters, **kwargs)
+        self._parameters = self._check_parameters(parameters)
+
+    def __call__(
+        self, control: Optional[Sequence[Qubit]] = None, target: Optional[Sequence[Qubit]] = None
+    ):
+        """Apply (or reapply) the operation within a context.
+
+        Args:
+            control: Control qubits. Only required if not already declared in operation.
+            target: Target qubits on which the operation should be applied. Only
+                required if not already declared in operation.
+        """
+        control = control or self.control
+        target = target or self.target
+
+        self.__class__(self.parameters, control, target)  # type: ignore
+
+    @mixedproperty(self_required=True)
+    def matrix(cls, self) -> NDArray:
+        """The matrix representation of the parametric controlled operation."""
+        self._target_matrix = cls.target_operation(self.parameters).matrix
+
+        # signature of super required for correct self to be passed along (do not remove)
+        # if removed, 'matrix' attribute will crash due to '_target_matrix' not found
+        return super(ParametricControlledOperation, self).matrix
 
 
 class Measurement(Operation):

@@ -2,31 +2,54 @@
 from __future__ import annotations
 
 __all__ = [
+    # "Unitary",
+    # single-qubit gates
     "Identity",
     "X",
     "Y",
     "Z",
     "Hadamard",
+    "Phase",
+    "S",
+    "P",
+    "T",
+    # parametric gates
     "RX",
     "RY",
     "RZ",
     "Rotation",
     "CX",
-    "CNOT",
+    # controlled gates
+    "CNOT",  # alias
+    "CY",
     "CZ",
     "SWAP",
+    "CHadamard",
+    "CRX",
+    "CRY",
+    "CRZ",
+    "CRotation",
     "CSWAP",
+    "Fredkin",  # alias
+    "CCNOT",
+    "CCX",  # alias
+    "Toffoli",  # alias
 ]
 
 import cmath
 import math
-from typing import Mapping, Optional, Sequence, Union
+from typing import Mapping, Optional, Sequence, Type, Union
 
 import numpy as np
 from numpy.typing import NDArray
 
 from dwave.gate.mixedproperty import mixedproperty
-from dwave.gate.operations.base import ControlledOperation, Operation, ParametricOperation
+from dwave.gate.operations.base import (
+    ControlledOperation,
+    Operation,
+    ParametricControlledOperation,
+    ParametricOperation,
+)
 from dwave.gate.primitives import Qubit
 
 #####################################
@@ -205,6 +228,78 @@ class Hadamard(Operation):
         return matrix
 
 
+class S(Operation):
+    """S (Phase) operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_qubits: int = 1
+
+    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
+        super().__init__(qubits)
+
+    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+        """Converts the S operation into an OpenQASM string.
+
+        Args:
+            mapping: Optional mapping between qubits and their indices in the circuit.
+
+        Returns:
+            str: OpenQASM string representation of the S operation.
+        """
+        if self.qubits:
+            qubits = self._map_qubits(mapping)
+            return f"s {qubits[0]}"
+        return "s"
+
+    @mixedproperty
+    def matrix(cls) -> NDArray[np.complex128]:
+        """The matrix representation of the S operator."""
+        matrix = np.array([[1.0, 0.0], [0.0, 1j]], dtype=np.complex128)
+        return matrix
+
+
+Phase = P = S
+"""Phase operation (aliases for the S operation)"""
+
+
+class T(Operation):
+    """T operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_qubits: int = 1
+
+    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
+        super().__init__(qubits)
+
+    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+        """Converts the T operation into an OpenQASM string.
+
+        Args:
+            mapping: Optional mapping between qubits and their indices in the circuit.
+
+        Returns:
+            str: OpenQASM string representation of the T operation.
+        """
+        if self.qubits:
+            qubits = self._map_qubits(mapping)
+            return f"t {qubits[0]}"
+        return "t"
+
+    @mixedproperty
+    def matrix(cls) -> NDArray[np.complex128]:
+        """The matrix representation of the T operator."""
+        matrix = np.array([[1.0, 0.0], [0.0, np.exp(1j * math.pi / 4)]], dtype=np.complex128)
+        return matrix
+
+
 #################################
 # Parametric single-qubit gates #
 #################################
@@ -222,13 +317,6 @@ class RX(ParametricOperation):
 
     _num_qubits: int = 1
     _num_params: int = 1
-
-    def __init__(
-        self,
-        theta: Union[float, Sequence[float]],
-        qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
-    ):
-        super(RX, self).__init__([theta] if isinstance(theta, float) else theta, qubits)
 
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the Rotation-X operation into an OpenQASM string.
@@ -269,13 +357,6 @@ class RY(ParametricOperation):
     _num_qubits: int = 1
     _num_params: int = 1
 
-    def __init__(
-        self,
-        theta: Union[float, Sequence[float]],
-        qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
-    ):
-        super(RY, self).__init__([theta] if isinstance(theta, float) else theta, qubits)
-
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the Rotation-Y operation into an OpenQASM string.
 
@@ -314,13 +395,6 @@ class RZ(ParametricOperation):
 
     _num_qubits: int = 1
     _num_params: int = 1
-
-    def __init__(
-        self,
-        theta: Union[float, Sequence[float]],
-        qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
-    ):
-        super(RZ, self).__init__([theta] if isinstance(theta, float) else theta, qubits)
 
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the Rotation-Z operation into an OpenQASM string.
@@ -364,13 +438,6 @@ class Rotation(ParametricOperation):
     _qasm_decl: str = (
         "gate rot(beta, gamma, delta) { rz(beta) q[0]; ry(gamma) q[0]; rz(delta) q[0]; }"
     )
-
-    def __init__(
-        self,
-        parameters: Sequence[float],
-        qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
-    ) -> None:
-        super(Rotation, self).__init__(parameters, qubits)
 
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the Rotation operation into an OpenQASM string.
@@ -426,10 +493,10 @@ class CX(ControlledOperation):
 
     _num_control: int = 1
     _num_target: int = 1
-    _target_operation: type[Operation] = X
+    _target_operation: Type[Operation] = X
 
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
-        """Converts the Controlled X operation into an OpenQASM string.
+        """Converts the CX operation into an OpenQASM string.
 
         Args:
             mapping: Optional mapping between qubits and their indices in the circuit.
@@ -447,6 +514,33 @@ CNOT = CX
 """Controlled-NOT operation (alias for the CX operation)"""
 
 
+class CY(ControlledOperation):
+    """Controlled-Y operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_control: int = 1
+    _num_target: int = 1
+    _target_operation: Type[Operation] = Y
+
+    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+        """Converts the Controlled-Y operation into an OpenQASM string.
+
+        Args:
+            mapping: Optional mapping between qubits and their indices in the circuit.
+
+        Returns:
+            str: OpenQASM string representation of the Controlled-Y operation.
+        """
+        if self.qubits:
+            qubits = self._map_qubits(mapping)
+            return f"cy {qubits[0]}, {qubits[1]}"
+        return "cy"
+
+
 class CZ(ControlledOperation):
     """Controlled-Z operation.
 
@@ -457,7 +551,7 @@ class CZ(ControlledOperation):
 
     _num_control: int = 1
     _num_target: int = 1
-    _target_operation: type[Operation] = Z
+    _target_operation: Type[Operation] = Z
 
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the Controlled-Z operation into an OpenQASM string.
@@ -472,6 +566,159 @@ class CZ(ControlledOperation):
             qubits = self._map_qubits(mapping)
             return f"cz {qubits[0]}, {qubits[1]}"
         return "cz"
+
+
+class CHadamard(ControlledOperation):
+    """Controlled-Hadamard operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_control: int = 1
+    _num_target: int = 1
+    _target_operation: Type[Operation] = Hadamard
+
+    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+        """Converts the Controlled-Hadamard operation into an OpenQASM string.
+
+        Args:
+            mapping: Optional mapping between qubits and their indices in the circuit.
+
+        Returns:
+            str: OpenQASM string representation of the Controlled-Hadamard operation.
+        """
+        if self.qubits:
+            qubits = self._map_qubits(mapping)
+            return f"ch {qubits[0]}, {qubits[1]}"
+        return "ch"
+
+
+class CRX(ParametricControlledOperation):
+    """Controlled-RX operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_control: int = 1
+    _num_target: int = 1
+    _num_params: int = 1
+
+    _target_operation: Type[Operation] = RX
+
+    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+        """Converts the Controlled-RX operation into an OpenQASM string.
+
+        Args:
+            mapping: Optional mapping between qubits and their indices in the circuit.
+
+        Returns:
+            str: OpenQASM string representation of the Controlled-RX operation.
+        """
+        theta = self.parameters[0]
+
+        if self.qubits:
+            qubits = self._map_qubits(mapping)
+            return f"crx({theta}) {qubits[0]}, {qubits[1]}"
+        return f"crx({theta})"
+
+
+class CRY(ParametricControlledOperation):
+    """Controlled-RY operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_control: int = 1
+    _num_target: int = 1
+    _num_params: int = 1
+
+    _target_operation: Type[Operation] = RY
+
+    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+        """Converts the Controlled-RY operation into an OpenQASM string.
+
+        Args:
+            mapping: Optional mapping between qubits and their indices in the circuit.
+
+        Returns:
+            str: OpenQASM string representation of the Controlled-RY operation.
+        """
+        theta = self.parameters[0]
+
+        if self.qubits:
+            qubits = self._map_qubits(mapping)
+            return f"cry({theta}) {qubits[0]}, {qubits[1]}"
+        return f"cry({theta})"
+
+
+class CRZ(ParametricControlledOperation):
+    """Controlled-RZ operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_control: int = 1
+    _num_target: int = 1
+    _num_params: int = 1
+
+    _target_operation: Type[Operation] = RZ
+
+    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+        """Converts the Controlled-RZ operation into an OpenQASM string.
+
+        Args:
+            mapping: Optional mapping between qubits and their indices in the circuit.
+
+        Returns:
+            str: OpenQASM string representation of the Controlled-RZ operation.
+        """
+        theta = self.parameters[0]
+
+        if self.qubits:
+            qubits = self._map_qubits(mapping)
+            return f"crz({theta}) {qubits[0]}, {qubits[1]}"
+        return f"crz({theta})"
+
+
+class CRotation(ParametricControlledOperation):
+    """Controlled-Rotation operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_control: int = 1
+    _num_target: int = 1
+    _num_params: int = 3
+
+    _target_operation: Type[Operation] = Rotation
+
+    _qasm_decl: str = "// gate definition not implemented"
+
+    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+        """Converts the Controlled-Rotation operation into an OpenQASM string.
+
+        Args:
+            mapping: Optional mapping between qubits and their indices in the circuit.
+
+        Returns:
+            str: OpenQASM string representation of the Controlled-Rotation operation.
+        """
+        beta, gamma, delta = self.parameters
+
+        if self.qubits:
+            qubits = self._map_qubits(mapping)
+            return f"crot({beta}, {gamma}, {delta}) {qubits[0]}, {qubits[1]}"
+        return f"crot({beta}, {gamma}, {delta})"
 
 
 class SWAP(Operation):
@@ -526,7 +773,7 @@ class SWAP(Operation):
 
 
 class CSWAP(Operation):
-    """CSWAP operation.
+    """CSWAP (controlled SWAP) operation.
 
     Args:
         qubits: Qubits on which the operation should be applied. Only
@@ -580,6 +827,53 @@ class CSWAP(Operation):
         return matrix
 
 
-###################################
-# Parametric multiple-qubit gates #
-###################################
+Fredkin = CSWAP
+"""Fredkin operation (alias for the CSWAP operation)"""
+
+
+class CCX(Operation):
+    """CCX (Toffoli) operation.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_qubits: int = 3
+
+    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+        """Converts the CCX operation into an OpenQASM string.
+
+        Args:
+            mapping: Optional mapping between qubits and their indices in the circuit.
+
+        Returns:
+            str: OpenQASM string representation of the CCX operation.
+        """
+        if self.qubits:
+            qubits = self._map_qubits(mapping)
+            return f"ccx {qubits[0]}, {qubits[1]}, {qubits[2]}"
+        return "ccx"
+
+    @mixedproperty
+    def matrix(cls) -> NDArray[np.complex128]:
+        """The matrix representation of the CCX operation."""
+        # TODO: add support for larger matrix states
+        matrix = np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+            ],
+            dtype=np.complex128,
+        )
+        return matrix
+
+
+Toffoli = CCNOT = CCX
+"""Toffoli operation (alias for the CCNOT operation)"""
