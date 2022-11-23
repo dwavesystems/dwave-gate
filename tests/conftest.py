@@ -49,6 +49,13 @@ def empty_circuit():
 
 
 @pytest.fixture(scope="function")
+def empty_parametric_circuit():
+    """Empty parametric circuit with no qubits, bits or operations."""
+    circuit = ParametricCircuit()
+    return circuit
+
+
+@pytest.fixture(scope="function")
 def two_qubit_op(monkeypatch):
     """Empty two-qubit operation."""
 

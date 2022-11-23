@@ -16,6 +16,7 @@ from dwave.gate.operations.base import (
     ParametricOperation,
     create_operation,
 )
+from dwave.gate.primitives import Variable
 from dwave.gate.tools.unitary import build_unitary
 
 
@@ -133,7 +134,7 @@ class TestOperations:
             expected = Op.matrix
 
         # create the circuit and build the unitary
-        empty_circuit.append(op_instances)
+        empty_circuit.extend(op_instances)
         unitary = build_unitary(empty_circuit)
 
         # compare built unitary with operation matrix representation
@@ -312,6 +313,62 @@ class TestParametricOperations:
             match=f"Operation '{ParamOp.label}' requires {op.num_qubits} qubits, got {op.num_qubits + 6}.",
         ):
             op.qubits = qubits
+
+    def test_eval(self, ParamOp):
+        """Test evaluate operation with parameters."""
+        vars = [Variable(str(i)) for i in range(ParamOp.num_parameters)]
+        op = ParamOp(vars)
+        for p in op.parameters:
+            assert isinstance(p, Variable)
+
+        params = [complex(i) for i in range(ParamOp.num_parameters)]
+        new_op = op.eval(params, in_place=False)
+        for i, p in enumerate(new_op.parameters):
+            assert isinstance(p, complex)
+            assert p == params[i]
+
+        # make sure that old op isn't changed
+        for p in op.parameters:
+            assert isinstance(p, Variable)
+
+    def test_eval_in_place(self, ParamOp):
+        """Test evaluate operation in place with parameters."""
+        vars = [Variable(str(i)) for i in range(ParamOp.num_parameters)]
+        op = ParamOp(vars)
+        for p in op.parameters:
+            assert isinstance(p, Variable)
+
+        params = [complex(i) for i in range(ParamOp.num_parameters)]
+        op.eval(params, in_place=True)
+        for i, p in enumerate(op.parameters):
+            assert isinstance(p, complex)
+            assert p == params[i]
+
+    def test_eval_no_param(self, ParamOp):
+        """Test that the correct exception is raised when evaluating operation without parameters."""
+        vars = [Variable(str(i)) for i in range(ParamOp.num_parameters)]
+        op = ParamOp(vars)
+        for p in op.parameters:
+            assert isinstance(p, Variable)
+
+        with pytest.raises(ValueError, match="No available parameter"):
+            op.eval()
+
+    def test_eval_var_set(self, ParamOp):
+        """Test evaluate operation by setting variable value."""
+        vars = [Variable(str(i)) for i in range(ParamOp.num_parameters)]
+        for var in vars:
+            var.set(1 + 2j)
+
+        op = ParamOp(vars)
+        for p in op.parameters:
+            assert isinstance(p, Variable)
+
+        op.eval()
+
+        for p in op.parameters:
+            assert isinstance(p, Variable)
+            assert p == 1 + 2j
 
 
 @pytest.mark.parametrize("ControlledOp", list(get_operations("controlled")))

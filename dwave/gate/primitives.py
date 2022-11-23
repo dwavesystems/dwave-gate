@@ -6,7 +6,7 @@ __all__ = [
     "Variable",
 ]
 
-from typing import Hashable
+from typing import Hashable, Optional
 
 from dwave.gate.tools.counters import IDCounter
 
@@ -97,21 +97,44 @@ class Variable:
     def __init__(self, name: str) -> None:
         self._name = str(name)
 
+        self._value: Optional[complex] = None
+
     @property
     def name(self) -> str:
         """The variable name."""
         return self._name
 
+    @property
+    def value(self) -> Optional[complex]:
+        """The variable value, if set."""
+        return self._value
+
     def __eq__(self, object: object) -> bool:
         """Two variables are equal if they share the same label."""
         if isinstance(object, Variable):
             return self.name == object.name
+        if self._value and self._value == object:
+            return True
         return False
 
     def __repr__(self) -> str:
         """The representation of the variable is its label."""
+        if self._value:
+            return f"{{{self.value}}}"
         return f"{{{self.name}}}"
 
     def __hash__(self) -> int:
         """The hash of the variable is determined by its label."""
         return hash(self.name)
+
+    def set(self, value: complex):
+        """Set a value for the variable.
+
+        Args:
+            value: Value that the variable should have.
+        """
+        self._value = value
+
+    def reset(self):
+        """Reset the variable value to ``None``."""
+        self._value = None

@@ -4,7 +4,7 @@ import pytest
 import dwave.gate.operations as ops
 from dwave.gate import CircuitContext
 from dwave.gate.circuit import Circuit, CircuitError, ParametricCircuit, ParametricCircuitContext
-from dwave.gate.primitives import Bit, Qubit
+from dwave.gate.primitives import Bit, Qubit, Variable
 from dwave.gate.registers import ClassicalRegister, QuantumRegister
 
 
@@ -150,7 +150,7 @@ class TestCircuit:
             ops.CX(circuit.qubits[0], circuit.qubits[1]),
         ]
 
-        circuit.append(operations)
+        circuit.extend(operations)
 
         assert circuit.circuit == operations
 
@@ -380,7 +380,7 @@ class TestCircuit:
             ops.RX(0.42, circuit_1.qubits[0]),
             ops.CX(circuit_1.qubits[0], circuit_1.qubits[1]),
         ]
-        circuit_1.append(operations)
+        circuit_1.extend(operations)
 
         circuit_2 = Circuit(3)
         with circuit_2.context as q:
@@ -393,17 +393,6 @@ class TestCircuit:
             ops.CX(circuit_2.qubits[0], circuit_2.qubits[2]),
         ]
 
-    def test_call_no_args(self):
-        """Test that the correct exception is raised when calling the circuit within a context
-        without any arguments."""
-        circuit_1 = Circuit(2)
-        circuit_1.append(ops.X(circuit_1.qubits[0]))
-
-        circuit_2 = Circuit(3)
-        with pytest.raises(ValueError, match="Circuit requires 2 qubits, got 0."):
-            with circuit_2.context:
-                circuit_1()
-
     def test_call_with_kwarg(self):
         """Test calling the circuit within a context to apply it to the active context
         when passing the qubits as a keyword argument."""
@@ -414,7 +403,7 @@ class TestCircuit:
             ops.RX(0.42, circuit_1.qubits[0]),
             ops.CX(circuit_1.qubits[0], circuit_1.qubits[1]),
         ]
-        circuit_1.append(operations)
+        circuit_1.extend(operations)
 
         circuit_2 = Circuit(3)
         with circuit_2.context as q:
@@ -427,46 +416,12 @@ class TestCircuit:
             ops.CX(circuit_2.qubits[0], circuit_2.qubits[2]),
         ]
 
-    def test_call_with_invalid_kwarg(self):
-        """Test calling the circuit with an invalid kwarg."""
-        circuit_1 = Circuit(2)
-        operations = [
-            ops.X(circuit_1.qubits[0]),
-            ops.Y(circuit_1.qubits[1]),
-            ops.RX(0.42, circuit_1.qubits[0]),
-            ops.CX(circuit_1.qubits[0], circuit_1.qubits[1]),
-        ]
-        circuit_1.append(operations)
-
-        circuit_2 = Circuit(3)
-
-        with pytest.raises(TypeError, match="got unexpected keyword"):
-            with circuit_2.context as q:
-                circuit_1(peabits=(q[0], q[2]))
-
-    def test_call_with_too_many_args(self):
-        """Test calling the circuit with too many arguments."""
-        circuit_1 = Circuit(2)
-        operations = [
-            ops.X(circuit_1.qubits[0]),
-            ops.Y(circuit_1.qubits[1]),
-            ops.RX(0.42, circuit_1.qubits[0]),
-            ops.CX(circuit_1.qubits[0], circuit_1.qubits[1]),
-        ]
-        circuit_1.append(operations)
-
-        circuit_2 = Circuit(3)
-
-        with pytest.raises(TypeError, match="takes from 1 to 2 arguments"):
-            with circuit_2.context as q:
-                circuit_1(31, q[0], q[2])
-
     def test_call_single_qubit(self):
         """Test calling the circuit within a context to apply it to the active context
         when passing the qubits as a keyword argument."""
         circuit_1 = Circuit(1)
         operations = [ops.X(circuit_1.qubits[0]), ops.RY(0.42, circuit_1.qubits[0])]
-        circuit_1.append(operations)
+        circuit_1.extend(operations)
 
         circuit_2 = Circuit(2)
         with circuit_2.context as q:
@@ -478,7 +433,7 @@ class TestCircuit:
         """Test that the correct exception is raised when calling a circuit with an incorrect number of qubits."""
         circuit_1 = Circuit(2)
         operations = [ops.X(circuit_1.qubits[0]), ops.RY(0.42, circuit_1.qubits[1])]
-        circuit_1.append(operations)
+        circuit_1.extend(operations)
 
         circuit_2 = Circuit(2)
         with pytest.raises(ValueError, match="requires 2 qubits, got 1"):
@@ -489,7 +444,7 @@ class TestCircuit:
         """Test that the correct exception is raised when calling a circuit inside it's own context."""
         circuit_1 = Circuit(1)
         operations = [ops.X(circuit_1.qubits[0]), ops.RY(0.42, circuit_1.qubits[0])]
-        circuit_1.append(operations)
+        circuit_1.extend(operations)
 
         with pytest.raises(TypeError, match="Cannot apply circuit in its own context."):
             with circuit_1.context as q:
@@ -499,7 +454,7 @@ class TestCircuit:
         """Test that the correct exception is raised when calling a circuit outside of a context."""
         circuit_1 = Circuit(1)
         operations = [ops.X(circuit_1.qubits[0]), ops.RY(0.42, circuit_1.qubits[0])]
-        circuit_1.append(operations)
+        circuit_1.extend(operations)
 
         with pytest.raises(
             CircuitError, match="Can only apply circuit object inside a circuit context."
@@ -631,25 +586,6 @@ class TestParametricCircuit:
             ops.RZ(3.3, circuit.qubits[1]),
         ]
 
-    def test_call_parametric_circuit_with_kwarg(self):
-        """Test calling a parametric circuit passing parameters as a kwarg."""
-        parametric_circuit = ParametricCircuit(1)
-        circuit = Circuit(2)
-
-        with parametric_circuit.context as (p, q):
-            ops.X(q[0])
-            ops.RY(p[0], q[0])
-            ops.RZ(3.3, q[0])
-
-        with circuit.context as q:
-            parametric_circuit(q[1], parameters=[4.2])
-
-        assert circuit.circuit == [
-            ops.X(circuit.qubits[1]),
-            ops.RY(4.2, circuit.qubits[1]),
-            ops.RZ(3.3, circuit.qubits[1]),
-        ]
-
     def test_num_parameters(self):
         """Test that the ``num_parameters`` property returns the correct value."""
         parametric_circuit = ParametricCircuit(1)
@@ -681,6 +617,63 @@ class TestParametricCircuit:
 
         assert parametric_circuit.parametric is True
         assert parametric_circuit.num_parameters == 2
+
+    def test_eval(self, empty_parametric_circuit):
+        """Test evaluate circuit with parameters."""
+        empty_parametric_circuit.add_qubit()
+        with empty_parametric_circuit.context as (p, q):
+            ops.RX(p[0], q[0])
+
+        for op in empty_parametric_circuit.circuit:
+            for p in op.parameters:
+                assert isinstance(p, Variable)
+
+        circuit = empty_parametric_circuit.eval([[4.2]], in_place=False)
+        for op in circuit.circuit:
+            assert op.parameters == [4.2]
+            assert isinstance(op.parameters[0], float)
+
+        for op in empty_parametric_circuit.circuit:
+            assert isinstance(op.parameters[0], Variable)
+
+    def test_eval_in_place(self, empty_parametric_circuit):
+        """Test evaluate circuit in place with parameters."""
+        empty_parametric_circuit.add_qubit()
+        with empty_parametric_circuit.context as (p, q):
+            ops.RX(p[0], q[0])
+
+        for op in empty_parametric_circuit.circuit:
+            for p in op.parameters:
+                assert isinstance(p, Variable)
+
+        empty_parametric_circuit.eval([[4.2]], in_place=True)
+        for op in empty_parametric_circuit.circuit:
+            assert op.parameters == [4.2]
+            assert isinstance(op.parameters[0], float)
+
+    def test_eval_no_params(self, empty_parametric_circuit):
+        """Test that the correct exception is raised when evaluating circuit without parameters."""
+        empty_parametric_circuit.add_qubit()
+        with empty_parametric_circuit.context as (p, q):
+            ops.RX(p[0], q[0])
+
+        for op in empty_parametric_circuit.circuit:
+            for p in op.parameters:
+                assert isinstance(p, Variable)
+
+        with pytest.raises(ValueError, match="No available parameter"):
+            empty_parametric_circuit.eval()
+
+    def test_call_outside_context(self):
+        """Test that the correct exception is raised when calling a circuit outside of a context."""
+        circuit_1 = ParametricCircuit(1)
+        with circuit_1.context as (p, q):
+            ops.RX(p[0], q[0])
+
+        with pytest.raises(
+            CircuitError, match="Can only apply circuit object inside a circuit context."
+        ):
+            circuit_1([0.42], circuit_1.qubits[0])
 
 
 class TestParametricCircuitContext:

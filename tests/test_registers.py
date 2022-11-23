@@ -365,3 +365,17 @@ class TestVariable:
         "Test the representation of a variable."
         var = Variable("ananas")
         assert var.__repr__() == "{ananas}"
+
+    def test_set_value(self):
+        var = Variable("banana")
+        assert var.__repr__() == "{banana}"
+
+        var.set(3.14)
+
+        assert var == 3.14
+        assert var.__repr__() == "{3.14}"
+
+        var.reset()
+
+        assert var != 3.14
+        assert var.__repr__() == "{banana}"

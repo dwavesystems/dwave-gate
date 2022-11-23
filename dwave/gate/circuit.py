@@ -9,9 +9,11 @@ __all__ = [
     "ParametricCircuitContext",
 ]
 
+import copy
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
+    Callable,
     ContextManager,
     Dict,
     Hashable,
@@ -69,28 +71,23 @@ class Circuit:
 
         self._locked = False
 
-    def __call__(self, *args, **kwargs) -> None:
+    def __call__(self, qubits: Union[Qubit, Sequence[Qubit]]) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
-        If passed to the call method, ``parameters`` is assumed to be the first argument (unless
-        passed as a keyword argument). If only qubits are passed (required since a circuit can only
-        be applied within a context), ``qubits`` will be the first argument (unless passed as a
-        keyword argument).
-
         Args:
-            parameters (optional): Parameters to apply to any parametric gates.
-            qubits: Qubits on which thecircuit operations should be applied. The qubits used in
+            qubits: Qubits on which the circuit operations should be applied. The qubits used in
                 the circuit will be exchanged with the corresponding ones (e.g., with the same
                 index as) in the active context.
 
         Raises:
-            ValueError: If the wrong number of qubits is passed.
+            ValueError: If an invalid number of qubits is passed.
             CircuitError: If called outside of an active context.
-            TypeError: If an unexpected keyword argument is passed, or if an invalid number of
-                total arguments is passed (expects 1-2 arguments).
         """
+        if isinstance(qubits, Qubit):
+            qubits = [qubits]
 
-        qubits, _ = self._extract_arguments(*args, **kwargs)
+        if len(qubits) != len(self.qubits):
+            raise ValueError(f"Circuit requires {len(self.qubits)} qubits, got {len(qubits)}.")
 
         if CircuitContext.active_context is None:
             raise CircuitError("Can only apply circuit object inside a circuit context.")
@@ -105,45 +102,11 @@ class Circuit:
             from dwave.gate.operations.base import ControlledOperation, ParametricOperation
 
             if isinstance(op, ParametricOperation):
-                for i, p in enumerate(op.parameters):
-                    if isinstance(p, Variable):
-                        op.parameters[i] = kwargs["parameters"].pop(0)
                 op.__class__(op.parameters, qubits=mapped_qubits)
             elif isinstance(op, ControlledOperation):
                 op.__class__(*mapped_qubits)
             else:
                 op.__class__(qubits=mapped_qubits)
-
-    def _extract_arguments(
-        self, *args, **kwargs
-    ) -> Tuple[Sequence[Qubit], Optional[List[complex]]]:
-        """Extracts the correct parameter and qubit arrays from args and kwargs.
-
-        Looks for "parameters" and "qubits" in the arguments. Raises errors if unexpected keyword
-        arguments are passed or an invalid number of arguments are passed.
-        """
-        # assert that args and/or kwargs only contain qubits and/or parameters
-        invalid_kwargs = set(kwargs) - {"qubits", "parameters"}
-        if invalid_kwargs:
-            raise TypeError(f"__call__() got unexpected keyword argument {invalid_kwargs.pop()}")
-
-        if len(args) + len(kwargs) > 2:
-            raise TypeError(
-                f"__call__() takes from 1 to 2 arguments but {len(args) + len(kwargs)} were given"
-            )
-
-        if args or kwargs:
-            qubits = kwargs.get("qubits", None) or args[0]
-        else:
-            qubits = []
-
-        if isinstance(qubits, Qubit):
-            qubits = [qubits]
-
-        if len(qubits) != len(self.qubits):
-            raise ValueError(f"Circuit requires {len(self.qubits)} qubits, got {len(qubits)}.")
-
-        return qubits, kwargs.get("parameters", None)
 
     @property
     def qregisters(self) -> Mapping[Hashable, QuantumRegister]:
@@ -168,27 +131,37 @@ class Circuit:
         """Circuit containing the applied operations."""
         return self._circuit
 
-    def append(self, operation: Union[Sequence[Operation], Operation]) -> None:
+    def append(self, operation: Operation) -> None:
         """Appends an operation to the circuit.
 
         Args:
-            operation: Operation or sequence of operations to append to the circuit.
+            operation: Operation to append to the circuit.
         """
         if self.is_locked() == True:
             raise CircuitError(
                 "Circuit is locked and no more operations can be appended. To "
                 "unlock the circuit, call 'Circuit.unlock()' first."
             )
+        if not self.parametric:
+            # if a parametric operation is called within a non-parameteric circuit, all variables
+            # should be replaced by their corresponding parameter values; eval does that
+            eval = getattr(operation, "eval", None)
+            operation = eval() if eval else operation
 
-        if not isinstance(operation, Sequence):
-            operation = [operation]
+        for q in operation.qubits or []:
+            if q not in self.qubits:
+                raise ValueError(f"Qubit '{q}' not in circuit.")
 
-        for op in operation:
-            for q in op.qubits or []:
-                if q not in self.qubits:
-                    raise ValueError(f"Qubit '{q}' not in circuit.")
+        self._circuit.append(operation)
 
-        self._circuit.extend(operation)
+    def extend(self, operations: Sequence[Operation]) -> None:
+        """Appends a sequence of operations to the circuit.
+
+        Args:
+            operations: Operations to append to the circuit.
+        """
+        for op in operations:
+            self.append(op)
 
     def remove(self, op: Operation) -> None:
         """Removes the operation from the circuit.
@@ -360,7 +333,7 @@ class Circuit:
     def __repr__(self) -> str:
         """Returns the representation of the Circuit object."""
         qb, cb = len(self.qubits), len(self.bits)
-        return f"<Circuit: qubits={qb}, bits={cb}, ops={len(self.circuit)}>"
+        return f"<{self.__class__.__name__}: qubits={qb}, bits={cb}, ops={len(self.circuit)}>"
 
     def find_qubit(self, qubit: Qubit, qreg_label: bool = False) -> Tuple[Hashable, int]:
         """Returns the register where a qubit contained and its index in the register.
@@ -480,19 +453,62 @@ class ParametricCircuit(Circuit):
 
         super().__init__(num_qubits, num_bits)
 
-    def __call__(self, *args, **kwargs) -> None:
-        if "parameters" in kwargs:
-            parameters = kwargs.pop("parameters")
-        else:
-            parameters = args[0]
-            args = args[1:]
+    def __call__(self, parameters: List[complex], qubits: Union[Qubit, Sequence[Qubit]]) -> None:
+        """Apply all the operations in the circuit within a circuit context.
 
-        return super().__call__(*args, **kwargs, parameters=parameters)
+        Args:
+            parameters: Parameters to apply to any parametric gates.
+            qubits: Qubits on which the circuit operations should be applied. The qubits used in
+                the circuit will be exchanged with the corresponding ones (e.g., with the same
+                index as) in the active context.
+
+        Raises:
+            ValueError: If an invalid number of qubits are passed.
+            CircuitError: If called outside of an active context.
+        """
+        if CircuitContext.active_context:
+            for i, var in enumerate(self._parameter_register):
+                var.set(parameters[i])
+
+        # delay reset variables function call to on context exit
+        CircuitContext.on_exit_functions.append(self.reset_variables)
+
+        return super().__call__(qubits=qubits)
 
     def unlock(self) -> None:
         """Unlocks the circuit allowing for further operations to be applied."""
         self._parameter_register._frozen = False
         return super().unlock()
+
+    def eval(
+        self, parameters: Optional[Sequence[Sequence[complex]]] = None, in_place: bool = False
+    ) -> ParametricCircuit:
+        """Evaluate circuit operations with explicit parameters.
+
+        Args:
+            parameters: Parameters to replace operation variables with. Overrides potential variable
+                values. If ``None`` then variable values are used (if existent).
+            in_place: Whether to evaluate the parameters on ``self`` or on a copy of ``self`` (returned).
+
+        Returns:
+            ParametricOperation: Either ``self`` or a copy of ``self``.
+
+        Raises:
+            ValueError: If no parameters are passed and if variable has no set value.
+        """
+        circuit = self if in_place else copy.deepcopy(self)
+
+        for i, op in enumerate(circuit.circuit):
+            eval = getattr(op, "eval", None)
+            params = parameters[i] if parameters else None
+            circuit.circuit[i] = eval(params, in_place) if eval else op
+
+        return circuit
+
+    def reset_variables(self) -> None:
+        """Resets any variables in the parameter register by setting their values to ``None``."""
+        for variable in self._parameter_register:
+            variable.reset()
 
     @property
     def parametric(self) -> bool:
@@ -528,8 +544,10 @@ class CircuitContext:
         circuit: Circuit to which the context is attached
     """
 
-    _active_context = None
+    _active_context: Optional[CircuitContext] = None
     """Optional[CircuitContext]: Current active context; can only be one at a time during runtime."""
+    on_exit_functions: List[Callable] = []
+    """List of functions that should be called on context exit. Cleared on context exit."""
 
     def __init__(self, circuit: Circuit) -> None:
         self._circuit = circuit
@@ -603,7 +621,6 @@ class CircuitContext:
             CircuitContext._active_context = self
         else:
             raise RuntimeError("Cannot enter context, another circuit context is already active.")
-
         return self.circuit.qubits
 
     def __exit__(
@@ -616,6 +633,11 @@ class CircuitContext:
         # IDEA: add setting to automatically decompose qubits on exit
         # TODO: add setting to automatically add missing qubits on exit (or raise error)
         CircuitContext._active_context = None
+
+        for exit_func in self.on_exit_functions:
+            exit_func()
+        self.on_exit_functions.clear()
+
         self.circuit.lock()
 
     @mixedproperty

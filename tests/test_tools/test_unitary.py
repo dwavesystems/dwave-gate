@@ -41,7 +41,7 @@ class TestBuildUnitary:
     def test_single_qubit_circuit(self, operations, expected):
         """Test building a unitary from a single-qubit circuit"""
         circuit = Circuit(1)
-        circuit.append([op(circuit.qubits[0]) for op in operations])
+        circuit.extend([op(circuit.qubits[0]) for op in operations])
 
         assert np.allclose(build_unitary(circuit), expected)
 
@@ -90,7 +90,7 @@ class TestBuildUnitary:
         """Test building a unitary from a multi-qubit circuit"""
         circuit = Circuit(2)
         qb = map(lambda tup: (circuit.qubits[j] for j in tup), qubits)
-        circuit.append([op(*t) for op, t in zip(operations, qb)])
+        circuit.extend([op(*t) for op, t in zip(operations, qb)])
 
         assert np.allclose(build_unitary(circuit), expected)
 

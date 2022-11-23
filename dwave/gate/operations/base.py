@@ -319,6 +319,35 @@ class ParametricOperation(Operation):
         """Parameters of the operation."""
         return self._parameters
 
+    def eval(
+        self, parameters: Optional[Sequence[complex]] = None, in_place: bool = False
+    ) -> ParametricOperation:
+        """Evaluate operation with explicit parameters.
+
+        Args:
+            parameters: Parameters to replace operation variables with. Overrides potential variable
+                values. If ``None`` then variable values are used (if existent).
+            in_place: Whether to evaluate the parameters on ``self`` or on a copy of ``self`` (returned).
+
+        Returns:
+            ParametricOperation: Either ``self`` or a copy of ``self``.
+
+        Raises:
+            ValueError: If no parameters are passed and if variable has no set value.
+        """
+        op = self if in_place else copy.deepcopy(self)
+
+        for i, p in enumerate(op.parameters):
+            if isinstance(p, Variable):
+                if parameters:
+                    op.parameters[i] = parameters[i]
+                elif p.value:
+                    op.parameters[i] = p.value
+                else:
+                    raise ValueError("No available parameter to evaluate with.")
+
+        return op
+
     @mixedproperty
     def num_parameters(cls) -> int:
         """Number of parameters that the operation requires."""
