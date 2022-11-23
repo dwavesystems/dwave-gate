@@ -1,67 +1,55 @@
 # Confidential & Proprietary Information: D-Wave Systems Inc.
 """Using and appending operations."""
 from dwave.gate.circuit import Circuit
-from dwave.gate.operations import Z, RY, CNOT, CX, Rotation
+import dwave.gate.operations as ops
 
-# Gates can be appended to the circuit (within a context) in several different
-# ways, as detailed below.
-circuit = Circuit(2)
+# Operations, or gates, are objects that contain information related to that specific operation,
+# including its matrix representation, potential decompositions, and application within a circuit.
+print(ops.X())
+
+# We can call the matrix property on either the class itself or on an instance (which is an
+# instantiated operation, with additional parameters and/or qubit information).
+print("X matrix:\n", ops.X.matrix)
+
+# If the matrix representation isn't general (e.g., as for the X-gate above) and requires knowledge
+# of parameters, it can only be retrieved from an instance (otherwise an exception will be raised).
+print("Z-rotation matrix:\n", ops.RZ(4.2).matrix)
+
+# Operations are applied when either the class or an instance is called within a circuit context.
+# They can be applied to the circuit in several different ways, as detailed below. Both qubits and
+# parameters can be passed either as single values (if supported by the gate) or contained in a
+# sequence.
+circuit = Circuit(3)
 with circuit.context as q:
-    # append gates using keyword arg for qubits
-    Z(qubits=q[0])
-    # append parametric gates using positional args
-    RY(4.2, q[1])
-    # append parametric gates using qubit labels
-    Rotation([0.1, 0.2, 0.3], "q0")
-    # append multi-qubit gates using tuples
-    CNOT(q[0], q[1])
-    # append multi-qubit gates using slicing
-    CX(*q[:2])
-
-# Note that CNOT and CX are the exact same gate, and that CNOT is only an alias
-# for CX (so they both are labelled as CX in the circuit).
-print(circuit)
-
-# We can also use the 'broadcast' method to apply operations to several qubits
-# at once. The 'layered' method will append the operation on each qubit layering
-# multi-qubit gates. The other method is called 'parallel' and will append the
-# operation to each qubit without any overlaps.
-circuit = Circuit(5)
-with circuit.context as q:
-    Z.broadcast(q, method="layered")
-
-print(circuit)
-
-# 'layered' is the default setting, but for single-qubit gates the outcome is
-# the same as for 'parallel'.
-circuit.reset()
-with circuit.context as q:
-    RY.broadcast(q, 0.3)
-
-print(circuit)
-
-# For multiqubit gates, the two methods differ.
-circuit.reset()
-with circuit.context as q:
-    CNOT.broadcast(q, method="layered")
-
-print(circuit)
-
-circuit.reset()
-with circuit.context as q:
-    CNOT.broadcast(q, method="parallel")
+    # apply single-qubit gate
+    ops.Z(q[0])
+    # apply single-qubit gate using kwarg
+    ops.Hadamard(qubits=q[0])
+    # apply a parametric gate
+    ops.RY(4.2, q[1])
+    # apply a parametric gate using kwargs
+    ops.Rotation(parameters=[4.2, 3.1, 2.3], qubits=q[1])
+    # apply controlled gate
+    ops.CNOT(q[0], q[1])
+    # apply controlled gate using kwargs
+    ops.CX(control=q[0], target=q[1])
+    # apply controlled qubit gates using slicing (must unpack)
+    ops.CZ(*q[:2])
+    # apply multi-qubit (non-controlled) gates (note tuple)
+    ops.SWAP((q[0], q[1]))
+    # apply multi-qubit (non-controlled) gates using kwargs
+    ops.CSWAP(qubits=(q[0], q[1], q[2]))
+    # apply multi-qubit (non-controlled) gates using slicing
+    ops.SWAP(q[:2])
+    # apply gate on all qubits in the circuit
+    ops.Toffoli(q)
 
 print(circuit)
 
-# Some gates implement decompositions as well.
-print(Rotation.decomposition)
-print(Rotation([0.1, 0.2, 0.3]).decomposition)
+# Print all operations in the circuit ()
+for op in circuit.circuit:
+    print(op)
 
-# Decompositions can be directly appended to circuits.
-# NOTE: Doesn't work properly with parametric gates when called on an instance
-# within a context (or any gate if called on an instance).
-circuit.reset()
-with circuit.context as q:
-    Rotation([0.1, 0.2, 0.3], q[0]).decomposition
-
-print(circuit)
+# Note that e.g., CNOT and CX apply the exact same gate. CNOT is only an alias for CX (so they both
+# are labelled as CX in the circuit). There are also other aliases which you can spot either in the
+# `dwave/gate/operations/operations.py` file, or read more about in the documentation.
