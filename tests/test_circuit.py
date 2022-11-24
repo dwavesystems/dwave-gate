@@ -5,7 +5,7 @@ import dwave.gate.operations as ops
 from dwave.gate import CircuitContext
 from dwave.gate.circuit import Circuit, CircuitError, ParametricCircuit, ParametricCircuitContext
 from dwave.gate.primitives import Bit, Qubit, Variable
-from dwave.gate.registers import ClassicalRegister, QuantumRegister
+from dwave.gate.registers.registers import ClassicalRegister, QuantumRegister
 
 
 class TestCircuitError:
@@ -245,7 +245,7 @@ class TestCircuit:
     def test_add_qubit_to_empty_circuit(self, empty_circuit):
         """Test adding qubits to an empty circuit."""
         assert empty_circuit.num_qubits == 0
-        assert empty_circuit.qubits == []
+        assert len(empty_circuit.qubits) == 0
 
         empty_circuit.add_qubit(Qubit("pineapple"))
         empty_circuit.add_qubit()
@@ -297,7 +297,7 @@ class TestCircuit:
     def test_add_bit_to_empty_circuit(self, empty_circuit):
         """Test adding bits to a circuit."""
         assert empty_circuit.num_bits == 0
-        assert empty_circuit.bits == []
+        assert len(empty_circuit.bits) == 0
 
         empty_circuit.add_bit(Bit("pineapple"))
         empty_circuit.add_bit()

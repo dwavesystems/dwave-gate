@@ -7,7 +7,7 @@ import dwave.gate.operations as ops
 from dwave.gate.circuit import Circuit, CircuitError, ParametricCircuit
 from dwave.gate.operations.base import create_operation
 from dwave.gate.primitives import Bit, Qubit
-from dwave.gate.registers import ClassicalRegister, QuantumRegister
+from dwave.gate.registers.registers import ClassicalRegister, QuantumRegister
 
 
 class TestCircuitOpenQASM:
@@ -254,20 +254,20 @@ class TestRegisterOpenQASM:
 
     def test_gate_qreg(self):
         """Test generating OpenQASM 2.0 for a quantum register."""
-        qreg = QuantumRegister("apple")
+        qreg = QuantumRegister()
         assert qreg.to_qasm() == "qreg q[0]"
 
     def test_gate_qreg_with_data(self):
         """Test generating OpenQASM 2.0 for a quantum register with data."""
-        qreg = QuantumRegister("apple", data=[Qubit("banana"), Qubit("coconut")])
+        qreg = QuantumRegister([Qubit("banana"), Qubit("coconut")])
         assert qreg.to_qasm() == "qreg q[2]"
 
     def test_gate_creg(self):
         """Test generating OpenQASM 2.0 for a classical register."""
-        qreg = ClassicalRegister("ananas")
+        qreg = ClassicalRegister()
         assert qreg.to_qasm() == "creg c[0]"
 
     def test_gate_creg_with_data(self):
         """Test generating OpenQASM 2.0 for a classical register with data."""
-        qreg = ClassicalRegister("ananas", data=[Bit("blueberry"), Bit("citrus")])
+        qreg = ClassicalRegister([Bit("blueberry"), Bit("citrus")])
         assert qreg.to_qasm() == "creg c[2]"

@@ -54,12 +54,12 @@ class Bit:
         label: Label used to represent the bit.
     """
 
-    def __init__(self, label: str) -> None:
+    def __init__(self, label: Hashable) -> None:
         self._label = label
         self._id: str = IDCounter.next()
 
     @property
-    def label(self) -> str:
+    def label(self) -> Hashable:
         """The bit's label."""
         return self._label
 
@@ -120,7 +120,7 @@ class Variable:
     def __repr__(self) -> str:
         """The representation of the variable is its label."""
         if self._value:
-            return f"{{{self.value}}}"
+            return str(self.value)
         return f"{{{self.name}}}"
 
     def __hash__(self) -> int:

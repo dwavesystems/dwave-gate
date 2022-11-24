@@ -10,6 +10,7 @@ __all__ = [
 ]
 
 import copy
+from functools import cached_property
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -28,11 +29,10 @@ from typing import (
 
 from dwave.gate.mixedproperty import mixedproperty
 from dwave.gate.primitives import Bit, Qubit
-from dwave.gate.registers import (
+from dwave.gate.registers.registers import (
     ClassicalRegister,
     QuantumRegister,
     SelfIncrementingRegister,
-    Variable,
 )
 
 if TYPE_CHECKING:
@@ -176,17 +176,23 @@ class Circuit:
 
         del self.circuit[idx]
 
-    @property
+    @cached_property
     def qubits(self) -> Sequence[Qubit]:
         """Qubits handled by the circuit."""
-        qubits = [qb for qreg in self.qregisters.values() for qb in qreg]
-        return qubits
+        qubit_reg = QuantumRegister()
+        for qreg in self.qregisters.values():
+            qubit_reg += qreg
 
-    @property
+        return qubit_reg
+
+    @cached_property
     def bits(self) -> Sequence[Bit]:
         """Classical bits handled by the circuit."""
-        bits = [b for creg in self.cregisters.values() for b in creg]
-        return bits
+        bit_reg = ClassicalRegister()
+        for creg in self.cregisters.values():
+            bit_reg += creg
+
+        return bit_reg
 
     @property
     def num_qubits(self) -> int:
@@ -266,11 +272,13 @@ class Circuit:
 
         # NOTE: same qubit in different registers NOT allowed
         if qubit in self.qubits:
-            raise ValueError(
-                f"Qubit '{qubit}' already in use in quantum register '{self.qregisters[qreg_label].label}'."
-            )
+            raise ValueError(f"Qubit '{qubit}' already in use in quantum register '{qreg_label}'.")
 
         self.qregisters[qreg_label].add(qubit or Qubit(str(self.num_qubits)))
+
+        # remove cached 'qubits' attribute when updating 'qregisters'
+        if hasattr(self, "qubits"):
+            del self.qubits
 
     def add_bit(self, bit: Optional[Bit] = None, creg_label: Optional[Hashable] = None) -> None:
         """Add a single bit to a classical register.
@@ -294,6 +302,10 @@ class Circuit:
 
         self.cregisters[creg_label].add(bit or Bit(str(self.num_bits)))
 
+        # remove cached 'bits' attribute when updating 'cregisters'
+        if hasattr(self, "bits"):
+            del self.bits
+
     def add_qregister(self, num_qubits: int = 0, label: Hashable = None) -> None:
         """Adds a new quantum register to the circuit.
 
@@ -308,9 +320,11 @@ class Circuit:
             raise ValueError(f"Quantum register {label} already present in the circuit.")
 
         data = [Qubit(str(i)) for i in range(num_qubits)]
-        qreg = QuantumRegister(label=label, data=data)
+        self._qregisters[label] = QuantumRegister(data)
 
-        self._qregisters[label] = qreg
+        # remove cached 'qubits' attribute when updating 'qregisters'
+        if hasattr(self, "qubits"):
+            del self.qubits
 
     def add_cregister(self, num_bits: int = 0, label: Hashable = None) -> None:
         """Adds a new classical register to the circuit.
@@ -326,9 +340,11 @@ class Circuit:
             raise ValueError(f"Classical register {label} already present in the circuit")
 
         data = [Bit(str(i)) for i in range(num_bits)]
-        creg = ClassicalRegister(label=label, data=data)
+        self._cregisters[label] = ClassicalRegister(data)
 
-        self._cregisters[label] = creg
+        # remove cached 'bits' attribute when updating 'cregisters'
+        if hasattr(self, "bits"):
+            del self.bits
 
     def __repr__(self) -> str:
         """Returns the representation of the Circuit object."""
@@ -410,17 +426,19 @@ class Circuit:
         qasm_str = ""
         # add quantum registers (only add index if more than one register)
         if len(self.qregisters) == 1:
-            qasm_str += list(self.qregisters.values())[0].to_qasm(qreg_label=reg_labels) + ";\n"
+            label, qreg = list(self.qregisters.items())[0]
+            qasm_str += qreg.to_qasm(label=label if reg_labels else None) + ";\n"
         else:
-            for i, (_, qreg) in enumerate(self.qregisters.items()):
-                qasm_str += qreg.to_qasm(qreg_label=reg_labels, idx=i) + ";\n"
+            for i, (label, qreg) in enumerate(self.qregisters.items()):
+                qasm_str += qreg.to_qasm(label=label if reg_labels else None, idx=i) + ";\n"
 
         # add classical registers (only add index if more than one register)
         if len(self.cregisters) == 1:
-            qasm_str += list(self.cregisters.values())[0].to_qasm(creg_label=reg_labels) + ";\n"
+            label, creg = list(self.cregisters.items())[0]
+            qasm_str += creg.to_qasm(label=label if reg_labels else None) + ";\n"
         else:
-            for i, (_, creg) in enumerate(self.cregisters.items()):
-                qasm_str += creg.to_qasm(creg_label=reg_labels, idx=i) + ";\n"
+            for i, (label, creg) in enumerate(self.cregisters.items()):
+                qasm_str += creg.to_qasm(label=label if reg_labels else None, idx=i) + ";\n"
 
         # add blank line between register declarations and gates
         qasm_str += "\n"
@@ -449,7 +467,7 @@ class ParametricCircuit(Circuit):
     """
 
     def __init__(self, num_qubits: Optional[int] = None, num_bits: Optional[int] = None) -> None:
-        self._parameter_register = SelfIncrementingRegister("preg")
+        self._parameter_register = SelfIncrementingRegister()
 
         super().__init__(num_qubits, num_bits)
 
@@ -508,7 +526,7 @@ class ParametricCircuit(Circuit):
     def reset_variables(self) -> None:
         """Resets any variables in the parameter register by setting their values to ``None``."""
         for variable in self._parameter_register:
-            variable.reset()
+            variable.reset()  # type: ignore
 
     @property
     def parametric(self) -> bool:
@@ -653,7 +671,7 @@ class ParametricCircuitContext(CircuitContext):
         circuit: Parametric circuit to which the context is attached.
     """
 
-    def __init__(self, circuit: Circuit) -> None:
+    def __init__(self, circuit: ParametricCircuit) -> None:
         if not isinstance(circuit, ParametricCircuit):
             raise TypeError("'ParametricCircuitContext' only works with 'ParametricCircuit'")
 

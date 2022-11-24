@@ -31,12 +31,14 @@ from typing import (
 from dwave.gate.circuit import Circuit, CircuitContext, ParametricCircuit
 from dwave.gate.mixedproperty import mixedproperty
 from dwave.gate.primitives import Qubit
-from dwave.gate.registers import Variable
+from dwave.gate.registers.registers import Variable
 from dwave.gate.tools.unitary import build_controlled_unitary, build_unitary
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
+Qubits = Union[Qubit, Sequence[Qubit]]
+Parameters = Union[Variable, complex, Sequence[Union[Variable, complex]]]
 
 CustomOperation = TypeVar("CustomOperation", bound="Operation")
 CustomParametricOperation = TypeVar("CustomParametricOperation", bound="ParametricOperation")
@@ -154,7 +156,7 @@ class Operation(metaclass=ABCLockedAttr):
             required when applying an operation within a circuit context.
     """
 
-    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None) -> None:
+    def __init__(self, qubits: Optional[Qubits] = None) -> None:
         active_context = CircuitContext.active_context
 
         if qubits is not None:
@@ -170,7 +172,7 @@ class Operation(metaclass=ABCLockedAttr):
             active_context.circuit.append(self)
 
     @classmethod
-    def _check_qubits(cls, qubits: Union[Qubit, Sequence[Qubit]]) -> Tuple[Qubit, ...]:
+    def _check_qubits(cls, qubits: Qubits) -> Tuple[Qubit, ...]:
         """Asserts size and type of the qubit(s) and returns the correct type.
 
         Args:
@@ -303,8 +305,8 @@ class ParametricOperation(Operation):
 
     def __init__(
         self,
-        parameters: Union[complex, Sequence[complex]],
-        qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None,
+        parameters: Parameters,
+        qubits: Optional[Qubits] = None,
     ):
         self._parameters = self._check_parameters(parameters)
         super(ParametricOperation, self).__init__(qubits=qubits)
@@ -361,7 +363,7 @@ class ParametricOperation(Operation):
         """Abstract mixedproperty asserting the existence of a ``_num_qubits`` attribute."""
 
     @classmethod
-    def _check_parameters(cls, params: Union[complex, Sequence[complex]]) -> List[complex]:
+    def _check_parameters(cls, params: Parameters) -> List[Union[Variable, complex]]:
         """Asserts the size and type of the parameter(s) and returns the
         correct type.
 
@@ -409,8 +411,8 @@ class ControlledOperation(Operation):
 
     def __init__(
         self,
-        control: Optional[Union[Qubit, Sequence[Qubit]]] = None,
-        target: Optional[Union[Qubit, Sequence[Qubit]]] = None,
+        control: Optional[Qubits] = None,
+        target: Optional[Qubits] = None,
         **kwargs,
     ) -> None:
         qubits = kwargs.pop("qubits") if "qubits" in kwargs else False
@@ -550,9 +552,9 @@ class ParametricControlledOperation(ControlledOperation, ParametricOperation):
 
     def __init__(
         self,
-        parameters: Union[complex, Sequence[complex]],
-        control: Optional[Union[Qubit, Sequence[Qubit]]] = None,
-        target: Optional[Union[Qubit, Sequence[Qubit]]] = None,
+        parameters: Parameters,
+        control: Optional[Qubits] = None,
+        target: Optional[Qubits] = None,
         **kwargs,
     ):
         # ControlledOperation.__init__(self, control, target, **kwargs)

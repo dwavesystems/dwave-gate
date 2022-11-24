@@ -14,7 +14,7 @@ install:
 ifndef PYTHON3
 	@echo "D-Wave Gate Model software requires at least Python 3.7"
 endif
-	$(PYTHON) -m pip install .
+	$(PYTHON) setup.py build_ext --inplace
 
 # whether coverage files should be removed (true)
 # default is to not delete coverage files (false)
