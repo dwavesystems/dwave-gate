@@ -1,58 +1,66 @@
-# Confidential & Proprietary Information: D-Wave Systems Inc.
+# Copyright 2022 D-Wave Systems Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
 """Creating and using templates."""
 from dwave.gate.circuit import Circuit
 from dwave.gate.tools import build_unitary
-from dwave.gate.operations import X, RY, RZ, Hadamard, Rotation, template
+import dwave.gate.operations as ops
 
 import numpy as np
+np.set_printoptions(suppress=True)
 
 # Let's create a circuit which applies a Z-gate to a single qubit, but by using
 # only Hadamards and X-gates.
-z_gate_circuit = Circuit(1)
-with z_gate_circuit.context as q:
-    Hadamard(q[0])
-    X(q[0])
-    Hadamard(q[0])
+z_circuit = Circuit(1)
+with z_circuit.context as q:
+    ops.Hadamard(q[0])
+    ops.X(q[0])
+    ops.Hadamard(q[0])
 
-# We can see that it's correct by printing it's unitary.
-print(build_unitary(z_gate_circuit))
+# We can check to see if it's correct by printing its unitary using the built-in 'build_unitary'
+# function. The resulting matrix represents the unitary that is applied when applying these three
+# operations according to the circuit above.
+z_matrix = build_unitary(z_circuit)
+print("Z matrix:\n", z_matrix)
 
-# The above circuit can also be appended to other circuits.
-circuit = Circuit(5)
+# The above circuit can also be applied to other circuits. This will basically just apply the
+# operations within that circuit to the new circuit, mapping the old qubits to the new.
+circuit = Circuit(3)
 with circuit.context as q:
-    z_gate_circuit(q[1])
+    z_circuit(q[1])
 
-print(circuit)
+print("Circuit:", circuit.circuit)
 
+# If the circuit is meant to be used as a custom operation, the 'create_operation' function can be
+# used to transform the circuit in to an operation class, inheriting from the abstract 'Operations'
+# class (as all other operations do).
+from dwave.gate.operations import create_operation
 
-# A better way to create a custom gate is to use the template decorator. We can
-# write a class with a 'circuit' method, which applies the circuit, and two
-# class attributes 'num_qubits' and 'num_params'. Below is a custom rotation
-# gate implementation using only 'RZ' and 'RY' gates.
-@template
-class RotGate:
-    num_qubits = 1
-    num_params = 3
+# If no name is given, the custom operation class will simply be named "CustomOperation".
+MyZOperation = create_operation(z_circuit, name="MyZOperation")
 
-    def circuit(self):
-        RZ(self.params[0], self.qubits[0])
-        RY(self.params[1], self.qubits[0])
-        RZ(self.params[2], self.qubits[0])
+print(MyZOperation())
 
+# We can compare its matrix representation to the built in 'Z' operation.
+print("MyZOperation matrix:\n", MyZOperation.matrix)
+print("Z matrix:\n", ops.Z.matrix)
+assert np.allclose(MyZOperation.matrix, ops.Z.matrix)
 
-# We can print the new gate representation.
-rotation_gate = RotGate([0.1, 0.2, 0.3])
-print(rotation_gate)
-
-# And compare it's matrix to the built in 'Rotation' gate.
-print(rotation_gate.matrix)
-print(Rotation([0.1, 0.2, 0.3]).matrix)
-assert np.allclose(rotation_gate.matrix, Rotation([0.1, 0.2, 0.3]).matrix)
-
-# This custom gate can now be applied to the circuit in exactly the same way as
-# any other gate. Note that the 'z_gate_circuit' is still there.
-circuit.unlock()
+# This custom gate can now be applied to the circuit in exactly the same way as any other gate. Note
+# that if we don't reset the circuit, the 'z_circuit' operations will still be there.
+circuit.reset()
 with circuit.context as q:
-    RotGate([1, 2, 3], (q[1], q[3]))
+    MyZOperation(q[2])
 
-print(circuit)
+print("Circuit:", circuit.circuit)

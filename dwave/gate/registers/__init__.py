@@ -12,8 +12,4 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from dwave.gate.circuit import *
-from dwave.gate.mixedproperty import *
-from dwave.gate.primitives import *
-
-__version__ = "0.1.0"
+from dwave.gate.registers.registers import *

@@ -1,26 +1,30 @@
-D-Wave Gate Model Software
-==========================
+dwave-gate
+==========
 
 .. index-start-marker
 
-``dwave-gate`` is a software package and set of tools to construct, modify and run quantum circuits.
+``dwave-gate`` is a software package for constructing, modifying and running quantum circuits. It
+  provides a set of tools that enables you to:
 
-Features
---------
+* Construct quantum circuits using an intuitive context-manager interface.
 
-* Construct quantum circuits by appending operations to a ``Circuit`` object.
+* Utilize a comprehensive library of quantum gates with simple access to matrix representations,
+  various decompositions, and more.
 
-* Simulate circuits using a performant state-vector simulator built in C++.
+* Simulate circuits on a performant (C++) state-vector simulator.
 
-* Have easy access to quantum operations, their matrix representations, decompositions and easily
-  create custom operations and circuit templates.
+* Easily create your own quantum gates and templates. Any circuit can be either directly applied in
+  another circuit or converted into a quantum operation.
 
+.. index-end-marker
 
-Example Usage
+Example usage
 -------------
 
-Construct a two-qubit circuit using the ``dwave.gate.Circuit`` object, to which you can easily append
-operations using the circuits context-manager.
+.. example-start-marker
+
+This example uses the ``dwave.gate.Circuit`` object's  context manager to append operations to
+a two-qubit circuit.
 
 .. code-block:: python
 
@@ -28,46 +32,73 @@ operations using the circuits context-manager.
     from dwave.gate import Circuit
 
     circuit = Circuit(2)
+
     with circuit.context as q:
-        ops.X(q[0])
         ops.Hadamard(q[1])
         ops.CZ(q[0], q[1])
         ops.Hadamard(q[1])
 
-The above circuit can then be simulated using ``dwave.gate.simulator.simulate()``.
+You can run the ``dwave.gate.simulator`` simulator on such circuits.
 
 >>> from dwave.gate.simulator import simulate
 >>> simulate(circuit)
 array([0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j])
 
-.. index-end-marker
+.. example-end-marker
 
 Installation
 ------------
 
 .. installation-start-marker
 
-The simplest way to install ``dwave-gate`` is from source, by cloning the repository, navigating to
-the root folder and running
+The simplest way to install ``dwave-gate`` is from `PyPI <https://pypi.org/project/dwave-gate>`_:
+
+.. code-block:: bash
+
+    pip install dwave-gate
+
+It can also be installed from source by cloning this GitHub repository and running (on Unix systems):
 
 .. code-block:: bash
 
     make install
 
 The makefile will also simplify running tests (``make test``), coverage (``make coverage``) and
-formatting (``make format``) the code with the help of the `Black <https://black.readthedocs.io/>`_
-formatter, set to a line-lenth of 100, and `isort <https://pycqa.github.io/isort/>`_.
+formatting (``make format``) the code using the `Black <https://black.readthedocs.io/>`_ formatter
+(set to a line-length of 100) and `isort <https://pycqa.github.io/isort/>`_.
+
+Alternatively, the package can be built and installed using Python (on any supported system):
+
+.. code-block:: bash
+
+    python setup.py build_ext --inplace
+
+and tests and coverage can be run using Pytest:
+
+.. code-block:: bash
+
+    pytest test --cov=dwave.gate
 
 .. installation-end-marker
 
+License
+-------
+
+Released under the Apache License 2.0. See LICENSE file.
+
+Contributing
+------------
+
+Ocean's `contributing guide <https://docs.ocean.dwavesys.com/en/stable/contributing.html>`_
+has guidelines for contributing to Ocean packages.
 
 Release Notes
 ~~~~~~~~~~~~~
 
 ``dwave-gate`` uses `reno <https://docs.openstack.org/reno/>`_ to manage its release notes.
 
-When making a contribution to ``dwave-gate`` that will affect users, create a new release note file by
-running
+When making a contribution to ``dwave-gate`` that will affect users, create a new release note file
+by running
 
 .. code-block:: bash
 
