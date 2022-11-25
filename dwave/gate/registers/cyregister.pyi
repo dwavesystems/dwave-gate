@@ -12,9 +12,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-# The following code is a derivative work of the code from the dwavesystems/dimod package,
-# specifically dimod/dimod/cyvariables.pyi, which is licensed under the Apache License 2.0.
-
 # as of Cython 0.29.28, __annotations__ are not included for Cython objects.
 # so we specify their types here.
 

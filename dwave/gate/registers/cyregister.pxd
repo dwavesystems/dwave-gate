@@ -15,9 +15,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-# The following code is a derivative work of the code from the dwavesystems/dimod package,
-# specifically dimod/dimod/cyvariables.pxd, which is licensed under the Apache License 2.0.
-
 __all__ = ['cyRegister']
 
 cdef class cyRegister:
