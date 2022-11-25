@@ -1,5 +1,5 @@
-D-Wave Gate Model Software
-==========================
+D-Wave Gate
+===========
 
 .. index-start-marker
 
@@ -8,12 +8,13 @@ D-Wave Gate Model Software
 Features
 --------
 
-* Construct quantum circuits by appending operations to a ``Circuit`` object.
+* Construct quantum circuits using an intuitive context manager interface.
 
-* Simulate circuits using a performant state-vector simulator built in C++.
+* Utilize our comprehensive library of quantum gates, and have quick access to their matrix representations, various decompositions and more.
 
-* Have easy access to quantum operations, their matrix representations, decompositions and easily
-  create custom operations and circuit templates.
+* Simulate circuits on our performant state-vector simulator, written in C++.
+
+* Easily create your own quantum gates and templates. Any circuit can either be directly applied in another circuit or converted into a quantum operation.
 
 
 Example Usage
@@ -28,8 +29,8 @@ operations using the circuits context-manager.
     from dwave.gate import Circuit
 
     circuit = Circuit(2)
+
     with circuit.context as q:
-        ops.X(q[0])
         ops.Hadamard(q[1])
         ops.CZ(q[0], q[1])
         ops.Hadamard(q[1])
@@ -47,16 +48,21 @@ Installation
 
 .. installation-start-marker
 
-The simplest way to install ``dwave-gate`` is from source, by cloning the repository, navigating to
-the root folder and running
+The simplest way to install ``dwave-gate`` is from PyPI:
+
+.. code-block:: bash
+
+    pip install dwave-gate
+
+It can also be installed from source by cloning the GitHub repository and running:
 
 .. code-block:: bash
 
     make install
 
 The makefile will also simplify running tests (``make test``), coverage (``make coverage``) and
-formatting (``make format``) the code with the help of the `Black <https://black.readthedocs.io/>`_
-formatter, set to a line-lenth of 100, and `isort <https://pycqa.github.io/isort/>`_.
+formatting (``make format``) the code using the `Black <https://black.readthedocs.io/>`_ formatter,
+set to a line-lenth of 100, and `isort <https://pycqa.github.io/isort/>`_.
 
 .. installation-end-marker
 

@@ -12,8 +12,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import pytest
 from typing import Type
+
+import pytest
 
 import dwave.gate.operations as ops
 from dwave.gate.circuit import Circuit, ParametricCircuit
