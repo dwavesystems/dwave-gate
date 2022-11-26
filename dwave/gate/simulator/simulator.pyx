@@ -59,7 +59,10 @@ def apply_instruction(
 
     elif hasattr(op, "control"):
         # should be single qubit gate with controls
-        gate = op.target_operation.matrix
+        if isinstance(op, ops.ParametricOperation):
+            gate = op.target_operation(op.parameters).matrix
+        else:
+            gate = op.target_operation.matrix
         assert gate.shape == (2, 2), (op, gate)
         if conjugate_gate:
             gate = np.ascontiguousarray(gate.conjugate())

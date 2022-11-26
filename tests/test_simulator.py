@@ -3,7 +3,8 @@ import pytest
 import numpy as np
 
 import dwave.gate.operations as ops
-from dwave.gate.circuit import Circuit
+from dwave.gate.operations.operations import __all__ as all_ops
+from dwave.gate.circuit import Circuit, ParametricCircuit
 from dwave.gate.simulator.simulator import simulate, apply_instruction
 
 
@@ -181,3 +182,25 @@ def test_simulate_dm_cswap():
     pure_110[3, 3] = 1
 
     assert np.all(state == pure_110)
+
+
+@pytest.mark.parametrize("op", [getattr(ops, name) for name in all_ops])
+@pytest.mark.parametrize("little_endian", [False, True])
+@pytest.mark.parametrize("mixed_state", [False, True])
+def test_simulate_all_gates(op, little_endian, mixed_state):
+    circuit = Circuit(op.num_qubits)
+    kwargs = {}
+    with circuit.context as q:
+        if issubclass(op, ops.ParametricOperation):
+            # TODO random parameters?
+            kwargs["parameters"] = [0 for i in range(op.num_parameters)]
+        kwargs["qubits"] = [q[i] for i in range(op.num_qubits)]
+
+        op(**kwargs)
+
+    state = simulate(circuit, little_endian=little_endian, mixed_state=mixed_state)
+
+    if mixed_state:
+        assert 1 == pytest.approx(np.trace(state))
+    else:
+        assert 1 == pytest.approx(np.sum(state * state.conj()))

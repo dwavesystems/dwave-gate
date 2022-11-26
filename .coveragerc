@@ -1,6 +1,8 @@
 [run]
 branch = True
 plugins = Cython.Coverage
+omit =
+    dwave/gate/simulator/ops.pxd
 
 [report]
 exclude_lines =

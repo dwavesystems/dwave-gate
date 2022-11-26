@@ -21,14 +21,20 @@ from Cython.Build import cythonize
 
 
 extra_compile_args = {
-    'msvc': ['/std:c++14', "/openmp"],
-    'unix': ['-std=c++11', "-fopenmp", "-Ofast", "-ffast-math",
-             "-march=native", "-DCYTHON_TRACE_NOGIL=1", ],
+    "msvc": ["/std:c++14", "/openmp"],
+    "unix": [
+        "-std=c++11",
+        "-fopenmp",
+        "-Ofast",
+        "-ffast-math",
+        "-march=native",
+        # "-DCYTHON_TRACE_NOGIL=1",
+    ],
 }
 
 extra_link_args = {
-    'msvc': ["/openmp"],
-    'unix': ["-fopenmp"],
+    "msvc": ["/openmp"],
+    "unix": ["-fopenmp"],
 }
 
 
@@ -49,16 +55,16 @@ class build_ext_compiler_check(build_ext):
 
 extensions = [
     Extension(
-        name='dwave.gate.simulator.simulator',
-        sources=['dwave/gate/simulator/simulator.pyx'],
+        name="dwave.gate.simulator.simulator",
+        sources=["dwave/gate/simulator/simulator.pyx"],
         include_dirs=["dwave/gate/simulator/"],
-        language='c++',
+        language="c++",
     ),
     Extension(
-        name='dwave.gate.registers.cyregister',
-        sources=['dwave/gate/registers/cyregister.pyx'],
+        name="dwave.gate.registers.cyregister",
+        sources=["dwave/gate/registers/cyregister.pyx"],
         include_dirs=["dwave/gate/registers/"],
-        language='c++',
+        language="c++",
     ),
 ]
 
@@ -71,6 +77,6 @@ setup(
         extensions, annotate=bool(os.getenv("CYTHON_ANNOTATE", False))
     ),
     include_dirs=[numpy.get_include()],
-    cmdclass={'build_ext': build_ext_compiler_check},
+    cmdclass={"build_ext": build_ext_compiler_check},
     zip_safe=False,
 )
