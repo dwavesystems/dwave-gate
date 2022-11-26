@@ -1,0 +1,26 @@
+[run]
+branch = True
+
+[report]
+exclude_lines =
+    pragma: no cover
+    # Don't complain if tests don't hit defensive assertion code
+    raise AssertionError
+    raise NotImplementedError
+
+    # Ignore abstract methods, they aren't run
+    @(abc\.)?abstractmethod
+    @(abc\.)?abstractproperty
+
+    # Ignore code for type checking
+    if TYPE_CHECKING
+    @(typing\.)?overload
+
+ignore_errors = True
+precision = 2
+
+skip_covered = True
+skip_empty = True
+
+[html]
+directory = coverage_html
