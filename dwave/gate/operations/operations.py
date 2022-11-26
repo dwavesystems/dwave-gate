@@ -23,16 +23,16 @@ __all__ = [
     "Z",
     "Hadamard",
     "Phase",
-    "S",
-    "P",
+    "S",  # alias
+    "P",  # alias
     "T",
     # parametric gates
     "RX",
     "RY",
     "RZ",
     "Rotation",
-    "CX",
     # controlled gates
+    "CX",
     "CNOT",  # alias
     "CY",
     "CZ",
@@ -51,7 +51,7 @@ __all__ = [
 
 import cmath
 import math
-from typing import Mapping, Optional, Sequence, Type, Union
+from typing import Mapping, Optional, Type
 
 import numpy as np
 from numpy.typing import NDArray
@@ -79,9 +79,6 @@ class Identity(Operation):
     """
 
     _num_qubits: int = 1
-
-    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
-        super(Identity, self).__init__(qubits)
 
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the identity operator into an OpenQASM string.
@@ -114,9 +111,6 @@ class X(Operation):
 
     _num_qubits: int = 1
 
-    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
-        super(X, self).__init__(qubits)
-
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the Pauli X operator into an OpenQASM string.
 
@@ -147,9 +141,6 @@ class Y(Operation):
     """
 
     _num_qubits: int = 1
-
-    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
-        super(Y, self).__init__(qubits)
 
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the Pauli Y operator into an OpenQASM string.
@@ -183,9 +174,6 @@ class Z(Operation):
     _num_qubits: int = 1
     _decomposition = ["Hadamard", "X", "Hadamard"]
 
-    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
-        super(Z, self).__init__(qubits)
-
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the Pauli Z operator into an OpenQASM string.
 
@@ -217,9 +205,6 @@ class Hadamard(Operation):
 
     _num_qubits: int = 1
 
-    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
-        super(Hadamard, self).__init__(qubits)
-
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the Hadamard operation into an OpenQASM string.
 
@@ -250,9 +235,6 @@ class S(Operation):
     """
 
     _num_qubits: int = 1
-
-    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
-        super().__init__(qubits)
 
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the S operation into an OpenQASM string.
@@ -288,9 +270,6 @@ class T(Operation):
     """
 
     _num_qubits: int = 1
-
-    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
-        super().__init__(qubits)
 
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the T operation into an OpenQASM string.
@@ -745,9 +724,6 @@ class SWAP(Operation):
     _num_qubits: int = 2
     _qasm_decl: str = "gate swap a, b { cx b, a; cx a, b; cx b, a; }"
 
-    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
-        super(SWAP, self).__init__(qubits)
-
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the SWAP operation into an OpenQASM string.
 
@@ -795,9 +771,6 @@ class CSWAP(Operation):
 
     _num_qubits: int = 3
     _qasm_decl: str = "gate cswap c, a, b { cx b, a; ccx c, a, b; cx b, a; }"
-
-    def __init__(self, qubits: Optional[Union[Qubit, Sequence[Qubit]]] = None):
-        super(CSWAP, self).__init__(qubits)
 
     def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
         """Converts the CSWAP operation into an OpenQASM string.

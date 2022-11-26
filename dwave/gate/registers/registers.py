@@ -71,10 +71,10 @@ class Register(cyRegister, AbstractSet[Data], Sequence[Data]):
         """Adds two registers together and returns a register referencing the contained items.
 
         Args:
-            qreg:
+            qreg: Register to add to ``self``.
 
         Returns:
-            Register:
+            Register: Combined register referencing the contained items.
         """
         copy = self.copy()
         copy._extend(qreg)

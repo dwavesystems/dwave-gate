@@ -289,8 +289,9 @@ class Circuit:
 
         self.qregisters[qreg_label].add(qubit or Qubit(str(self.num_qubits)))
 
-        # remove cached 'qubits' attribute when updating 'qregisters'
-        if hasattr(self, "qubits"):
+        # remove cached 'qubits' attribute when updating 'qregisters';
+        # will always be in 'self.__dict__' since 'self.qubits' is called above
+        if "qubits" in self.__dict__:  # pragma: no cover
             del self.qubits
 
     def add_bit(self, bit: Optional[Bit] = None, creg_label: Optional[Hashable] = None) -> None:
@@ -316,7 +317,8 @@ class Circuit:
         self.cregisters[creg_label].add(bit or Bit(str(self.num_bits)))
 
         # remove cached 'bits' attribute when updating 'cregisters'
-        if hasattr(self, "bits"):
+        # will always be in 'self.__dict__' since 'self.bits' is called above
+        if "bits" in self.__dict__:  # pragma: no cover
             del self.bits
 
     def add_qregister(self, num_qubits: int = 0, label: Hashable = None) -> None:
@@ -336,7 +338,8 @@ class Circuit:
         self._qregisters[label] = QuantumRegister(data)
 
         # remove cached 'qubits' attribute when updating 'qregisters'
-        if hasattr(self, "qubits"):
+        # will always be in 'self.__dict__' since 'self.qubits' is called above
+        if "qubits" in self.__dict__:  # pragma: no cover
             del self.qubits
 
     def add_cregister(self, num_bits: int = 0, label: Hashable = None) -> None:
@@ -356,7 +359,8 @@ class Circuit:
         self._cregisters[label] = ClassicalRegister(data)
 
         # remove cached 'bits' attribute when updating 'cregisters'
-        if hasattr(self, "bits"):
+        # will always be in 'self.__dict__' since 'self.bits' is called above
+        if "bits" in self.__dict__:  # pragma: no cover
             del self.bits
 
     def __repr__(self) -> str:

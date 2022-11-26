@@ -93,7 +93,7 @@ def create_operation(circuit, name: Optional[str] = None) -> Type[CustomOperatio
 
         def __init__(self, *args, **kwargs) -> None:
             self._matrix = None
-            super(CustomOperation, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
         def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
             """Converts the custom operation into an OpenQASM string.
@@ -158,7 +158,7 @@ class ABCLockedAttr(ABCMeta):
         if attr in self.locked_attributes:
             raise ValueError(f"Cannot set class attribute '{attr}' to '{value}'.")
 
-        super(ABCLockedAttr, self).__setattr__(attr, value)
+        super().__setattr__(attr, value)
 
 
 class Operation(metaclass=ABCLockedAttr):
@@ -289,13 +289,17 @@ class Operation(metaclass=ABCLockedAttr):
             )
         self._qubits = self._check_qubits(qubits)
 
-    @abstractmethod
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
-        """Converts the operation into an OpenQASM string.
+    def to_qasm(self, *args, **kwargs):
+        """Converts the operation into an OpenQASM 2.0 string.
 
-        Returns:
-            str: OpenQASM string representation of the operation.
+        Must be implemented by subclass to support OpenQASM 2.0 transpilation.
+
+        Raises:
+            NotImplementedError: If called on a class which hasn't implemented this method.
         """
+        raise NotImplementedError(
+            f"'{self.__class__.__name__}' does not support OpenQASM 2.0 transpilation"
+        )
 
     @abstractproperty
     def matrix(cls) -> NDArray:  # type: ignore
@@ -322,12 +326,12 @@ class ParametricOperation(Operation):
         qubits: Optional[Qubits] = None,
     ):
         self._parameters = self._check_parameters(parameters)
-        super(ParametricOperation, self).__init__(qubits=qubits)
+        super().__init__(qubits=qubits)
 
     def __eq__(self, op: ParametricOperation) -> bool:
         """Returns whether two operations are considered equal."""
         param_eq = op.parameters == self.parameters
-        return param_eq and super(ParametricOperation, self).__eq__(op)
+        return param_eq and super().__eq__(op)
 
     @property
     def parameters(self):
