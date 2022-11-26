@@ -23,7 +23,7 @@ from Cython.Build import cythonize
 extra_compile_args = {
     'msvc': ['/std:c++14', "/openmp"],
     'unix': ['-std=c++11', "-fopenmp", "-Ofast", "-ffast-math",
-             "-march=native"],
+             "-march=native", "-DCYTHON_TRACE_NOGIL=1", ],
 }
 
 extra_link_args = {

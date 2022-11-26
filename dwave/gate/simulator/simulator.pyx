@@ -1,4 +1,5 @@
-#cython: language_level=3
+# cython: language_level=3
+# cython: linetrace=True
 
 __all__ = [
     "simulate",
@@ -6,6 +7,7 @@ __all__ = [
 
 import numpy as np
 from dwave.gate.circuit import Circuit
+import dwave.gate.operations as ops
 
 from dwave.gate.simulator.ops cimport (
     apply_cswap,
@@ -17,9 +19,14 @@ from dwave.gate.simulator.ops cimport (
 
 
 def apply_instruction(
-    num_qubits, state, op, targets, little_endian, conjugate_gate=False,
+    num_qubits: int,
+    state: np.ndarray,
+    op: ops.Operation,
+    targets: list[int],
+    little_endian: bool,
+    conjugate_gate: bool = False,
 ):
-    if op.label == "swap":
+    if isinstance(op, ops.SWAP):
         gate = op.matrix
         target0 = targets[1]
         target1 = targets[0]
@@ -28,13 +35,25 @@ def apply_instruction(
             little_endian=little_endian,
         )
 
-    elif op.label == "cswap":
+    elif isinstance(op, ops.CSWAP):
         gate = op.matrix
         target0 = targets[1]
         target1 = targets[2]
         control = targets[0]
         apply_cswap(
             num_qubits, state, gate, target0, target1, control,
+            little_endian=little_endian,
+        )
+
+    elif isinstance(op, ops.CCX):
+        # this one has to hardcoded for now because ops.ControlledOperation
+        # doesn't support more than one control yet
+        gate = np.array([[0, 1], [1, 0]], dtype=np.complex128)
+        target = targets[2]
+        control0 = targets[0]
+        control1 = targets[1]
+        apply_gate_two_control(
+            num_qubits, state, gate, target, control0, control1,
             little_endian=little_endian,
         )
 
@@ -64,6 +83,10 @@ def apply_instruction(
             )
     else:
         # apply single qubit gate
+        if op.num_qubits != 1:
+            raise ValueError(
+                f"simulator encountered unknown multi-qubit operation: {op.label}"
+            )
         gate = op.matrix
         if conjugate_gate:
             gate = np.ascontiguousarray(gate.conjugate())
@@ -93,11 +116,13 @@ def simulate(
         The resulting state vector or density matrix.
 
     """
+    num_qubits = circuit.num_qubits
+    if num_qubits == 0:
+        return np.empty(0, dtype=np.complex128)
 
     if mixed_state:
         return _simulate_circuit_density_matrix(circuit)
 
-    num_qubits = circuit.num_qubits
     state = np.zeros(1 << num_qubits, dtype=np.complex128)
     state[0] = 1
 
