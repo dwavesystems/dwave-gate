@@ -4,7 +4,7 @@ dwave-gate
 .. index-start-marker
 
 ``dwave-gate`` is a software package for constructing, modifying and running quantum circuits. It
-  provides a set of tools that enables you to:
+provides a set of tools that enables you to:
 
 * Construct quantum circuits using an intuitive context-manager interface.
 
