@@ -28,6 +28,7 @@ install:
 ifndef PYTHON3
 	@echo "D-Wave Gate Model software requires at least Python 3.7"
 endif
+	$(PYTHON) dwave/gate/simulator/operation_generation.py
 	$(PYTHON) setup.py build_ext --inplace
 
 # whether coverage files should be removed (true)

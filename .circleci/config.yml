@@ -100,6 +100,7 @@ jobs:
             python -m venv env
             . env/bin/activate
             pip install -r requirements.txt
+            python dwave/gate/simulator/operation_generation.py
             python setup.py sdist -d ./dist
       - store_artifacts: *store-artifacts
       - persist_to_workspace: *persist-to-workspace
@@ -160,6 +161,7 @@ jobs:
           name: build
           command: |
             . env/bin/activate
+            python dwave/gate/simulator/operation_generation.py
             pip install .
       - run:
           name: run coverage
