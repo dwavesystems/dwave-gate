@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from typing import List, Dict, Tuple, Optional, NamedTuple, Union
+from typing import List, Dict, Set, Tuple, Optional, NamedTuple, Union
 
 import cgen as c
 import numpy as np
@@ -28,8 +28,8 @@ def binary(i: int, n: int) -> Tuple[int, ...]:
 
 
 def compile_gate(
-    gate_matrix: Union[np.ndarray, list[list[EntryType]]]
-) -> Tuple[set[int], dict[int, List[Tuple[int, EntryType]]]]:
+    gate_matrix: Union[np.ndarray, List[List[EntryType]]]
+) -> Tuple[Set[int], Dict[int, List[Tuple[int, EntryType]]]]:
     """Compile a given gate into a minimal set of instructions.
 
     Args:
