@@ -300,7 +300,7 @@ def generate_op_c_code(
 
 
         # loop over all basis states of all qubits *not* affected by the gate
-        c.Pragma("omp parallel for"),
+        # c.Pragma("omp parallel for"),
         c.For(
             f"{partial_basis.typename} {partial_basis.name} = 0",
             f"{partial_basis.name} < {num_iterations}",
