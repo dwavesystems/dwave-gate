@@ -46,30 +46,17 @@ class build_ext_compiler_check(build_ext):
         build_ext.build_extensions(self)
 
 
-extensions = [
-    Extension(
-        name="dwave.gate.simulator.simulator",
-        sources=["dwave/gate/simulator/simulator.pyx"],
-        include_dirs=["dwave/gate/simulator/"],
-        language="c++",
-    ),
-    Extension(
-        name="dwave.gate.registers.cyregister",
-        sources=["dwave/gate/registers/cyregister.pyx"],
-        include_dirs=["dwave/gate/registers/"],
-        language="c++",
-    ),
-]
-
 setup(
     name="dwave-gate",
     install_requires=[
         "numpy",
     ],
     ext_modules=cythonize(
-        extensions, annotate=bool(os.getenv("CYTHON_ANNOTATE", False))
+        ["dwave/gate/simulator/simulator.pyx",
+         "dwave/gate/registers/cyregister.pyx"
+         ],
+        annotate=bool(os.getenv("CYTHON_ANNOTATE", False))
     ),
     include_dirs=[numpy.get_include()],
     cmdclass={"build_ext": build_ext_compiler_check},
-    zip_safe=False,
 )
