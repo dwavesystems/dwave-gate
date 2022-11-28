@@ -164,7 +164,7 @@ def test_simulate_sv_cswap():
 
     state = simulate(circuit, little_endian=False)
 
-    # CCX should have mapped |011> to |110>
+    # CSWAP should have mapped |011> to |110>
     assert np.all(state == np.array([0, 0, 0, 1, 0, 0, 0, 0]))
 
 
@@ -177,7 +177,7 @@ def test_simulate_dm_cswap():
 
     state = simulate(circuit, little_endian=False, mixed_state=True)
 
-    # CCX should have mapped |011> to |110>
+    # CSWAP should have mapped |011> to |110>
     pure_110 = np.zeros((8, 8))
     pure_110[3, 3] = 1
 

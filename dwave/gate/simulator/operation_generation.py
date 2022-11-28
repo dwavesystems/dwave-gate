@@ -8,7 +8,7 @@ def binary(i: int, n: int) -> Tuple[int, ...]:
     return tuple((i >> j) & 1 for j in range(n))
 
 
-def compile_gate(gate_matrix: np.ndarray, assume_unitary: bool = True):
+def compile_gate(gate_matrix: np.ndarray, assume_unitary: bool = True) -> Tuple[set, dict]:
     gate_matrix_size = len(gate_matrix)
 
     # set of "sub states" we will need to fetch at each iteration

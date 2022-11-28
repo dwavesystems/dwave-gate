@@ -100,7 +100,7 @@ def apply_instruction(
 
 def simulate(
     circuit: Circuit, mixed_state: bool = False, little_endian: bool = False
-) -> np.ndarray:
+) -> np.typing.NDArray:
     """Simulate the given circuit with either a state vector or density matrix
     simulation.
 
@@ -136,7 +136,7 @@ def simulate(
     return state
 
 
-def _simulate_circuit_density_matrix(circuit, little_endian=False):
+def _simulate_circuit_density_matrix(circuit: Circuit, little_endian: bool = False) -> np.typing.NDArray:
     num_qubits = circuit.num_qubits
     num_virtual_qubits = 2 * num_qubits
     state = np.zeros(1 << num_virtual_qubits, dtype=np.complex128)
