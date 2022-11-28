@@ -12,7 +12,7 @@ build-verbosity = "1"
 skip = "pp* *musllinux*"
 before-test = "pip install -r {project}/requirements_dev.txt"
 test-command = "pytest {project}/tests"
-before-all = "pip install 'cgen>=2020.1' && python {project}/dwave/gate/simulator/operation_generation.py"
+before-build = "pip install 'cgen>=2020.1' && python {project}/dwave/gate/simulator/operation_generation.py"
 
 [tool.cibuildwheel.linux]
 archs = "x86_64 aarch64"
