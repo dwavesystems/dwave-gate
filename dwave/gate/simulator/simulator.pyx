@@ -1,3 +1,7 @@
+# distutils: language = c++
+# cython: language_level=3
+# cython: linetrace=True
+
 # Copyright 2022 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,9 +15,6 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-
-# cython: language_level=3
-# cython: linetrace=True
 
 __all__ = [
     "simulate",
