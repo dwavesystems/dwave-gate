@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 # TODO: exchange for something better; only here for testing matrix creation
 # for custom operations; controlled operations only works with single
 # control and target; no support for any other multi-qubit gates
-@lru_cache
+@lru_cache(maxsize=128)
 def build_unitary(circuit) -> NDArray:
     """Builds the circuit unitary by multiplying together the operation matrices.
 

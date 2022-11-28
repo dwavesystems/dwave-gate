@@ -23,7 +23,7 @@ __all__ = [
 ]
 
 import copy
-from functools import cached_property
+from dwave.gate.utils import cached_property
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
