@@ -429,4 +429,4 @@ def _resolve_label_conflict(mapping, existing, old_labels=None, new_labels=None)
             old_to_intermediate[old] = new
             # don't need to add it to intermediate_to_new because it is a self-label
 
-    return old_to_intermediate,
+    return old_to_intermediate, intermediate_to_new

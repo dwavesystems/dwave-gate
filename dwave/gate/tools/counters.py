@@ -79,7 +79,7 @@ class IDCounter:
 
         Args:
             length: The (initial) length of unique ID numbers.
-            bathc: The size of each generated batch of ID numbers. The lower the number, the less
+            batch: The size of each generated batch of ID numbers. The lower the number, the less
                 variation there will be between IDs; the higher the number, the more variation
                 there will be, but with a higher memory and performance impact at refresh time.
         """
