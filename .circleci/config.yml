@@ -38,7 +38,7 @@ jobs:
         type: string
 
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
 
     environment:
       <<: *global-environment
@@ -90,7 +90,7 @@ jobs:
 
   build-sdist:
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
 
     steps:
       - checkout
@@ -124,7 +124,7 @@ jobs:
 
   deploy-all:
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
 
     steps:
       - attach_workspace:
@@ -146,7 +146,7 @@ jobs:
   # suffices to just do it once
   test-codecov:
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
 
     steps:
       - checkout
@@ -177,7 +177,7 @@ jobs:
 
   test-sdist:
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
 
     steps:
       - checkout
