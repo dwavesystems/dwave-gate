@@ -34,7 +34,7 @@ def compile_gate(
 
     Args:
         gate_matrix: Square matrix representing the gate. Values may be scalars or C variables that
-        refer to floats.
+            refer to floats.
 
     Returns:
         A tuple where the first item is the set of substates acted on by the gate, and the second
