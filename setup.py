@@ -21,14 +21,13 @@ from Cython.Build import cythonize
 
 
 extra_compile_args = {
-    'msvc': ['/std:c++14', "/openmp"],
-    'unix': ['-std=c++11', "-fopenmp", "-Ofast", "-ffast-math",
-             "-march=native"],
+    'msvc': ['/std:c++17'],
+    'unix': ['-std=c++17'],
 }
 
 extra_link_args = {
-    'msvc': ["/openmp"],
-    'unix': ["-fopenmp"],
+    'msvc': [],
+    'unix': [],
 }
 
 

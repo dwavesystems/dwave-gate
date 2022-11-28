@@ -77,7 +77,7 @@ and tests and coverage can be run using Pytest:
 
 .. code-block:: bash
 
-    pytest test --cov=dwave.gate
+    pytest tests/ --cov=dwave.gate
 
 .. installation-end-marker
 
