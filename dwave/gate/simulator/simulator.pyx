@@ -71,7 +71,7 @@ def apply_instruction(
             little_endian=little_endian,
         )
 
-    elif hasattr(op, "control"):
+    elif isinstance(op, ops.ControlledOperation):
         # should be single qubit gate with controls
         if isinstance(op, ops.ParametricOperation):
             gate = op.target_operation(op.parameters).matrix
@@ -81,7 +81,7 @@ def apply_instruction(
         if conjugate_gate:
             gate = np.ascontiguousarray(gate.conjugate())
 
-        if len(op.control) == 1:
+        if op.num_control == 1:
             target = targets[1]
             control = targets[0]
             apply_gate_control(
@@ -89,7 +89,7 @@ def apply_instruction(
                 little_endian=little_endian,
             )
 
-        elif len(op.control) == 2:
+        elif op.num_control == 2:
             target = targets[2]
             control0 = targets[0]
             control1 = targets[1]

@@ -12,10 +12,14 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from typing import List, Dict, Tuple, Optional, NamedTuple
+from typing import List, Dict, Tuple, Optional, NamedTuple, Union
 
 import cgen as c
 import numpy as np
+
+
+# entry of a gate matrix
+EntryType = Union[float, c.Value]
 
 
 def binary(i: int, n: int) -> Tuple[int, ...]:
@@ -23,7 +27,20 @@ def binary(i: int, n: int) -> Tuple[int, ...]:
     return tuple((i >> j) & 1 for j in range(n))
 
 
-def compile_gate(gate_matrix: np.ndarray, assume_unitary: bool = True) -> Tuple[set, dict]:
+def compile_gate(
+    gate_matrix: Union[np.ndarray, list[list[EntryType]]]
+) -> Tuple[set[int], dict[int, List[Tuple[int, EntryType]]]]:
+    """Compile a given gate into a minimal set of instructions.
+
+    Args:
+        gate_matrix: Square matrix representing the gate. Values may be scalars or C variables that
+        refer to floats.
+
+    Returns:
+        A tuple where the first item is the set of substates acted on by the gate, and the second
+        item is a dictionary mapping output substates to those corresponding instructions.
+    """
+
     gate_matrix_size = len(gate_matrix)
 
     # set of "sub states" we will need to fetch at each iteration
@@ -31,7 +48,7 @@ def compile_gate(gate_matrix: np.ndarray, assume_unitary: bool = True) -> Tuple[
 
     # keys are substates, and values are lists of instructions to compute the new
     # sub state amplitude
-    instructions: Dict[int, List[Tuple]] = {}
+    instructions: Dict[int, List[Tuple[int, EntryType]]] = {}
 
     for state_i in range(gate_matrix_size):
         nz = np.nonzero(gate_matrix[state_i])[0]
@@ -39,7 +56,6 @@ def compile_gate(gate_matrix: np.ndarray, assume_unitary: bool = True) -> Tuple[
         if (
             nz_set == {state_i}
             and gate_matrix[state_i][state_i] == 1
-            and assume_unitary
         ):
             # essentially the identity operation for this sub state, can ignore
             continue
@@ -155,7 +171,7 @@ def generate_op_c_code(
     def shift(value, idx):
         return f"({value} << {idx})"
 
-    sub_states = set()
+    sub_states: set[int] = set()
     inits = []
 
     gate_matrix_size = 1 << num_targets
