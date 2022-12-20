@@ -1,9 +1,10 @@
+#  type: ignore
 from _thread import RLock
 from typing import _GenericAlias
 
-try:
+try:  # pragma: no cover
     from functools import cached_property
-except ImportError:
+except ImportError:  # pragma: no cover
 
     # Copyright (C) 2006-2013 Python Software Foundation.
     _NOT_FOUND = object()
@@ -29,7 +30,8 @@ except ImportError:
                 return self
             if self.attrname is None:
                 raise TypeError(
-                    "Cannot use cached_property instance without calling __set_name__ on it.")
+                    "Cannot use cached_property instance without calling __set_name__ on it."
+                )
             try:
                 cache = instance.__dict__
             except AttributeError:  # not all objects have __dict__ (e.g. class defines slots)

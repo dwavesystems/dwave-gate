@@ -19,7 +19,13 @@ import pytest
 
 import dwave.gate.operations.operations as ops
 from dwave.gate.circuit import Circuit, ParametricCircuit
-from dwave.gate.operations.base import ABCLockedAttr, Operation, create_operation
+from dwave.gate.operations.base import (
+    ABCLockedAttr,
+    Barrier,
+    Measurement,
+    Operation,
+    create_operation,
+)
 
 
 class TestLockedMetaclass:
@@ -190,13 +196,60 @@ class TestMatrixRepr:
     def test_controlled_matrix_repr(self, op, qubits, matrix, two_qubit_circuit):
         """Test that controlled matrix representations are correct."""
         two_qubit_circuit.unlock()
-        with two_qubit_circuit.context as q:
+        with two_qubit_circuit.context as (q, c):
             assert np.allclose(op(*[q[i] for i in qubits]).matrix, matrix)
 
 
-@pytest.mark.xfail(reason="Measurements are not implemented yet.")
 class TestMeasurement:
     """Unit tests for the ``Measurement`` class."""
+
+    def test_initialize_measurement(self):
+        """Test initializing a measurement operation."""
+        m = Measurement()
+        assert m.__repr__() == "<Measurement, qubits=None, measured=None>"
+
+    def test_pipe_single_measurement(self, quantum_register, classical_register):
+        """Test measuring a qubit and 'piping' the value to a classical register."""
+        qubit = quantum_register[0]
+        bit = classical_register[0]
+        m = Measurement(qubits=qubit) | bit
+        assert m.__repr__() == f"<Measurement, qubits={(qubit,)}, measured={(bit,)}>"
+
+        assert m.bits == (bit,)
+
+    def test_pipe_measurements(self, quantum_register, classical_register):
+        """Test measuring several qubits and 'piping' the values to a classical register."""
+        qubits = quantum_register
+        bits = classical_register
+        m = Measurement(qubits=qubits) | bits
+        assert m.__repr__() == f"<Measurement, qubits={tuple(qubits)}, measured={tuple(bits)}>"
+
+        assert m.bits == tuple(bits)
+
+    def test_pipe_measurement_to_seq(self, quantum_register, classical_register):
+        """Test measuring several qubits and 'piping' the values to a sequence of bits."""
+        qubits = quantum_register
+        bits = tuple(classical_register)
+        m = Measurement(qubits=qubits) | bits
+        assert m.__repr__() == f"<Measurement, qubits={tuple(qubits)}, measured={bits}>"
+
+        assert m.bits == tuple(bits)
+
+    def test_pipe_measurements_to_large_register(self, quantum_register, classical_register):
+        """Test measuring several qubits and 'piping' the values to a larger classical register."""
+        qubits = quantum_register[:2]
+        bits = classical_register
+        m = Measurement(qubits=qubits) | bits
+        assert m.__repr__() == f"<Measurement, qubits={tuple(qubits)}, measured={tuple(bits[:2])}>"
+
+        assert m.bits == tuple(bits[:2])
+
+    def test_pipe_measurements_to_small_register(self, quantum_register, classical_register):
+        """Test measuring several qubits and 'piping' the values to a smaller classical register."""
+        qubits = quantum_register
+        bits = classical_register[:2]
+        with pytest.raises(ValueError, match=r"Measuring 4 qubit\(s\), passed to only 2 bits."):
+            m = Measurement(qubits=qubits) | bits
 
 
 @pytest.mark.xfail(reason="Barriers are not implemented yet.")
@@ -211,7 +264,7 @@ class TestCreateOperation:
         """Test creating an operation out of a parametric circuit."""
         circuit = ParametricCircuit(1)
 
-        with circuit.context as (p, q):
+        with circuit.context as (p, q, c):
             ops.RZ(p[0], q[0])
             ops.RY(p[1], q[0])
             ops.RZ(p[2], q[0])
@@ -230,7 +283,7 @@ class TestCreateOperation:
         """Test creating an operation out of a non-parametric circuit."""
         circuit = Circuit(1)
 
-        with circuit.context as q:
+        with circuit.context as (q, c):
             ops.Hadamard(q[0])
             ops.X(q[0])
             ops.Hadamard(q[0])
@@ -244,7 +297,7 @@ class TestCreateOperation:
         """Test creating an operation without a label."""
         circuit = Circuit(1)
 
-        with circuit.context as q:
+        with circuit.context as (q, c):
             ops.Hadamard(q[0])
             ops.X(q[0])
             ops.Hadamard(q[0])
@@ -258,7 +311,7 @@ class TestCreateOperation:
         parameters."""
         circuit = ParametricCircuit(1)
 
-        with circuit.context as (p, q):
+        with circuit.context as (p, q, c):
             ops.RZ(0.1, q[0])
             ops.RY(p[0], q[0])
             ops.RZ(0.3, q[0])

@@ -81,7 +81,7 @@ def z_op() -> Type[Operation]:
     """
     circuit = Circuit(1)
 
-    with circuit.context as q:
+    with circuit.context as (q, c):
         ops.Hadamard(q[0])
         ops.X(q[0])
         ops.Hadamard(q[0])
@@ -98,7 +98,7 @@ def rot_op() -> Type[Operation]:
     """
     circuit = ParametricCircuit(1)
 
-    with circuit.context as (p, q):
+    with circuit.context as (p, q, c):
         ops.RZ(p[0], q[0])
         ops.RY(p[1], q[0])
         ops.RZ(p[2], q[0])
@@ -152,6 +152,48 @@ class TestOperations:
 
         # compare built unitary with operation matrix representation
         assert np.allclose(unitary, expected)
+
+    def test_repr(self, Op):
+        """Test the representation of operations."""
+        if issubclass(Op, ParametricOperation):
+            op = Op([0 for _ in range(Op.num_parameters)])
+        else:
+            op = Op()
+        assert (
+            op.__repr__() == f"<{op.__class__.__base__.__name__}: {op.label}, qubits={op.qubits}>"
+        )
+
+    def test_repr_conditional(self, Op, classical_register):
+        """Test the representation of conditional operations."""
+        if issubclass(Op, ParametricOperation):
+            op = Op([0 for _ in range(Op.num_parameters)])
+        else:
+            op = Op()
+        op._cond = classical_register
+        assert (
+            op.__repr__()
+            == f"<{op.__class__.__base__.__name__}: {op.label}, qubits={op.qubits}, conditional: {op._cond}>"
+        )
+
+    def test_conditional(self, Op, classical_register):
+        """Test initializing a conditional operation."""
+        if issubclass(Op, ParametricOperation):
+            op = Op([0 for _ in range(Op.num_parameters)])
+        else:
+            op = Op()
+
+        op.conditional(classical_register)
+        assert op._cond == classical_register
+
+    def test_conditional_single_bit(self, Op, classical_register):
+        """Test initializing a conditional operation with a single bit."""
+        if issubclass(Op, ParametricOperation):
+            op = Op([0 for _ in range(Op.num_parameters)])
+        else:
+            op = Op()
+
+        op.conditional(classical_register[0])
+        assert op._cond == (classical_register[0],)
 
 
 class TestCustomOperations:
@@ -238,7 +280,7 @@ class TestParametricOperations:
         params = list(range(ParamOp.num_parameters))
 
         empty_circuit.add_qregister(ParamOp.num_qubits)
-        with empty_circuit.context as q:
+        with empty_circuit.context as (q, c):
             op = ParamOp(params, q)
 
         assert empty_circuit.circuit == [op]
@@ -262,7 +304,7 @@ class TestParametricOperations:
         with pytest.raises(
             ValueError, match=f"requires {ParamOp.num_qubits} qubits, got {ParamOp.num_qubits + 9}."
         ):
-            with empty_circuit.context as q:
+            with empty_circuit.context as (q, c):
                 ParamOp(params, q)
 
     def test_applying_operation_instance(self, empty_circuit, ParamOp):
@@ -417,7 +459,7 @@ class TestControlledOperations:
     def test_initializing_gate_in_context(self, empty_circuit, ControlledOp):
         """Test initializing a controlled operation within a context."""
         empty_circuit.add_qregister(ControlledOp.num_qubits)
-        with empty_circuit.context as q:
+        with empty_circuit.context as (q, c):
             op = ControlledOp(q[: ControlledOp.num_control], q[ControlledOp.num_control :])
 
         assert empty_circuit.circuit == [op]
@@ -438,7 +480,7 @@ class TestControlledOperations:
             ValueError,
             match=f"requires {ControlledOp.num_qubits} qubits, got {ControlledOp.num_qubits + 9}.",
         ):
-            with empty_circuit.context as q:
+            with empty_circuit.context as (q, c):
                 ControlledOp(q[: ControlledOp.num_control], q[ControlledOp.num_control :])
 
     def test_applying_operation_instance(self, empty_circuit, ControlledOp):
@@ -491,7 +533,7 @@ class TestParametricControlledOperations:
         params = [f"p{i}" for i in range(ParametricControlledOp.num_parameters)]
 
         empty_circuit.add_qregister(ParametricControlledOp.num_qubits)
-        with empty_circuit.context as q:
+        with empty_circuit.context as (q, c):
             op = ParametricControlledOp(
                 params,
                 q[: ParametricControlledOp.num_control],
@@ -522,7 +564,7 @@ class TestParametricControlledOperations:
             ValueError,
             match=f"requires {ParametricControlledOp.num_qubits} qubits, got {ParametricControlledOp.num_qubits + 9}.",
         ):
-            with empty_circuit.context as q:
+            with empty_circuit.context as (q, c):
                 ParametricControlledOp(
                     params,
                     q[: ParametricControlledOp.num_control],
@@ -578,7 +620,7 @@ class TestOtherOperations:
     def test_initializing_gate_in_context(self, empty_circuit, Op):
         """Test initializing an operation within a context."""
         empty_circuit.add_qregister(Op.num_qubits)
-        with empty_circuit.context as q:
+        with empty_circuit.context as (q, c):
             op = Op(q)
 
         assert empty_circuit.circuit == [op]
@@ -598,7 +640,7 @@ class TestOtherOperations:
         with pytest.raises(
             ValueError, match=f"requires {Op.num_qubits} qubits, got {Op.num_qubits + 9}."
         ):
-            with empty_circuit.context as q:
+            with empty_circuit.context as (q, c):
                 Op(q)
 
     def test_applying_operation_instance(self, empty_circuit, Op):

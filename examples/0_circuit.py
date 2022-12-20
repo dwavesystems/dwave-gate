@@ -43,7 +43,7 @@ print("Qubits:", circuit.qubits)
 
 # To create a circuit, we use the circuit context manager and append gates as follows;
 # an X-gate to the first qubit (q[0]) and an X-rotation to the second qubit (q[1]).
-with circuit.context as q:
+with circuit.context as (q, c):
     X(q[0])
     RX(0.5, q[1])
 
@@ -56,7 +56,7 @@ print("Circuit", circuit.circuit)
 circuit.unlock()
 
 # We can now apply more gates which will be appended to the circuit.
-with circuit.context as q:
+with circuit.context as (q, c):
     CNOT(q[0], q[1])
 
 print("Circuit", circuit.circuit)
