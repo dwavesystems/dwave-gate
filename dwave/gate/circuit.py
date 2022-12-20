@@ -23,7 +23,6 @@ __all__ = [
 ]
 
 import copy
-from dwave.gate.utils import cached_property
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -47,6 +46,7 @@ from dwave.gate.registers.registers import (
     QuantumRegister,
     SelfIncrementingRegister,
 )
+from dwave.gate.utils import cached_property
 
 if TYPE_CHECKING:
     from dwave.gate.operations.base import Operation
@@ -190,7 +190,7 @@ class Circuit:
         del self.circuit[idx]
 
     @cached_property
-    def qubits(self) -> Sequence[Qubit]:
+    def qubits(self) -> QuantumRegister:
         """Qubits handled by the circuit."""
         qubit_reg = QuantumRegister()
         for qreg in self.qregisters.values():
@@ -199,7 +199,7 @@ class Circuit:
         return qubit_reg
 
     @cached_property
-    def bits(self) -> Sequence[Bit]:
+    def bits(self) -> ClassicalRegister:
         """Classical bits handled by the circuit."""
         bit_reg = ClassicalRegister()
         for creg in self.cregisters.values():
@@ -262,6 +262,9 @@ class Circuit:
         if not keep_registers:
             self._qregisters.clear()
             self._cregisters.clear()
+        else:
+            for bit in self.bits:
+                bit.reset()
 
         self.unlock()
 
@@ -311,7 +314,7 @@ class Circuit:
             creg_label = list(self.cregisters)[0]
 
         # NOTE: same bit in different registers NOT allowed
-        if bit in self.bits:
+        if self.bits and bit in self.bits:
             raise ValueError(f"Bit '{bit}' already in use in classical register '{creg_label}'.")
 
         self.cregisters[creg_label].add(bit or Bit(str(self.num_bits)))
@@ -620,7 +623,7 @@ class CircuitContext:
 
                 >>> circuit = Circuit(1)
 
-                >>> with circuit.context as q:
+                >>> with circuit.context as (q, c):
                 ...   X(q[0])  # will be appended to the circuit
                 ...   with circuit.context.freeze:
                 ...       Y(q[0])  # will NOT be appended to the circuit
@@ -644,7 +647,7 @@ class CircuitContext:
 
     def __enter__(
         self,
-    ) -> Sequence[Qubit]:
+    ) -> Tuple[QuantumRegister, ClassicalRegister]:
         """Enters the context and sets itself as active."""
         if self.circuit.is_locked() == True:
             raise CircuitError(
@@ -656,7 +659,7 @@ class CircuitContext:
             CircuitContext._active_context = self
         else:
             raise RuntimeError("Cannot enter context, another circuit context is already active.")
-        return self.circuit.qubits
+        return self.circuit.qubits, self.circuit.bits
 
     def __exit__(
         self,
@@ -696,13 +699,13 @@ class ParametricCircuitContext(CircuitContext):
 
     def __enter__(
         self,
-    ) -> Tuple[SelfIncrementingRegister, Sequence[Qubit]]:
+    ) -> Tuple[SelfIncrementingRegister, QuantumRegister, ClassicalRegister]:
         """Enters the context and sets itself as active."""
         # should always be a 'ParametricCircuit'; check in '__init__'
         assert isinstance(self.circuit, ParametricCircuit)
 
-        q = super().__enter__()
-        return (self.circuit._parameter_register, q)
+        qreg, creg = super().__enter__()
+        return (self.circuit._parameter_register, qreg, creg)
 
     def __exit__(
         self,

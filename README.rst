@@ -33,7 +33,7 @@ a two-qubit circuit.
 
     circuit = Circuit(2)
 
-    with circuit.context as q:
+    with circuit.context as (q, c):
         ops.Hadamard(q[1])
         ops.CZ(q[0], q[1])
         ops.Hadamard(q[1])

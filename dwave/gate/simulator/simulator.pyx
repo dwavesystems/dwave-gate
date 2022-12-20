@@ -20,16 +20,21 @@ __all__ = [
     "simulate",
 ]
 
+import random
+import warnings
+from typing import List
+
 import numpy as np
-from dwave.gate.circuit import Circuit
+
 import dwave.gate.operations as ops
+from dwave.gate.circuit import Circuit
 
 from dwave.gate.simulator.ops cimport (
     apply_cswap,
     apply_gate_control,
     apply_gate_two_control,
     apply_swap,
-    single_qubit
+    single_qubit,
 )
 
 
@@ -41,7 +46,11 @@ def apply_instruction(
     little_endian: bool,
     conjugate_gate: bool = False,
 ):
-    if isinstance(op, ops.SWAP):
+    # if conditional and all bits are 1, skip
+    if op._cond and not any(op._cond):
+        return
+
+    elif isinstance(op, ops.SWAP):
         gate = op.matrix
         target0 = targets[1]
         target1 = targets[0]
@@ -145,10 +154,73 @@ def simulate(
     state[0] = 1
 
     for op in circuit.circuit:
-        targets = [circuit.qubits.index(qb) for qb in op.qubits]
-        apply_instruction(num_qubits, state, op, targets, little_endian)
+        if isinstance(op, ops.Measurement):
+            _measure(op, state, circuit)
+        else:
+            targets = [circuit.qubits.index(qb) for qb in op.qubits]
+            apply_instruction(num_qubits, state, op, targets, little_endian)
 
     return state
+
+
+def _measure(op, state, circuit):
+    op._measured_state = state.copy()
+
+    for idx, qb in enumerate(op.qubits):
+        m = _sample(circuit.qubits.index(qb), state)
+
+        try:
+            op.bits[idx].set(m)
+        except (IndexError, TypeError):
+            warnings.warn("Measurements not stored in the classical register.")
+
+        op._measured_qubit_indices.append(circuit.qubits.index(qb))
+
+
+def _sample(qubit: int, state: np.typing.NDArray, collapse_state: bool = True) -> int:
+    """Sample a measurement on a single qubit and collapse the state.
+
+    Args:
+        qubit: Which qubit (index, from left to right) to sample.
+        collapse_state: Whether to collapse the state after a measurement.
+
+    Returns:
+        int: 0 or 1 sample of the measured qubit.
+    """
+    num_qubits = round(np.log2(len(state)))
+
+    if qubit >= num_qubits:
+        raise ValueError(f"Cannot sample qubit {qubit}. State has only {num_qubits} qubits.")
+
+    weight_0 = weight_1 = 0
+    zero_weight = False
+    state_0_ids = []
+    state_1_ids = []
+
+    for i in range(2**num_qubits):
+        if i % 2**(num_qubits - qubit - 1) == 0:
+            zero_weight = not zero_weight
+        if zero_weight:
+            weight_0 += np.abs(state[i])**2
+            state_0_ids.append(i)
+        else:
+            weight_1 += np.abs(state[i])**2
+            state_1_ids.append(i)
+
+    sample = random.choices((0, 1), weights=[weight_0, weight_1])[0]
+
+    if collapse_state:
+        if sample == 0:
+            state[state_1_ids] = 0
+        else:
+            state[state_0_ids] = 0
+
+        # renormalize the state after removing the measured state values
+        norm = np.linalg.norm(state)
+        for i, s in enumerate(state):
+            state[i] = state[i] / norm
+
+    return sample
 
 
 def _simulate_circuit_density_matrix(circuit: Circuit, little_endian: bool = False) -> np.typing.NDArray:

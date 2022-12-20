@@ -25,7 +25,7 @@ __all__ = [
 
 import copy
 import warnings
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractproperty
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -41,20 +41,32 @@ from typing import (
     overload,
 )
 
+import numpy as np
+
 from dwave.gate.circuit import Circuit, CircuitContext, ParametricCircuit
 from dwave.gate.mixedproperty import mixedproperty
-from dwave.gate.primitives import Qubit
-from dwave.gate.registers.registers import Variable
+from dwave.gate.primitives import Bit, Qubit
+from dwave.gate.registers.registers import ClassicalRegister, Variable
+from dwave.gate.tools.samples import sample
 from dwave.gate.tools.unitary import build_controlled_unitary, build_unitary
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
+# define an integer value for an arbitrary number of qubits;
+# used for clarity in variable qubit number operations
+ANY = -1
+
 Qubits = Union[Qubit, Sequence[Qubit]]
+Bits = Union[Bit, Sequence[Bit]]
 Parameters = Union[Variable, complex, Sequence[Union[Variable, complex]]]
 
 CustomOperation = TypeVar("CustomOperation", bound="Operation")
 CustomParametricOperation = TypeVar("CustomParametricOperation", bound="ParametricOperation")
+
+
+class OperationError(Exception):
+    """Exception to be raised when there is an error with an OperationError."""
 
 
 @overload
@@ -174,12 +186,16 @@ class Operation(metaclass=ABCLockedAttr):
 
         if qubits is not None:
             qubits = self._check_qubits(qubits)
+            # set num_qubits to the actual number of qubits
+            if self._num_qubits == ANY:
+                self._num_qubits: int = len(qubits)
 
         elif active_context is not None:
             raise TypeError("Qubits required when applying gate within context.")
 
         # must be set before appending operation to circuit
         self._qubits = qubits
+        self._cond: Optional[Sequence[Bit]] = None
 
         if active_context is not None and active_context.frozen is False:
             active_context.circuit.append(self)
@@ -197,7 +213,7 @@ class Operation(metaclass=ABCLockedAttr):
         if isinstance(qubits, Qubit):
             qubits = [qubits]
 
-        if len(qubits) != cls.num_qubits:
+        if cls.num_qubits != ANY and len(qubits) != cls.num_qubits:
             raise ValueError(
                 f"Operation '{cls.label}' requires " f"{cls.num_qubits} qubits, got {len(qubits)}."
             )
@@ -243,6 +259,8 @@ class Operation(metaclass=ABCLockedAttr):
 
     def __repr__(self) -> str:
         """Returns the representation of the Operation object."""
+        if self._cond:
+            return f"<{self.__class__.__base__.__name__}: {self.label}, qubits={self.qubits}, conditional: {self._cond}>"
         return f"<{self.__class__.__base__.__name__}: {self.label}, qubits={self.qubits}>"
 
     @mixedproperty
@@ -264,8 +282,11 @@ class Operation(metaclass=ABCLockedAttr):
         return decomposition
 
     @mixedproperty
-    def num_qubits(cls) -> int:
+    def num_qubits(cls, self) -> int:
         """Number of qubits that the operation supports."""
+        if self is not None:
+            return self._num_qubits
+
         if isinstance(cls._num_qubits, int):
             return cls._num_qubits
 
@@ -301,13 +322,21 @@ class Operation(metaclass=ABCLockedAttr):
             f"'{self.__class__.__name__}' does not support OpenQASM 2.0 transpilation"
         )
 
-    @abstractproperty
+    @mixedproperty
     def matrix(cls) -> NDArray:  # type: ignore
         """Returns the matrix representation of the operation.
 
         Returns:
             NDArray: Matrix representation of the operation.
         """
+
+    def conditional(self, bits: Bits) -> Operation:
+        """Sets the ``_cond`` attribute, conditioning the operation on one or more bits."""
+        if isinstance(bits, Bit):
+            bits = (bits,)
+
+        self._cond = bits
+        return self
 
 
 class ParametricOperation(Operation):
@@ -611,6 +640,81 @@ class Measurement(Operation):
             an measurement within a circuit context.
     """
 
+    _num_qubits: int = ANY
+
+    def __init__(self, qubits: Optional[Qubits] = None) -> None:
+        self._bits = None
+        self._measured_state = None
+
+        self._measured_qubit_indices = []
+        """List[int]: The indices of the measured qubit in the circuit."""
+
+        super().__init__(qubits)
+
+    def __repr__(self) -> str:
+        return f"<Measurement, qubits={self.qubits}, measured={self.bits}>"
+
+    def __or__(self, bits: Union[Bits, ClassicalRegister]) -> Measurement:
+        if not isinstance(bits, ClassicalRegister):
+            if isinstance(bits, Bit):
+                bits = (bits,)
+            measured_bits = tuple(bits)
+        else:
+            measured_bits = tuple(bits.data)
+
+        if len(measured_bits) < self.num_qubits:
+            raise ValueError(
+                f"Measuring {self.num_qubits} qubit(s), passed to only {len(measured_bits)} bits."
+            )
+
+        self._bits = measured_bits[: self.num_qubits]
+        return self
+
+    @property
+    def bits(self) -> Optional[Sequence[Bit]]:
+        """The bits in which the measurement samples are stored."""
+        return self._bits
+
+    @property
+    def state(self) -> Optional[NDArray]:
+        """The circuit state when measured."""
+        return self._measured_state
+
+    def sample(self, qubit: Optional[int] = None, num_samples: int = 1) -> Optional[Sequence[int]]:
+        """Sample the measured state.
+
+        Args:
+            qubit: The qubit to sample. Not required if measurement is on a single qubit.
+            num_samples: The number of samples to measure.
+
+        Returns:
+            Sequence[int]: The measurement samples.
+        """
+        if qubit is None and self.num_qubits != 1:
+            raise ValueError("Measurement has several qubit. Must specify which to sample.")
+
+        if self.state is not None:
+            return sample(
+                qubit or self._measured_qubit_indices[0], self.state, num_samples=num_samples
+            )
+        return None
+
+    def expval(self, qubit: Optional[int] = None, num_samples: int = 1000) -> Optional[float]:
+        """Calculate the expectation value of a measurement.
+
+        Args:
+            qubit: The qubit to sample. Not required if measurement is on a single qubit.
+            num_samples: The number of samples to use when calculating the expectation value.
+
+        Returns:
+            float: The expectation value of the measurement.
+        """
+        samples = self.sample(qubit, num_samples)
+
+        if samples is not None:
+            return np.mean(samples, dtype=float)
+        return None
+
 
 class Barrier(Operation):
     """Class representing a barrier operation.
@@ -620,3 +724,5 @@ class Barrier(Operation):
             Only required when applying a barrier operation within a circuit
             context.
     """
+
+    _num_qubits: None = None
