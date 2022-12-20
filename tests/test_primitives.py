@@ -82,24 +82,18 @@ class TestBit:
         bit = Bit("ananas")
         assert bit.__repr__() == f"<bit: ananas, id:{bit.id}>"
 
-    @pytest.mark.parametrize("value", [1, 0, "1", True])
+    @pytest.mark.parametrize("value", [1, 0, "1", True, 42, (1, 2, 3)])
     def test_set_value(self, value):
         """Test setting a value for the bit."""
         bit = Bit("banana")
         bit.set(value)
 
-        assert bit == int(value)
-        assert bit.__repr__() == f"<bit: banana, id:{bit.id}, value: {int(value)}>"
+        assert bit == int(bool(value))
+        assert bit.__repr__() == f"<bit: banana, id:{bit.id}, value: {int(bool(value))}>"
 
         bit.reset()
 
         assert bit != 3.14
-
-    def test_set_invalid_value(self):
-        """Test setting an invalid value for the bit."""
-        bit = Bit("banana")
-        with pytest.raises(ValueError, match="can only be 0 or 1"):
-            bit.set(4)
 
     def test_force_set_value(self):
         """Test forcing a value for the bit."""

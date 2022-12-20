@@ -310,6 +310,18 @@ class Operation(metaclass=ABCLockedAttr):
             )
         self._qubits = self._check_qubits(qubits)
 
+    def is_blocked(self) -> bool:
+        """Whether the operation is blocked and should not be executed.
+
+        Note that this affects the operation only at runtime (e.g., in the simulator) and does not
+        block the operation from being appended to the circuit. This happend when at least one
+        conditional bit is False.
+        """
+        if self._cond:
+            return not all(self._cond)
+        return False
+
+
     def to_qasm(self, *args, **kwargs):
         """Converts the operation into an OpenQASM 2.0 string.
 
@@ -725,4 +737,4 @@ class Barrier(Operation):
             context.
     """
 
-    _num_qubits: None = None
+    _num_qubits: Optional[int] = None

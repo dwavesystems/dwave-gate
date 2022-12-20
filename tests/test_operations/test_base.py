@@ -206,7 +206,7 @@ class TestMeasurement:
     def test_initialize_measurement(self):
         """Test initializing a measurement operation."""
         m = Measurement()
-        assert m.__repr__() == "<Measurement, qubits=None, measured=None>"
+        assert repr(m) == "<Measurement, qubits=None, measured=None>"
 
     def test_pipe_single_measurement(self, quantum_register, classical_register):
         """Test measuring a qubit and 'piping' the value to a classical register."""

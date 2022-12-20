@@ -122,10 +122,7 @@ class Bit:
             force: Whether to replace any previously set value.
         """
         # leniently allow any type that evaluates to 0 or 1
-        value = int(value)
-
-        if value != 0 and value != 1:
-            raise ValueError("Bit can only be 0 or 1.")
+        value = int(bool(value))
 
         if self._value and not force:
             raise ValueError("Value already set. Use 'force=True' to replace it.")

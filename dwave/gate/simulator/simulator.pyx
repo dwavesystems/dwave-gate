@@ -46,8 +46,7 @@ def apply_instruction(
     little_endian: bool,
     conjugate_gate: bool = False,
 ):
-    # if conditional and all bits are 1, skip
-    if op._cond and not any(op._cond):
+    if op.is_blocked():
         return
 
     elif isinstance(op, ops.SWAP):
