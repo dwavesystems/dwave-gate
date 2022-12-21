@@ -346,6 +346,7 @@ class Operation(metaclass=ABCLockedAttr):
             )
         self._qubits = self._check_qubits(qubits)
 
+    @property
     def is_blocked(self) -> bool:
         """Whether the operation is blocked and should not be executed.
 

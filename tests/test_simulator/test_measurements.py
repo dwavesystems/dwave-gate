@@ -166,7 +166,7 @@ class TestConditionalOps:
         expected = np.array([0, 0, 1, 0])
 
         assert np.allclose(res, expected)
-        assert x.is_blocked()
+        assert x.is_blocked
 
     def test_conditional_op_multiple_qubits_true(self):
         """Test simulating a circuit with a multiple conditional ops (true)."""
@@ -183,4 +183,4 @@ class TestConditionalOps:
         expected = np.array([0, 1, 0, 0])
 
         assert np.allclose(res, expected)
-        assert not x.is_blocked()
+        assert not x.is_blocked

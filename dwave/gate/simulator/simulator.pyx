@@ -46,7 +46,7 @@ def apply_instruction(
     little_endian: bool,
     conjugate_gate: bool = False,
 ):
-    if op.is_blocked():
+    if op.is_blocked:
         return
 
     elif isinstance(op, ops.SWAP):
@@ -176,12 +176,18 @@ def _measure(op, state, circuit):
         op._measured_qubit_indices.append(circuit.qubits.index(qb))
 
 
-def _sample(qubit: int, state: np.typing.NDArray, collapse_state: bool = True) -> int:
+def _sample(
+    qubit: int,
+    state: np.typing.NDArray,
+    collapse_state: bool = True,
+    reset_measured_qubits: bool = False
+) -> int:
     """Sample a measurement on a single qubit and collapse the state.
 
     Args:
         qubit: Which qubit (index, from left to right) to sample.
         collapse_state: Whether to collapse the state after a measurement.
+        reset_measured_qubits: Whether to reset the measured qubits to 0 after being measured.
 
     Returns:
         int: 0 or 1 sample of the measured qubit.
@@ -213,6 +219,10 @@ def _sample(qubit: int, state: np.typing.NDArray, collapse_state: bool = True) -
             state[state_1_ids] = 0
         else:
             state[state_0_ids] = 0
+
+            if reset_measured_qubits:
+                # since 1 was measured, that qubit is reset to 0 (by switching all 1s to 0s)
+                state[state_1_ids], state[state_0_ids] = state[state_0_ids], state[state_1_ids]
 
         # renormalize the state after removing the measured state values
         norm = np.linalg.norm(state)

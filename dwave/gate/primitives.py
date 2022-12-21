@@ -124,7 +124,7 @@ class Bit:
         # leniently allow any type that evaluates to 0 or 1
         value = int(bool(value))
 
-        if self._value and not force:
+        if self._value is not None and not force:
             raise ValueError("Value already set. Use 'force=True' to replace it.")
 
         self._value = value
