@@ -53,9 +53,6 @@ from dwave.gate.tools.unitary import build_controlled_unitary, build_unitary
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-# define an integer value for an arbitrary number of qubits;
-# used for clarity in variable qubit number operations
-ANY = -1
 
 Qubits = Union[Qubit, Sequence[Qubit]]
 Bits = Union[Bit, Sequence[Bit]]
@@ -67,6 +64,45 @@ CustomParametricOperation = TypeVar("CustomParametricOperation", bound="Parametr
 
 class OperationError(Exception):
     """Exception to be raised when there is an error with an OperationError."""
+
+
+class AnyClass(int):
+    """Integer type class for representing an arbitrary number of qubits.
+
+    Used for clarity in variable qubit number operations. Comparisons always return ``False``,
+    other than when comparing with other ``AnyClass`` instances (e.g., another ``ANY`` object).
+    All arithmetic operations are disabled and will only raise a warning and return ``None``.
+    """
+
+    def __eq__(self, ob: object) -> bool:
+        """Whether ``ob`` is of type ``AnyClass``."""
+        return isinstance(ob, AnyClass)
+
+    def __false_warning(self, _) -> bool:
+        """Raise a warning and return ``False``."""
+        warnings.warn("ANY are always unique, and never less, equal or greater than other numbers.")
+        return False
+
+    def __new__(cls) -> AnyClass:
+        """Create new object of class with comparison and arithmetic operations overridden."""
+        cls.__lt__ = cls.__false_warning
+        cls.__le__ = cls.__false_warning
+        cls.__gt__ = cls.__false_warning
+        cls.__ge__ = cls.__false_warning
+
+        for m in ["__add__", "__sub__", "__mul__", "__div__", "__invert__", "__neg__", "__pos__"]:
+            msg = "Cannot perform arithmetic on ANY object."
+            setattr(cls, m, lambda *_, **__: warnings.warn(msg))
+
+        return super().__new__(cls, -1)
+
+    def __repr__(self) -> str:
+        """The representation of the ``ANY`` object."""
+        return "ANY"
+
+
+# create ANY object to represent an arbitrary number of qubits
+ANY = AnyClass()
 
 
 @overload
@@ -320,7 +356,6 @@ class Operation(metaclass=ABCLockedAttr):
         if self._cond:
             return not all(self._cond)
         return False
-
 
     def to_qasm(self, *args, **kwargs):
         """Converts the operation into an OpenQASM 2.0 string.
