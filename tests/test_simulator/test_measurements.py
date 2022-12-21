@@ -118,3 +118,69 @@ class TestSimulateMeasurements:
         assert m.expval() is None
         assert m.sample() is None
         assert m.state is None
+
+
+class TestConditionalOps:
+    """Unit tests for running conditional operations on the simulator."""
+
+    def test_conditional_op_true(self):
+        """Test simulating a circuit with a conditional op (true)."""
+        circuit = Circuit(2, 1)
+
+        with circuit.context as (q, c):
+            ops.X(q[0])
+            ops.Measurement(q[0]) | c[0]  # state is |10>
+            ops.X(q[1]).conditional(c[0])
+
+        res = simulate(circuit)
+        # should apply X on qubit 1 changing state to |11>
+        expected = np.array([0, 0, 0, 1])
+
+        assert np.allclose(res, expected)
+
+    def test_conditional_op_false(self):
+        """Test simulating a circuit with a conditional op (false)."""
+        circuit = Circuit(2, 1)
+
+        with circuit.context as (q, c):
+            ops.Measurement(q[0]) | c[0]  # state is |00>
+            ops.X(q[1]).conditional(c[0])
+
+        res = simulate(circuit)
+        # should NOT apply X on qubit 1 leaving state in |00>
+        expected = np.array([1, 0, 0, 0])
+
+        assert np.allclose(res, expected)
+
+    def test_conditional_op_multiple_qubits_false(self):
+        """Test simulating a circuit with a multiple conditional ops (false)."""
+        circuit = Circuit(2, 2)
+
+        with circuit.context as (q, c):
+            ops.X(q[0])
+            ops.Measurement(q) | c  # state is |10>
+            x = ops.X(q[1]).conditional(c)
+
+        res = simulate(circuit)
+        # should NOT apply X on qubit 1 leaving state in |10>
+        expected = np.array([0, 0, 1, 0])
+
+        assert np.allclose(res, expected)
+        assert x.is_blocked()
+
+    def test_conditional_op_multiple_qubits_true(self):
+        """Test simulating a circuit with a multiple conditional ops (true)."""
+        circuit = Circuit(2, 2)
+
+        with circuit.context as (q, c):
+            ops.X(q[0])
+            ops.X(q[1])
+            ops.Measurement(q) | c  # state is |11>
+            x = ops.X(q[0]).conditional(c)
+
+        res = simulate(circuit)
+        # should apply X on qubit 0 changing state to |01>
+        expected = np.array([0, 1, 0, 0])
+
+        assert np.allclose(res, expected)
+        assert not x.is_blocked()
