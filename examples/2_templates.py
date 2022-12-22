@@ -23,7 +23,7 @@ np.set_printoptions(suppress=True)
 # Let's create a circuit which applies a Z-gate to a single qubit, but by using
 # only Hadamards and X-gates.
 z_circuit = Circuit(1)
-with z_circuit.context as q:
+with z_circuit.context as (q, c):
     ops.Hadamard(q[0])
     ops.X(q[0])
     ops.Hadamard(q[0])
@@ -37,7 +37,7 @@ print("Z matrix:\n", z_matrix)
 # The above circuit can also be applied to other circuits. This will basically just apply the
 # operations within that circuit to the new circuit, mapping the old qubits to the new.
 circuit = Circuit(3)
-with circuit.context as q:
+with circuit.context as (q, c):
     z_circuit(q[1])
 
 print("Circuit:", circuit.circuit)
@@ -60,7 +60,7 @@ assert np.allclose(MyZOperation.matrix, ops.Z.matrix)
 # This custom gate can now be applied to the circuit in exactly the same way as any other gate. Note
 # that if we don't reset the circuit, the 'z_circuit' operations will still be there.
 circuit.reset()
-with circuit.context as q:
+with circuit.context as (q, c):
     MyZOperation(q[2])
 
 print("Circuit:", circuit.circuit)

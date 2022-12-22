@@ -31,10 +31,10 @@ class TestCircuitOpenQASM:
         circuit = Circuit(3)
         circuit.add_cregister(2, "apple")
 
-        with circuit.context as q:
-            ops.X(q[0])
-            ops.RX(0.42, q[1])
-            ops.CNOT(q[2], q[0])
+        with circuit.context as regs:
+            ops.X(regs.q[0])
+            ops.RX(0.42, regs.q[1])
+            ops.CNOT(regs.q[2], regs.q[0])
 
         assert circuit.to_qasm() == cleandoc(
             """
@@ -55,10 +55,10 @@ class TestCircuitOpenQASM:
         circuit = Circuit(1)
         circuit.add_qregister(2, "apple")
 
-        with circuit.context as q:
-            ops.X(q[0])
-            ops.RX(0.42, q[1])
-            ops.CNOT(q[2], q[0])
+        with circuit.context as regs:
+            ops.X(regs.q[0])
+            ops.RX(0.42, regs.q[1])
+            ops.CNOT(regs.q[2], regs.q[0])
 
         assert circuit.to_qasm() == cleandoc(
             """
@@ -80,10 +80,10 @@ class TestCircuitOpenQASM:
         circuit.add_cregister(2, "apple")
         circuit.add_cregister(3, "banana")
 
-        with circuit.context as q:
-            ops.X(q[0])
-            ops.RX(0.42, q[1])
-            ops.CNOT(q[1], q[0])
+        with circuit.context as regs:
+            ops.X(regs.q[0])
+            ops.RX(0.42, regs.q[1])
+            ops.CNOT(regs.q[1], regs.q[0])
 
         assert circuit.to_qasm() == cleandoc(
             """
@@ -106,10 +106,10 @@ class TestCircuitOpenQASM:
         circuit.add_qregister(2, "apple")
         circuit.add_cregister(2, "banana")
 
-        with circuit.context as q:
-            ops.X(q[0])
-            ops.RX(0.42, q[1])
-            ops.CNOT(q[2], q[0])
+        with circuit.context as regs:
+            ops.X(regs.q[0])
+            ops.RX(0.42, regs.q[1])
+            ops.CNOT(regs.q[2], regs.q[0])
 
         assert circuit.to_qasm(reg_labels=True) == cleandoc(
             """
@@ -130,10 +130,10 @@ class TestCircuitOpenQASM:
         """Test generating OpenQASM 2.0 for a circuit using gate definitions."""
         circuit = Circuit(3)
 
-        with circuit.context as q:
-            ops.X(q[0])
-            ops.Rotation((0.1, 0.2, 0.3), q[1])
-            ops.CNOT(q[2], q[0])
+        with circuit.context as regs:
+            ops.X(regs.q[0])
+            ops.Rotation((0.1, 0.2, 0.3), regs.q[1])
+            ops.CNOT(regs.q[2], regs.q[0])
 
         assert circuit.to_qasm(gate_definitions=True) == cleandoc(
             """
@@ -155,10 +155,10 @@ class TestCircuitOpenQASM:
 
         circuit = ParametricCircuit(3)
 
-        with circuit.context as (p, q):
-            ops.X(q[0])
-            ops.RX(p[0], q[1])
-            ops.CNOT(q[2], q[0])
+        with circuit.context as regs:
+            ops.X(regs.q[0])
+            ops.RX(regs.p[0], regs.q[1])
+            ops.CNOT(regs.q[2], regs.q[0])
 
         with pytest.raises(
             CircuitError, match="Parametric circuits cannot be transpiled into OpenQASM."
@@ -237,10 +237,10 @@ class TestOperationsOpenQASM:
         """Test creating an operation."""
         circuit = Circuit(1)
 
-        with circuit.context as q:
-            ops.Hadamard(q[0])
-            ops.X(q[0])
-            ops.Hadamard(q[0])
+        with circuit.context as regs:
+            ops.Hadamard(regs.q[0])
+            ops.X(regs.q[0])
+            ops.Hadamard(regs.q[0])
 
         ZOp = create_operation(circuit, name="ZOp")
 
@@ -251,10 +251,10 @@ class TestOperationsOpenQASM:
         """Test creating an operation without a label."""
         circuit = Circuit(1)
 
-        with circuit.context as q:
-            ops.Hadamard(q[0])
-            ops.X(q[0])
-            ops.Hadamard(q[0])
+        with circuit.context as regs:
+            ops.Hadamard(regs.q[0])
+            ops.X(regs.q[0])
+            ops.Hadamard(regs.q[0])
 
         ZOp = create_operation(circuit)
 

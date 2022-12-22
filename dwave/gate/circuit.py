@@ -23,7 +23,6 @@ __all__ = [
 ]
 
 import copy
-from dwave.gate.utils import cached_property
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -33,6 +32,7 @@ from typing import (
     Hashable,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Tuple,
@@ -47,6 +47,7 @@ from dwave.gate.registers.registers import (
     QuantumRegister,
     SelfIncrementingRegister,
 )
+from dwave.gate.utils import cached_property
 
 if TYPE_CHECKING:
     from dwave.gate.operations.base import Operation
@@ -190,7 +191,7 @@ class Circuit:
         del self.circuit[idx]
 
     @cached_property
-    def qubits(self) -> Sequence[Qubit]:
+    def qubits(self) -> QuantumRegister:
         """Qubits handled by the circuit."""
         qubit_reg = QuantumRegister()
         for qreg in self.qregisters.values():
@@ -199,7 +200,7 @@ class Circuit:
         return qubit_reg
 
     @cached_property
-    def bits(self) -> Sequence[Bit]:
+    def bits(self) -> ClassicalRegister:
         """Classical bits handled by the circuit."""
         bit_reg = ClassicalRegister()
         for creg in self.cregisters.values():
@@ -231,7 +232,14 @@ class Circuit:
 
     @property
     def context(self) -> CircuitContext:
-        """Circuit context used to apply operations to the circuit."""
+        """Circuit context used to apply operations to the circuit.
+
+        A :class:`dwave.gate.circuit.Registers` is returned when entering the context, which
+        contains the quantum and classical registers, named ``q`` and ``c`` respectively. These
+        contain all qubits and classical bits respectively and can be used to reference operation
+        applications and measurement values. All operations initialized within the context are
+        automatically applied to the circuit unless called within a frozen context.
+        """
         if self._circuit_context is None:
             self._circuit_context = CircuitContext(circuit=self)
         return self._circuit_context
@@ -572,6 +580,10 @@ class ParametricCircuit(Circuit):
         raise CircuitError("Parametric circuits cannot be transpiled into OpenQASM.")
 
 
+Registers = NamedTuple("Registers", [("q", QuantumRegister), ("c", ClassicalRegister)])
+"""NamedTuple: collection of registers returned from the context manager."""
+
+
 class CircuitContext:
     """Class used to handle and store the active context.
 
@@ -602,8 +614,8 @@ class CircuitContext:
     def freeze(cls) -> ContextManager:
         """Freeze the context so that no operations are appended on initialization.
 
-        Returns a context manager for a context in which any initialized gates won't be
-        appended to the active circuit context.
+        Returns a context manager for a context in which any initialized gates won't be appended to
+        the active circuit context.
 
         Returns:
             ContextManager: Manager for context withing no opperations are appended.
@@ -620,7 +632,7 @@ class CircuitContext:
 
                 >>> circuit = Circuit(1)
 
-                >>> with circuit.context as q:
+                >>> with circuit.context as (q, c):
                 ...   X(q[0])  # will be appended to the circuit
                 ...   with circuit.context.freeze:
                 ...       Y(q[0])  # will NOT be appended to the circuit
@@ -644,7 +656,7 @@ class CircuitContext:
 
     def __enter__(
         self,
-    ) -> Sequence[Qubit]:
+    ) -> Registers:
         """Enters the context and sets itself as active."""
         if self.circuit.is_locked() == True:
             raise CircuitError(
@@ -656,7 +668,8 @@ class CircuitContext:
             CircuitContext._active_context = self
         else:
             raise RuntimeError("Cannot enter context, another circuit context is already active.")
-        return self.circuit.qubits
+
+        return Registers(self.circuit.qubits, self.circuit.bits)
 
     def __exit__(
         self,
@@ -681,6 +694,13 @@ class CircuitContext:
         return cls._active_context
 
 
+ParametricRegisters = NamedTuple(
+    "ParametricRegisters",
+    [("p", SelfIncrementingRegister), ("q", QuantumRegister), ("c", ClassicalRegister)],
+)
+"""NamedTuple: collection of registers returned from the parametric context manager."""
+
+
 class ParametricCircuitContext(CircuitContext):
     """Class used to handle and store the active context with parametric circuits.
 
@@ -696,13 +716,14 @@ class ParametricCircuitContext(CircuitContext):
 
     def __enter__(
         self,
-    ) -> Tuple[SelfIncrementingRegister, Sequence[Qubit]]:
+    ) -> ParametricRegisters:
         """Enters the context and sets itself as active."""
         # should always be a 'ParametricCircuit'; check in '__init__'
         assert isinstance(self.circuit, ParametricCircuit)
 
-        q = super().__enter__()
-        return (self.circuit._parameter_register, q)
+        qreg, creg = super().__enter__()
+
+        return ParametricRegisters(self.circuit._parameter_register, qreg, creg)
 
     def __exit__(
         self,

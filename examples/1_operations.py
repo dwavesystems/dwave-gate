@@ -33,7 +33,7 @@ print("Z-rotation matrix:\n", ops.RZ(4.2).matrix)
 # parameters can be passed either as single values (if supported by the gate) or contained in a
 # sequence.
 circuit = Circuit(3)
-with circuit.context as q:
+with circuit.context as (q, c):
     # apply single-qubit gate
     ops.Z(q[0])
     # apply single-qubit gate using kwarg
