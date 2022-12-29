@@ -25,6 +25,7 @@ from dwave.gate.circuit import Circuit, ParametricCircuit
 from dwave.gate.operations.base import (
     ControlledOperation,
     Operation,
+    OperationError,
     ParametricControlledOperation,
     ParametricOperation,
     create_operation,
@@ -206,7 +207,7 @@ class TestCustomOperations:
         class CustomOp(Operation):
             pass
 
-        with pytest.raises(AttributeError, match="missing class attributes '_num_qubits'"):
+        with pytest.raises(AttributeError, match="supports an arbitrary number of qubits"):
             CustomOp.num_qubits
 
     def test_missing_num_control_attribute(self):
@@ -228,6 +229,17 @@ class TestCustomOperations:
 
         with pytest.raises(AttributeError, match="missing class attributes '_num_control'"):
             CustomOp.num_qubits
+
+    def test_missing_target_operation(self):
+        """Test that the correct exception is raised when a subclass to ``ControlledOperation`` is missing
+        the ``_target_operation`` class attribute."""
+
+        class CustomOp(ControlledOperation):
+            _num_control: int = 1
+            _num_target: int = 1
+
+        with pytest.raises(OperationError, match="No target operation declared for controlled operation"):
+            CustomOp.target_operation
 
     def test_num_parameters_attribute(self):
         """Test the ``num_parameters`` attribute."""

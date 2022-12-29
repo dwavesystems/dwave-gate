@@ -239,17 +239,20 @@ def _simulate_circuit_density_matrix(circuit: Circuit, little_endian: bool = Fal
     state[0] = 1
 
     for op in circuit.circuit:
-        # first apply the gate normally
-        targets = [circuit.qubits.index(qb) for qb in op.qubits]
-        apply_instruction(
-            num_virtual_qubits, state, op, targets, little_endian
-        )
-        # then apply conjugate transpose to corresponding virtual qubit
-        virtual_targets = [t + num_qubits for t in targets]
-        apply_instruction(
-            num_virtual_qubits, state, op, virtual_targets, little_endian,
-            conjugate_gate=True,
-        )
+        if isinstance(op, ops.Measurement):
+            _measure(op, state, circuit)
+        else:
+            # first apply the gate normally
+            targets = [circuit.qubits.index(qb) for qb in op.qubits]
+            apply_instruction(
+                num_virtual_qubits, state, op, targets, little_endian
+            )
+            # then apply conjugate transpose to corresponding virtual qubit
+            virtual_targets = [t + num_qubits for t in targets]
+            apply_instruction(
+                num_virtual_qubits, state, op, virtual_targets, little_endian,
+                conjugate_gate=True,
+            )
     density_matrix = state.reshape((1 << num_qubits, 1 << num_qubits))
 
     return density_matrix

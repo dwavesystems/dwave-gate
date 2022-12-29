@@ -20,69 +20,12 @@ import pytest
 import dwave.gate.operations.operations as ops
 from dwave.gate.circuit import Circuit, ParametricCircuit
 from dwave.gate.operations.base import (
-    ANY,
     ABCLockedAttr,
-    AnyClass,
     Barrier,
     Measurement,
     Operation,
     create_operation,
 )
-
-
-class TestAnyClass:
-    """Unit tests for the ``AnyClass`` class"""
-
-    def test_initialize(self):
-        """Test creating a new ``AnyClass`` object."""
-
-        any_object = AnyClass()
-        assert isinstance(any_object, int)
-
-    @pytest.mark.parametrize("comparison", ["__lt__", "__le__", "__gt__", "__ge__"])
-    @pytest.mark.parametrize("number", [3, -1, 3.14, 1j, 0, AnyClass()])
-    def test_comparison(self, comparison, number):
-        """Test comparing ``AnyClass`` objects with numbers."""
-        any_object = AnyClass()
-
-        with pytest.warns(UserWarning, match="ANY are always unique"):
-            is_equal = getattr(any_object, comparison)(number)
-
-        assert not is_equal
-
-    @pytest.mark.parametrize(
-        "op", ["__add__", "__sub__", "__mul__", "__div__", "__invert__", "__neg__", "__pos__"]
-    )
-    @pytest.mark.parametrize("number", [3, -1, 3.14, 1j, 0, AnyClass()])
-    def test_arithmetic(self, op, number):
-        """Test comparing ``AnyClass`` objects with numbers."""
-        any_object = AnyClass()
-
-        with pytest.warns(UserWarning, match="Cannot perform arithmetic on ANY object."):
-            # since the arithmetic ops now take any args/kwargs, we can use an arbitrary
-            # signature when testing, even though it's technically incorrect for the op
-            is_equal = getattr(any_object, op)(number)
-
-        assert is_equal is None
-
-    @pytest.mark.parametrize(
-        "number, is_equal",
-        [(3, False), (-1, False), (3.14, False), (1j, False), (0, False), (AnyClass(), True)],
-    )
-    def test_eq(self, number, is_equal):
-        """Test comparing ``AnyClass`` objects with another ``AnyClass`` object."""
-        any_object = AnyClass()
-        assert is_equal is (any_object == number)
-
-    def test_repr(self):
-        """Test representation of ``AnyClass`` objects."""
-        any_object = AnyClass()
-        assert repr(any_object) == "ANY"
-
-    def test_ANY_constant(self):
-        """Test the ``ANY`` constant object."""
-        assert ANY == AnyClass()
-        assert repr(ANY) == "ANY"
 
 
 class TestLockedMetaclass:

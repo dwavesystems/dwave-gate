@@ -66,45 +66,6 @@ class OperationError(Exception):
     """Exception to be raised when there is an error with an OperationError."""
 
 
-class AnyClass(int):
-    """Integer type class for representing an arbitrary number of qubits.
-
-    Used for clarity in variable qubit number operations. Comparisons always return ``False``,
-    other than when comparing with other ``AnyClass`` instances (e.g., another ``ANY`` object).
-    All arithmetic operations are disabled and will only raise a warning and return ``None``.
-    """
-
-    def __eq__(self, ob: object) -> bool:
-        """Whether ``ob`` is of type ``AnyClass``."""
-        return isinstance(ob, AnyClass)
-
-    def __false_warning(self, _) -> bool:
-        """Raise a warning and return ``False``."""
-        warnings.warn("ANY are always unique, and never less, equal or greater than other numbers.")
-        return False
-
-    def __new__(cls) -> AnyClass:
-        """Create new object of class with comparison and arithmetic operations overridden."""
-        cls.__lt__ = cls.__false_warning
-        cls.__le__ = cls.__false_warning
-        cls.__gt__ = cls.__false_warning
-        cls.__ge__ = cls.__false_warning
-
-        for m in ["__add__", "__sub__", "__mul__", "__div__", "__invert__", "__neg__", "__pos__"]:
-            msg = "Cannot perform arithmetic on ANY object."
-            setattr(cls, m, lambda *_, **__: warnings.warn(msg))
-
-        return super().__new__(cls, -1)
-
-    def __repr__(self) -> str:
-        """The representation of the ``ANY`` object."""
-        return "ANY"
-
-
-# create ANY object to represent an arbitrary number of qubits
-ANY = AnyClass()
-
-
 @overload
 def create_operation(circuit: ParametricCircuit, name: Optional[str] = None) -> Type[CustomParametricOperation]:  # type: ignore
     ...
@@ -217,14 +178,16 @@ class Operation(metaclass=ABCLockedAttr):
             required when applying an operation within a circuit context.
     """
 
+    _num_qubits: Optional[int] = None
+
     def __init__(self, qubits: Optional[Qubits] = None) -> None:
         active_context = CircuitContext.active_context
 
         if qubits is not None:
             qubits = self._check_qubits(qubits)
             # set num_qubits to the actual number of qubits
-            if self._num_qubits == ANY:
-                self._num_qubits: int = len(qubits)
+            if self._num_qubits is None:
+                self._num_qubits = len(qubits)
 
         elif active_context is not None:
             raise TypeError("Qubits required when applying gate within context.")
@@ -249,7 +212,7 @@ class Operation(metaclass=ABCLockedAttr):
         if isinstance(qubits, Qubit):
             qubits = [qubits]
 
-        if cls.num_qubits != ANY and len(qubits) != cls.num_qubits:
+        if cls._num_qubits is not None and len(qubits) != cls.num_qubits:
             raise ValueError(
                 f"Operation '{cls.label}' requires " f"{cls.num_qubits} qubits, got {len(qubits)}."
             )
@@ -326,11 +289,7 @@ class Operation(metaclass=ABCLockedAttr):
         if isinstance(cls._num_qubits, int):
             return cls._num_qubits
 
-        raise AttributeError(f"Operations {cls.label} missing class attributes '_num_qubits'.")
-
-    @abstractproperty
-    def _num_qubits(cls) -> int:  # type: ignore
-        """Abstract mixedproperty asserting the existence of a ``_num_qubits`` attribute."""
+        raise AttributeError(f"Operation {cls.label} supports an arbitrary number of qubits.")
 
     @property
     def qubits(self) -> Optional[Tuple[Qubit, ...]]:
@@ -397,6 +356,8 @@ class ParametricOperation(Operation):
             matrix representation of the operation.
     """
 
+    _num_params: Optional[int] = None
+
     def __init__(
         self,
         parameters: Parameters,
@@ -452,10 +413,6 @@ class ParametricOperation(Operation):
 
         raise AttributeError(f"Operations {cls.label} missing class attribute '_num_params'.")
 
-    @abstractproperty
-    def _num_params(cls) -> int:  # type: ignore
-        """Abstract mixedproperty asserting the existence of a ``_num_qubits`` attribute."""
-
     @classmethod
     def _check_parameters(cls, params: Parameters) -> List[Union[Variable, complex]]:
         """Asserts the size and type of the parameter(s) and returns the
@@ -503,6 +460,10 @@ class ControlledOperation(Operation):
             the operations ``_num_control`` and ``_num_target`` class attributes.
     """
 
+    _num_control: Optional[int] = None
+    _num_target: Optional[int] = None
+    _target_operation: Optional[Type[Operation]] = None
+
     def __init__(
         self,
         control: Optional[Qubits] = None,
@@ -530,6 +491,9 @@ class ControlledOperation(Operation):
             else:
                 qubits = None
 
+        self._num_control = len(self._control) if self._control else None
+        self._num_target = len(self._target) if self._target else None
+
         super().__init__(qubits=qubits, **kwargs)
 
     def __call__(
@@ -549,30 +513,23 @@ class ControlledOperation(Operation):
 
         self.__class__(control, target)  # type: ignore
 
-    @abstractproperty
-    def _num_control(cls) -> int:  # type: ignore
-        """Abstract mixedproperty asserting the existence of a ``_num_control`` attribute."""
-
-    @abstractproperty
-    def _num_target(cls) -> int:  # type: ignore
-        """Abstract mixedproperty asserting the existence of a ``_num_target`` attribute."""
-
-    @abstractproperty
-    def _target_operation(cls) -> Type[Operation]:  # type: ignore
-        """Abstract mixedproperty asserting the existence of a ``_target_operation`` attribute."""
-
     @mixedproperty
-    def _num_qubits(cls) -> int:
-        """Realizing the ``_num_qubits`` mixedproperty so that only ``_num_control`` and
-        ``num_target`` attributes are required by subclasses."""
-        # BUG: Unless an instance check for ints is here, 'mixedproperty' will complain
-        # with 'TypeError: unsupported operand type(s) for +: 'function' and 'function''
-        if isinstance(cls.num_control, int) and isinstance(cls.num_target, int):
-            return cls.num_control + cls.num_target
+    def num_qubits(cls, self) -> int:
+        """Number of qubits that the operation supports."""
+        if not cls._num_qubits and cls.num_control and cls.num_target:
+            cls._num_qubits = cls.num_control + cls.num_target
 
-        raise AttributeError(
-            f"Operations {cls.label} missing class attributes '_num_control' and/or '_num_target'."
-        )
+        if self is not None:
+            return super(ControlledOperation, self).num_qubits
+
+        # if called directly on class and 'num_qubits' is 'None', change the error message to
+        # reflect that 'num_control' or 'num_target' is 'None' or both are 'None'
+        try:
+            return super(ControlledOperation, cls).num_qubits
+        except AttributeError as e:
+            raise AttributeError(
+                f"Operations {cls.label} missing class attributes '_num_control' and/or '_num_target'."
+            ) from e
 
     @mixedproperty
     def matrix(cls, self) -> NDArray:
@@ -612,21 +569,22 @@ class ControlledOperation(Operation):
         return self._target
 
     @mixedproperty
-    def num_control(cls) -> int:
+    def num_control(cls) -> Optional[int]:
         """Number of control qubit(s)."""
-        assert cls._num_control
         return cls._num_control
 
     @mixedproperty
-    def num_target(cls) -> int:
+    def num_target(cls) -> Optional[int]:
         """Number of target qubit(s)."""
-        assert cls._num_target
         return cls._num_target
 
     @mixedproperty
-    def target_operation(cls) -> Type[Operation]:
+    def target_operation(cls) -> Optional[Type[Operation]]:
         """Target operation"""
-        return cls._target_operation
+        if cls._target_operation:
+            return cls._target_operation
+
+        raise OperationError("No target operation declared for controlled operation.")
 
 
 class ParametricControlledOperation(ControlledOperation, ParametricOperation):
@@ -688,7 +646,7 @@ class Measurement(Operation):
             an measurement within a circuit context.
     """
 
-    _num_qubits: int = ANY
+    _num_qubits: Optional[int] = None
 
     def __init__(self, qubits: Optional[Qubits] = None) -> None:
         self._bits = None
