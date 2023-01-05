@@ -49,6 +49,15 @@ with circuit.context as (q, c):
 
 print("Circuit", circuit.circuit)
 
+# Note that 'circuit.context' returns a NamedTuple which is unpacked dirctly into 'c' and 'q' above.
+# It would work equally well to simply keep the named tuple as e.g., 'reg' and then call the quantum
+# and classical registers via 'reg.q' and 'reg.c' respectively:
+#
+#   with circuit.context as reg:
+#       X(reg.q[0])
+#       RX(0.5, reg.q[1])
+#
+
 # We now have a circuit object which we could, for example, send to run on a compatible
 # simulator or hardware. After the circuit has been created it is automatically locked.
 # This is to prevent any unexpected changes to the circuit. To unlock it, and add more

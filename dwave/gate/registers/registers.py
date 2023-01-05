@@ -22,10 +22,22 @@ __all__ = [
     "SelfIncrementingRegister",
 ]
 
-from typing import AbstractSet, Hashable, Iterator, Optional, Sequence, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Hashable,
+    Iterator,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 from dwave.gate.primitives import Bit, Qubit, Variable
 from dwave.gate.registers.cyregister import cyRegister
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 Data = TypeVar("Data", bound=Hashable)
 
@@ -75,7 +87,7 @@ class Register(cyRegister, AbstractSet[Data], Sequence[Data]):
         """Returns the representation of the Register object."""
         return f"<{self.__class__.__name__}, data={list(self)}>"
 
-    def __add__(self, qreg: Register):
+    def __add__(self, qreg: Register) -> Self:
         """Adds two registers together and returns a register referencing the contained items.
 
         Args:

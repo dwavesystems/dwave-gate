@@ -196,8 +196,8 @@ class TestMatrixRepr:
     def test_controlled_matrix_repr(self, op, qubits, matrix, two_qubit_circuit):
         """Test that controlled matrix representations are correct."""
         two_qubit_circuit.unlock()
-        with two_qubit_circuit.context as (q, c):
-            assert np.allclose(op(*[q[i] for i in qubits]).matrix, matrix)
+        with two_qubit_circuit.context as regs:
+            assert np.allclose(op(*[regs.q[i] for i in qubits]).matrix, matrix)
 
 
 class TestMeasurement:
@@ -264,10 +264,10 @@ class TestCreateOperation:
         """Test creating an operation out of a parametric circuit."""
         circuit = ParametricCircuit(1)
 
-        with circuit.context as (p, q, c):
-            ops.RZ(p[0], q[0])
-            ops.RY(p[1], q[0])
-            ops.RZ(p[2], q[0])
+        with circuit.context as regs:
+            ops.RZ(regs.p[0], regs.q[0])
+            ops.RY(regs.p[1], regs.q[0])
+            ops.RZ(regs.p[2], regs.q[0])
 
         RotOp = create_operation(circuit, name="Rot")
         params = [0.23, 0.34, 0.45]
@@ -283,10 +283,10 @@ class TestCreateOperation:
         """Test creating an operation out of a non-parametric circuit."""
         circuit = Circuit(1)
 
-        with circuit.context as (q, c):
-            ops.Hadamard(q[0])
-            ops.X(q[0])
-            ops.Hadamard(q[0])
+        with circuit.context as regs:
+            ops.Hadamard(regs.q[0])
+            ops.X(regs.q[0])
+            ops.Hadamard(regs.q[0])
 
         ZOp = create_operation(circuit, name="Z")
 
@@ -297,10 +297,10 @@ class TestCreateOperation:
         """Test creating an operation without a label."""
         circuit = Circuit(1)
 
-        with circuit.context as (q, c):
-            ops.Hadamard(q[0])
-            ops.X(q[0])
-            ops.Hadamard(q[0])
+        with circuit.context as regs:
+            ops.Hadamard(regs.q[0])
+            ops.X(regs.q[0])
+            ops.Hadamard(regs.q[0])
 
         ZOp = create_operation(circuit)
 
@@ -311,12 +311,12 @@ class TestCreateOperation:
         parameters."""
         circuit = ParametricCircuit(1)
 
-        with circuit.context as (p, q, c):
-            ops.RZ(0.1, q[0])
-            ops.RY(p[0], q[0])
-            ops.RZ(0.3, q[0])
-            ops.X(q[0])  # cover testing non-parametric ops in parametric circuits
-            ops.X(q[0])  # negate the previous X-gate to compare with Rotation-gate
+        with circuit.context as regs:
+            ops.RZ(0.1, regs.q[0])
+            ops.RY(regs.p[0], regs.q[0])
+            ops.RZ(0.3, regs.q[0])
+            ops.X(regs.q[0])  # cover testing non-parametric ops in parametric circuits
+            ops.X(regs.q[0])  # negate the previous X-gate to compare with Rotation-gate
 
         RotOp = create_operation(circuit, name="Rot")
         params = [0.2]
