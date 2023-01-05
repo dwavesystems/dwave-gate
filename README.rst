@@ -1,3 +1,15 @@
+.. image:: https://img.shields.io/pypi/v/dwave-gate.svg
+    :target: https://pypi.org/project/dwave-gate
+
+.. image:: https://img.shields.io/pypi/pyversions/dwave-gate.svg
+    :target: https://pypi.org/project/dwave-gate
+
+.. image:: https://circleci.com/gh/dwavesystems/dwave-gate.svg?style=svg
+    :target: https://circleci.com/gh/dwavesystems/dwave-gate
+
+.. image:: https://codecov.io/gh/dwavesystems/dwave-gate/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/dwavesystems/dwave-gate
+
 dwave-gate
 ==========
 
