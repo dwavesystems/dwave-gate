@@ -43,11 +43,20 @@ print("Qubits:", circuit.qubits)
 
 # To create a circuit, we use the circuit context manager and append gates as follows;
 # an X-gate to the first qubit (q[0]) and an X-rotation to the second qubit (q[1]).
-with circuit.context as q:
+with circuit.context as (q, c):
     X(q[0])
     RX(0.5, q[1])
 
 print("Circuit", circuit.circuit)
+
+# Note that 'circuit.context' returns a NamedTuple which is unpacked dirctly into 'c' and 'q' above.
+# It would work equally well to simply keep the named tuple as e.g., 'reg' and then call the quantum
+# and classical registers via 'reg.q' and 'reg.c' respectively:
+#
+#   with circuit.context as reg:
+#       X(reg.q[0])
+#       RX(0.5, reg.q[1])
+#
 
 # We now have a circuit object which we could, for example, send to run on a compatible
 # simulator or hardware. After the circuit has been created it is automatically locked.
@@ -56,7 +65,7 @@ print("Circuit", circuit.circuit)
 circuit.unlock()
 
 # We can now apply more gates which will be appended to the circuit.
-with circuit.context as q:
+with circuit.context as (q, c):
     CNOT(q[0], q[1])
 
 print("Circuit", circuit.circuit)

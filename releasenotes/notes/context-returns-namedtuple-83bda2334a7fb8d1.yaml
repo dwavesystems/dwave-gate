@@ -1,0 +1,30 @@
+---
+features:
+  - |
+    Circuit context returns the classical register together with ``QuantumRegister``. The two
+    registers are contained within a tuple and are returned as ``with circuit.context as (q, c)``,
+    instead of ``with circuit.context as q``.
+
+    .. code-block:: python
+
+      circuit = Circuit(2, 2)
+
+      with circuit.context as (q, c):
+          ops.X(q[0])
+
+upgrade:
+  - |
+    Update context to return a ``NamedTuple`` instead of a regular tuple, allowing for the registers
+    to be returned as previously, directly unpacked into ``q`` and ``c``, or as a named ``Registers``
+    tuple and retrieved via ``Registers.q`` and ``Registers.c`` respectively.
+  - |
+    Update parametric context to return a ``NamedTuple`` instead of a regular tuple similar to the
+    non-parametric context upgrade, with the parameter register accessed via ``Registers.p``.
+
+    .. code-block:: python
+
+      circuit = ParametricCircuit(2, 2)
+
+      with circuit.context as reg:
+          ops.RX(reg.p[0], reg.q[0])
+

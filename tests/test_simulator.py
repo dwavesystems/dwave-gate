@@ -12,12 +12,12 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import pytest
 import numpy as np
+import pytest
 
 import dwave.gate.operations as ops
-from dwave.gate.operations.operations import __all__ as all_ops
 from dwave.gate.circuit import Circuit
+from dwave.gate.operations.operations import __all__ as all_ops
 from dwave.gate.simulator.simulator import simulate
 
 
@@ -59,25 +59,25 @@ def test_simulate_dm_no_ops_two_qubit():
 
 def test_simulate_sv_not():
     circuit = Circuit(1)
-    with circuit.context as q:
-        ops.X(q[0])
+    with circuit.context as regs:
+        ops.X(regs.q[0])
     state = simulate(circuit)
     assert np.all(state == np.array([0, 1]))
 
 
 def test_simulate_dm_not():
     circuit = Circuit(1)
-    with circuit.context as q:
-        ops.X(q[0])
+    with circuit.context as regs:
+        ops.X(regs.q[0])
     state = simulate(circuit, mixed_state=True)
     assert np.all(state == np.array([[0, 0], [0, 1]]))
 
 
 def test_simulate_sv_cnot():
     circuit = Circuit(2)
-    with circuit.context as q:
-        ops.X(q[0])
-        ops.CNOT(q[0], q[1])
+    with circuit.context as regs:
+        ops.X(regs.q[0])
+        ops.CNOT(regs.q[0], regs.q[1])
     state = simulate(circuit)
     # should be |11>
     assert np.all(state == np.array([0, 0, 0, 1]))
@@ -85,9 +85,9 @@ def test_simulate_sv_cnot():
 
 def test_simulate_dm_cnot():
     circuit = Circuit(2)
-    with circuit.context as q:
-        ops.X(q[0])
-        ops.CNOT(q[0], q[1])
+    with circuit.context as regs:
+        ops.X(regs.q[0])
+        ops.CNOT(regs.q[0], regs.q[1])
     state = simulate(circuit, mixed_state=True)
     # should be |11>
     pure_11 = np.zeros((4, 4))
@@ -97,8 +97,8 @@ def test_simulate_dm_cnot():
 
 def test_simulate_sv_big_endian():
     circuit = Circuit(2)
-    with circuit.context as q:
-        ops.X(q[1])
+    with circuit.context as regs:
+        ops.X(regs.q[1])
 
     state = simulate(circuit, little_endian=False)
     assert np.all(state == np.array([0, 1, 0, 0]))
@@ -106,8 +106,8 @@ def test_simulate_sv_big_endian():
 
 def test_simulate_sv_little_endian():
     circuit = Circuit(2)
-    with circuit.context as q:
-        ops.X(q[1])
+    with circuit.context as regs:
+        ops.X(regs.q[1])
 
     state = simulate(circuit, little_endian=True)
     assert np.all(state == np.array([0, 0, 1, 0]))
@@ -115,11 +115,11 @@ def test_simulate_sv_little_endian():
 
 def test_simulate_sv_swap():
     circuit = Circuit(2)
-    with circuit.context as q:
-        ops.X(q[0])
-        ops.Hadamard(q[0])
-        ops.Hadamard(q[1])
-        ops.SWAP([q[0], q[1]])
+    with circuit.context as regs:
+        ops.X(regs.q[0])
+        ops.Hadamard(regs.q[0])
+        ops.Hadamard(regs.q[1])
+        ops.SWAP([regs.q[0], regs.q[1]])
 
     state = simulate(circuit, little_endian=False)
 
@@ -128,11 +128,11 @@ def test_simulate_sv_swap():
 
 def test_simulate_dm_swap():
     circuit = Circuit(2)
-    with circuit.context as q:
-        ops.X(q[0])
-        ops.Hadamard(q[0])
-        ops.Hadamard(q[1])
-        ops.SWAP([q[0], q[1]])
+    with circuit.context as regs:
+        ops.X(regs.q[0])
+        ops.Hadamard(regs.q[0])
+        ops.Hadamard(regs.q[1])
+        ops.SWAP([regs.q[0], regs.q[1]])
 
     state = simulate(circuit, little_endian=False)
 
@@ -141,10 +141,10 @@ def test_simulate_dm_swap():
 
 def test_simulate_sv_ccx():
     circuit = Circuit(3)
-    with circuit.context as q:
-        ops.X(q[0])
-        ops.X(q[2])
-        ops.CCX([q[0], q[2], q[1]])
+    with circuit.context as regs:
+        ops.X(regs.q[0])
+        ops.X(regs.q[2])
+        ops.CCX([regs.q[0], regs.q[2], regs.q[1]])
 
     state = simulate(circuit)
 
@@ -154,10 +154,10 @@ def test_simulate_sv_ccx():
 
 def test_simulate_dm_ccx():
     circuit = Circuit(3)
-    with circuit.context as q:
-        ops.X(q[0])
-        ops.X(q[2])
-        ops.CCX([q[0], q[2], q[1]])
+    with circuit.context as regs:
+        ops.X(regs.q[0])
+        ops.X(regs.q[2])
+        ops.CCX([regs.q[0], regs.q[2], regs.q[1]])
 
     state = simulate(circuit, mixed_state=True)
 
@@ -170,10 +170,10 @@ def test_simulate_dm_ccx():
 
 def test_simulate_sv_cswap():
     circuit = Circuit(3)
-    with circuit.context as q:
-        ops.X(q[0])
-        ops.X(q[1])
-        ops.CSWAP([q[1], q[0], q[2]])
+    with circuit.context as regs:
+        ops.X(regs.q[0])
+        ops.X(regs.q[1])
+        ops.CSWAP([regs.q[1], regs.q[0], regs.q[2]])
 
     state = simulate(circuit, little_endian=False)
 
@@ -183,10 +183,10 @@ def test_simulate_sv_cswap():
 
 def test_simulate_dm_cswap():
     circuit = Circuit(3)
-    with circuit.context as q:
-        ops.X(q[0])
-        ops.X(q[1])
-        ops.CSWAP([q[1], q[0], q[2]])
+    with circuit.context as regs:
+        ops.X(regs.q[0])
+        ops.X(regs.q[1])
+        ops.CSWAP([regs.q[1], regs.q[0], regs.q[2]])
 
     state = simulate(circuit, little_endian=False, mixed_state=True)
 
@@ -203,11 +203,11 @@ def test_simulate_dm_cswap():
 def test_simulate_all_gates(op, little_endian, mixed_state):
     circuit = Circuit(op.num_qubits)
     kwargs = {}
-    with circuit.context as q:
+    with circuit.context as regs:
         if issubclass(op, ops.ParametricOperation):
             # TODO random parameters?
             kwargs["parameters"] = [0 for i in range(op.num_parameters)]
-        kwargs["qubits"] = [q[i] for i in range(op.num_qubits)]
+        kwargs["qubits"] = [regs.q[i] for i in range(op.num_qubits)]
 
         op(**kwargs)
 
