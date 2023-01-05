@@ -12,6 +12,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+""":class:`mixedproperty` decorator.
+
+Contains a decorator for creating mixed properties, which differs from regular properties by
+allowing access to both the class and the instance."""
+
 from __future__ import annotations
 
 __all__ = [

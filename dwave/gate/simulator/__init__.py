@@ -12,4 +12,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+"""Simulators for running circuits locally.
+
+Contains a state-vector simulator able to return the resulting state vector after running a circuit
+on an all-zero initialized basis state. Support both the little- and big-endian conventions."""
+
 from dwave.gate.simulator.simulator import *

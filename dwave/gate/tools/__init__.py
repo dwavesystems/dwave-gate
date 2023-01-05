@@ -12,5 +12,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+"""Set of tools that are useful for circuit- and operation-creation.
+
+Contains a set of modules with helper functions for e.g., generation of different unitaries as well
+as labels and unique ID's that are used when constructing primitives such as qubits and bits.
+"""
 from dwave.gate.tools.counters import *
 from dwave.gate.tools.unitary import *

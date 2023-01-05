@@ -12,6 +12,12 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+"""Quantum operations that can be applied in a circuit.
+
+Contains all supported quantum operations along with aliases for operations that may be know by
+different names, e.g., :class:`Fredkin` is an alias for :class:`CSWAP`, and :class:`Toffoli` and
+:class:`CCNOT` are aliases for :class:`CCX`."""
+
 from __future__ import annotations
 
 __all__ = [

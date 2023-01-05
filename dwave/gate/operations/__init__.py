@@ -12,5 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+"""Quantum operations and base operations for creating new operation classes."""
+
 from dwave.gate.operations.base import *
 from dwave.gate.operations.operations import *

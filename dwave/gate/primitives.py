@@ -12,6 +12,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+"""Primitive types used with quantum circuits.
+
+Contains primitive types such as qubits, bits and variables."""
+
 __all__ = [
     "Qubit",
     "Bit",

@@ -12,6 +12,12 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+"""Circuit and context manager classes.
+
+Contains classes to construct and handle quantum circuits which contain the quantum operations and
+instructions for running on simulators or hardware. See :py:mod:`dwave.gate.operations` for details
+on which operations are supported."""
+
 from __future__ import annotations
 
 __all__ = [

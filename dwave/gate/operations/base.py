@@ -12,6 +12,12 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+"""Set of base operation classes subclassed by all quantum operations.
+
+Contains all base classes for general quantum operations, including parametric operations,
+controlled operations and measurements. Also provides the utility function :func:`create_operation`
+for transforming circuits into operations."""
+
 from __future__ import annotations
 
 __all__ = [
@@ -25,7 +31,7 @@ __all__ = [
 
 import copy
 import warnings
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractproperty
 from itertools import chain
 from typing import (
     TYPE_CHECKING,

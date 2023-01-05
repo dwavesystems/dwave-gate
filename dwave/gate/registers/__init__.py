@@ -12,4 +12,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+"""Registers for collecting qubits, bits and variables.
+
+Contains performant container classes for keeping track of and handling primitive type object (see
+:py:mod:`dwave.gate.primitives` for details on the supported objects)."""
+
 from dwave.gate.registers.registers import *
