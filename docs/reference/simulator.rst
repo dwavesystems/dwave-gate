@@ -6,7 +6,7 @@ Simulators
     :undoc-members:
     :show-inheritance:
 
-operation generation module
+Operation-Generation Module
 ---------------------------
 
 .. automodule:: dwave.gate.simulator.operation_generation
@@ -14,7 +14,7 @@ operation generation module
     :undoc-members:
     :show-inheritance:
 
-simulator module
+Simulator Module
 ----------------
 
 .. automodule:: dwave.gate.simulator.simulator

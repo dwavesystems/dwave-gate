@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2022-2023 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 """Set of tools that are useful for circuit- and operation-creation.
 
-Contains a set of modules with helper functions for e.g., generation of different unitaries as well
+Contains a set of modules with helper functions for generation of different unitaries as well
 as labels and unique ID's that are used when constructing primitives such as qubits and bits.
 """
 from dwave.gate.tools.counters import *

@@ -6,7 +6,7 @@ Tools
     :undoc-members:
     :show-inheritance:
 
-counters module
+Counters Module
 ---------------
 
 .. automodule:: dwave.gate.tools.counters
@@ -14,7 +14,7 @@ counters module
     :undoc-members:
     :show-inheritance:
 
-unitary module
+Unitary Module
 --------------
 
 .. automodule:: dwave.gate.tools.unitary

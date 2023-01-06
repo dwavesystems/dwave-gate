@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2022-2023 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 """Simulators for running circuits locally.
 
 Contains a state-vector simulator able to return the resulting state vector after running a circuit
-on an all-zero initialized basis state. Support both the little- and big-endian conventions."""
+on an all-zero initialized basis state. Supports both the little- and big-endian conventions.
+"""
 
 from dwave.gate.simulator.simulator import *

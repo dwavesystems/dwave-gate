@@ -6,7 +6,7 @@ Registers
     :undoc-members:
     :show-inheritance:
 
-registers module
+Registers Module
 ----------------
 
 .. automodule:: dwave.gate.registers.registers

@@ -1,20 +1,15 @@
 Circuits
 ========
 
+Circuit Module
+--------------
+
 .. automodule:: dwave.gate.circuit
     :members:
     :undoc-members:
     :show-inheritance:
 
-mixedproperty module
---------------------
-
-.. automodule:: dwave.gate.mixedproperty
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-primitives module
+Primitives Module
 -----------------
 
 .. automodule:: dwave.gate.primitives

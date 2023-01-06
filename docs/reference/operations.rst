@@ -6,7 +6,7 @@ Operations
     :undoc-members:
     :show-inheritance:
 
-base module
+Base Module
 -----------
 
 .. automodule:: dwave.gate.operations.base
@@ -14,7 +14,7 @@ base module
     :undoc-members:
     :show-inheritance:
 
-operations module
+Operations Module
 -----------------
 
 .. automodule:: dwave.gate.operations.operations

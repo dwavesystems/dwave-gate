@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2022-2023 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
 
 """:class:`mixedproperty` decorator.
 
-Contains a decorator for creating mixed properties, which differs from regular properties by
-allowing access to both the class and the instance."""
+Contains a decorator for creating mixed properties, which differ from regular properties by
+allowing access to both the class and the instance.
+"""
 
 from __future__ import annotations
 

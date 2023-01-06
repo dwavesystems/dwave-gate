@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2022-2023 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,9 +14,10 @@
 
 """Quantum operations that can be applied in a circuit.
 
-Contains all supported quantum operations along with aliases for operations that may be know by
-different names, e.g., :class:`Fredkin` is an alias for :class:`CSWAP`, and :class:`Toffoli` and
-:class:`CCNOT` are aliases for :class:`CCX`."""
+Contains all supported quantum operations along with aliases for operations that may be known by
+different names; e.g., :class:`Fredkin` is an alias for :class:`CSWAP`, and :class:`Toffoli` and
+:class:`CCNOT` are aliases for :class:`CCX`.
+"""
 
 from __future__ import annotations
 

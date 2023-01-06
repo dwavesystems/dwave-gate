@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2022-2023 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@
 
 """Utility functions for solving version and/or development issues.
 
-Should not need to be used except by developers when necessary."""
+Should not need to be used except by developers.
+"""
 
 from _thread import RLock
 from typing import _GenericAlias
