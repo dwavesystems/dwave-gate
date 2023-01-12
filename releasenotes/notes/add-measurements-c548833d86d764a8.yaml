@@ -1,0 +1,10 @@
+---
+prelude: >
+    We began using `Reno <https://docs.openstack.org/reno/>`_ as a changelog tool after the first
+    release, version 0.1.0. Features that were part of that release are not included in the
+    changelog.
+features:
+  - Add support for mid-circuit measurements.
+  - Add support for operations conditioned on measurements.
+  - Add support for measurement sampling and expectation value calculations.
+

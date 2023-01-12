@@ -25,6 +25,7 @@ from dwave.gate.circuit import Circuit, ParametricCircuit
 from dwave.gate.operations.base import (
     ControlledOperation,
     Operation,
+    OperationError,
     ParametricControlledOperation,
     ParametricOperation,
     create_operation,
@@ -153,6 +154,48 @@ class TestOperations:
         # compare built unitary with operation matrix representation
         assert np.allclose(unitary, expected)
 
+    def test_repr(self, Op):
+        """Test the representation of operations."""
+        if issubclass(Op, ParametricOperation):
+            op = Op([0 for _ in range(Op.num_parameters)])
+        else:
+            op = Op()
+        assert (
+            op.__repr__() == f"<{op.__class__.__base__.__name__}: {op.label}, qubits={op.qubits}>"
+        )
+
+    def test_repr_conditional(self, Op, classical_register):
+        """Test the representation of conditional operations."""
+        if issubclass(Op, ParametricOperation):
+            op = Op([0 for _ in range(Op.num_parameters)])
+        else:
+            op = Op()
+        op._cond = classical_register
+        assert (
+            op.__repr__()
+            == f"<{op.__class__.__base__.__name__}: {op.label}, qubits={op.qubits}, conditional: {op._cond}>"
+        )
+
+    def test_conditional(self, Op, classical_register):
+        """Test initializing a conditional operation."""
+        if issubclass(Op, ParametricOperation):
+            op = Op([0 for _ in range(Op.num_parameters)])
+        else:
+            op = Op()
+
+        op.conditional(classical_register)
+        assert op._cond == classical_register
+
+    def test_conditional_single_bit(self, Op, classical_register):
+        """Test initializing a conditional operation with a single bit."""
+        if issubclass(Op, ParametricOperation):
+            op = Op([0 for _ in range(Op.num_parameters)])
+        else:
+            op = Op()
+
+        op.conditional(classical_register[0])
+        assert op._cond == (classical_register[0],)
+
 
 class TestCustomOperations:
     """Unit tests for custom operation inheriting from one of the base classes."""
@@ -164,7 +207,7 @@ class TestCustomOperations:
         class CustomOp(Operation):
             pass
 
-        with pytest.raises(AttributeError, match="missing class attributes '_num_qubits'"):
+        with pytest.raises(AttributeError, match="supports an arbitrary number of qubits"):
             CustomOp.num_qubits
 
     def test_missing_num_control_attribute(self):
@@ -186,6 +229,17 @@ class TestCustomOperations:
 
         with pytest.raises(AttributeError, match="missing class attributes '_num_control'"):
             CustomOp.num_qubits
+
+    def test_missing_target_operation(self):
+        """Test that the correct exception is raised when a subclass to ``ControlledOperation`` is missing
+        the ``_target_operation`` class attribute."""
+
+        class CustomOp(ControlledOperation):
+            _num_control: int = 1
+            _num_target: int = 1
+
+        with pytest.raises(OperationError, match="No target operation declared for controlled operation"):
+            CustomOp.target_operation
 
     def test_num_parameters_attribute(self):
         """Test the ``num_parameters`` attribute."""

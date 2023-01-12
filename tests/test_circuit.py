@@ -244,6 +244,22 @@ class TestCircuit:
             assert two_qubit_circuit.qregisters == dict()
             assert two_qubit_circuit.cregisters == dict()
 
+    def test_reset_bits(self):
+        """Test resetting a circuit with bits that contain measurement values."""
+        circuit = Circuit(2, 2)
+        with circuit.context as (q, c):
+            ops.X(q[0])
+            ops.Measurement(q[0]) | c[0]
+
+        # must simulate circuit to populate classical register
+        from dwave.gate.simulator.simulator import simulate
+
+        assert c[0].value is None
+        simulate(circuit)
+        assert c[0].value is not None
+        circuit.reset()
+        assert c[0].value is None
+
     def test_add_qubit(self, two_qubit_circuit):
         """Test adding qubits to a circuit."""
         assert two_qubit_circuit.num_qubits == 2

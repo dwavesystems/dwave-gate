@@ -270,6 +270,9 @@ class Circuit:
         if not keep_registers:
             self._qregisters.clear()
             self._cregisters.clear()
+        else:
+            for bit in self.bits:
+                bit.reset()
 
         self.unlock()
 
@@ -319,7 +322,7 @@ class Circuit:
             creg_label = list(self.cregisters)[0]
 
         # NOTE: same bit in different registers NOT allowed
-        if bit in self.bits:
+        if self.bits and bit in self.bits:
             raise ValueError(f"Bit '{bit}' already in use in classical register '{creg_label}'.")
 
         self.cregisters[creg_label].add(bit or Bit(str(self.num_bits)))

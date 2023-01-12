@@ -19,6 +19,8 @@ import pytest
 import dwave.gate.operations as ops
 from dwave.gate.circuit import Circuit, ParametricCircuit
 from dwave.gate.operations.base import ControlledOperation, Operation, ParametricOperation
+from dwave.gate.primitives import Bit, Qubit
+from dwave.gate.registers import ClassicalRegister, QuantumRegister
 
 
 @pytest.fixture(scope="function")
@@ -110,3 +112,17 @@ def two_qubit_controlled_op(monkeypatch):
     monkeypatch.setattr(DummyOp, "__abstractmethods__", set())
 
     return DummyOp
+
+
+@pytest.fixture()
+def classical_register():
+    """Classical register with 4 bits."""
+    creg = ClassicalRegister([Bit(i) for i in range(4)])
+    return creg
+
+
+@pytest.fixture()
+def quantum_register():
+    """Quantum register with 4 bits."""
+    qreg = QuantumRegister([Qubit(i) for i in range(4)])
+    return qreg

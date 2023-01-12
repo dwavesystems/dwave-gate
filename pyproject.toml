@@ -27,3 +27,6 @@ archs = "x86_64 arm64"
 archs = "AMD64"
 # before-build = "pip install delvewheel"
 # repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"
+
+[tool.pyright]
+reportUnusedExpression = false
