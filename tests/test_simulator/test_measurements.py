@@ -16,8 +16,7 @@ import numpy as np
 import pytest
 
 import dwave.gate.operations as ops
-from dwave.gate.circuit import Circuit
-from dwave.gate.operations.operations import __all__ as all_ops
+from dwave.gate.circuit import Circuit, CircuitError
 from dwave.gate.simulator.simulator import simulate
 
 
@@ -37,6 +36,16 @@ class TestSimulateMeasurements:
         assert m.bits
         assert m.bits[0] == c[0]
         assert c[0] == 1
+
+    def test_measurements_little_endian(self):
+        """Test that the correct error is raised when measuring using little-endian notation."""
+        circuit = Circuit(1, 1)
+
+        with circuit.context as (q, c):
+            ops.X(q[0])
+            ops.Measurement(q[0]) | c[0]
+        with pytest.raises(CircuitError, match="only supports big-endian"):
+            _ = simulate(circuit, little_endian=True)
 
     def test_measurement_state(self):
         """Test accessing a state from a measurement."""

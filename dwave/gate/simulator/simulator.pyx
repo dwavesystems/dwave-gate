@@ -27,7 +27,7 @@ from typing import List
 import numpy as np
 
 import dwave.gate.operations as ops
-from dwave.gate.circuit import Circuit
+from dwave.gate.circuit import Circuit, CircuitError
 
 from dwave.gate.simulator.ops cimport (
     apply_cswap,
@@ -48,6 +48,11 @@ def apply_instruction(
 ):
     if op.is_blocked:
         return
+
+    if isinstance(op, ops.Measurement):
+        if little_endian:
+            raise CircuitError("Measurements only supports big-endian qubit indexing.")
+        _measure(op, state, targets)
 
     elif isinstance(op, ops.SWAP):
         gate = op.matrix
@@ -153,41 +158,39 @@ def simulate(
     state[0] = 1
 
     for op in circuit.circuit:
-        if isinstance(op, ops.Measurement):
-            _measure(op, state, circuit)
-        else:
-            targets = [circuit.qubits.index(qb) for qb in op.qubits]
-            apply_instruction(num_qubits, state, op, targets, little_endian)
+        targets = [circuit.qubits.index(qb) for qb in op.qubits]
+        apply_instruction(num_qubits, state, op, targets, little_endian)
 
     return state
 
 
-def _measure(op, state, circuit):
+def _measure(op, state, targets):
     op._measured_state = state.copy()
 
-    for idx, qb in enumerate(op.qubits):
-        m = _sample(circuit.qubits.index(qb), state)
+    for idx, t in enumerate(targets):
+        m = _sample(t, state)
 
         try:
             op.bits[idx].set(m)
         except (IndexError, TypeError):
             warnings.warn("Measurements not stored in the classical register.")
 
-        op._measured_qubit_indices.append(circuit.qubits.index(qb))
+        op._measured_qubit_indices.append(t)
 
 
 def _sample(
     qubit: int,
     state: np.typing.NDArray,
     collapse_state: bool = True,
-    reset_measured_qubits: bool = False
 ) -> int:
     """Sample a measurement on a single qubit and collapse the state.
+
+    Note, assumes big-endian qubit indexing and will not work properly
+    with little-endian indexing.
 
     Args:
         qubit: Which qubit (index, from left to right) to sample.
         collapse_state: Whether to collapse the state after a measurement.
-        reset_measured_qubits: Whether to reset the measured qubits to 0 after being measured.
 
     Returns:
         int: 0 or 1 sample of the measured qubit.
@@ -199,30 +202,30 @@ def _sample(
 
     weight_0 = weight_1 = 0
     zero_weight = False
-    state_0_ids = []
-    state_1_ids = []
+    num_states = 2**num_qubits
 
-    for i in range(2**num_qubits):
-        if i % 2**(num_qubits - qubit - 1) == 0:
+    for i in range(num_states):
+        if (i >> (num_qubits - qubit - 1)) & 1 == zero_weight:
             zero_weight = not zero_weight
+
         if zero_weight:
             weight_0 += np.abs(state[i])**2
-            state_0_ids.append(i)
         else:
             weight_1 += np.abs(state[i])**2
-            state_1_ids.append(i)
 
     sample = random.choices((0, 1), weights=[weight_0, weight_1])[0]
 
     if collapse_state:
-        if sample == 0:
-            state[state_1_ids] = 0
-        else:
-            state[state_0_ids] = 0
+        zero_weight = False
+        for i in range(num_states):
+            if (i >> (num_qubits - qubit - 1)) & 1 == zero_weight:
+                zero_weight = not zero_weight
 
-            if reset_measured_qubits:
-                # since 1 was measured, that qubit is reset to 0 (by switching all 1s to 0s)
-                state[state_1_ids], state[state_0_ids] = state[state_0_ids], state[state_1_ids]
+            if sample == 0 and not zero_weight:
+                state[i] = 0
+
+            if sample == 1 and zero_weight:
+                state[i] = 0
 
         # renormalize the state after removing the measured state values
         norm = np.linalg.norm(state)
