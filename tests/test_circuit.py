@@ -244,6 +244,22 @@ class TestCircuit:
             assert two_qubit_circuit.qregisters == dict()
             assert two_qubit_circuit.cregisters == dict()
 
+    def test_reset_bits(self):
+        """Test resetting a circuit with bits that contain measurement values."""
+        circuit = Circuit(2, 2)
+        with circuit.context as (q, c):
+            ops.X(q[0])
+            ops.Measurement(q[0]) | c[0]
+
+        # must simulate circuit to populate classical register
+        from dwave.gate.simulator.simulator import simulate
+
+        assert c[0].value is None
+        simulate(circuit)
+        assert c[0].value is not None
+        circuit.reset()
+        assert c[0].value is None
+
     def test_add_qubit(self, two_qubit_circuit):
         """Test adding qubits to a circuit."""
         assert two_qubit_circuit.num_qubits == 2
@@ -396,8 +412,8 @@ class TestCircuit:
         circuit_1.extend(operations)
 
         circuit_2 = Circuit(3)
-        with circuit_2.context as q:
-            circuit_1((q[0], q[2]))
+        with circuit_2.context as regs:
+            circuit_1((regs.q[0], regs.q[2]))
 
         assert circuit_2.circuit == [
             ops.X(circuit_2.qubits[0]),
@@ -419,8 +435,8 @@ class TestCircuit:
         circuit_1.extend(operations)
 
         circuit_2 = Circuit(3)
-        with circuit_2.context as q:
-            circuit_1(qubits=(q[0], q[2]))
+        with circuit_2.context as regs:
+            circuit_1(qubits=(regs.q[0], regs.q[2]))
 
         assert circuit_2.circuit == [
             ops.X(circuit_2.qubits[0]),
@@ -437,8 +453,8 @@ class TestCircuit:
         circuit_1.extend(operations)
 
         circuit_2 = Circuit(2)
-        with circuit_2.context as q:
-            circuit_1(q[1])
+        with circuit_2.context as regs:
+            circuit_1(regs.q[1])
 
         assert circuit_2.circuit == [ops.X(circuit_2.qubits[1]), ops.RY(0.42, circuit_2.qubits[1])]
 
@@ -450,8 +466,8 @@ class TestCircuit:
 
         circuit_2 = Circuit(2)
         with pytest.raises(ValueError, match="requires 2 qubits, got 1"):
-            with circuit_2.context as q:
-                circuit_1(q[1])
+            with circuit_2.context as regs:
+                circuit_1(regs.q[1])
 
     def test_calling_in_own_context(self):
         """Test that the correct exception is raised when calling a circuit inside it's own context."""
@@ -460,8 +476,8 @@ class TestCircuit:
         circuit_1.extend(operations)
 
         with pytest.raises(TypeError, match="Cannot apply circuit in its own context."):
-            with circuit_1.context as q:
-                circuit_1(q[0])
+            with circuit_1.context as regs:
+                circuit_1(regs.q[0])
 
     def test_call_outside_context(self):
         """Test that the correct exception is raised when calling a circuit outside of a context."""
@@ -585,13 +601,13 @@ class TestParametricCircuit:
         parametric_circuit = ParametricCircuit(1)
         circuit = Circuit(2)
 
-        with parametric_circuit.context as (p, q):
-            ops.X(q[0])
-            ops.RY(p[0], q[0])
-            ops.RZ(3.3, q[0])
+        with parametric_circuit.context as regs:
+            ops.X(regs.q[0])
+            ops.RY(regs.p[0], regs.q[0])
+            ops.RZ(3.3, regs.q[0])
 
-        with circuit.context as q:
-            parametric_circuit([4.2], q[1])
+        with circuit.context as regs:
+            parametric_circuit([4.2], regs.q[1])
 
         assert circuit.circuit == [
             ops.X(circuit.qubits[1]),
@@ -606,10 +622,10 @@ class TestParametricCircuit:
         assert parametric_circuit.parametric is False
         assert parametric_circuit.num_parameters == 0
 
-        with parametric_circuit.context as (p, q):
-            ops.X(q[0])
-            ops.RY(p[0], q[0])
-            ops.RZ(p[1], q[0])
+        with parametric_circuit.context as regs:
+            ops.X(regs.q[0])
+            ops.RY(regs.p[0], regs.q[0])
+            ops.RZ(regs.p[1], regs.q[0])
 
         assert parametric_circuit.parametric is True
         assert parametric_circuit.num_parameters == 2
@@ -618,15 +634,15 @@ class TestParametricCircuit:
         """Test accessing a cached context by calling it twice."""
         parametric_circuit = ParametricCircuit(1)
 
-        with parametric_circuit.context as (p, q):
-            ops.RY(p[0], q[0])
+        with parametric_circuit.context as regs:
+            ops.RY(regs.p[0], regs.q[0])
 
         assert parametric_circuit.parametric is True
         assert parametric_circuit.num_parameters == 1
 
         parametric_circuit.unlock()
-        with parametric_circuit.context as (p, q):
-            ops.RZ(p[1], q[0])
+        with parametric_circuit.context as regs:
+            ops.RZ(regs.p[1], regs.q[0])
 
         assert parametric_circuit.parametric is True
         assert parametric_circuit.num_parameters == 2
@@ -634,8 +650,8 @@ class TestParametricCircuit:
     def test_eval(self, empty_parametric_circuit):
         """Test evaluate circuit with parameters."""
         empty_parametric_circuit.add_qubit()
-        with empty_parametric_circuit.context as (p, q):
-            ops.RX(p[0], q[0])
+        with empty_parametric_circuit.context as regs:
+            ops.RX(regs.p[0], regs.q[0])
 
         for op in empty_parametric_circuit.circuit:
             for p in op.parameters:
@@ -652,8 +668,8 @@ class TestParametricCircuit:
     def test_eval_in_place(self, empty_parametric_circuit):
         """Test evaluate circuit in place with parameters."""
         empty_parametric_circuit.add_qubit()
-        with empty_parametric_circuit.context as (p, q):
-            ops.RX(p[0], q[0])
+        with empty_parametric_circuit.context as regs:
+            ops.RX(regs.p[0], regs.q[0])
 
         for op in empty_parametric_circuit.circuit:
             for p in op.parameters:
@@ -667,8 +683,8 @@ class TestParametricCircuit:
     def test_eval_no_params(self, empty_parametric_circuit):
         """Test that the correct exception is raised when evaluating circuit without parameters."""
         empty_parametric_circuit.add_qubit()
-        with empty_parametric_circuit.context as (p, q):
-            ops.RX(p[0], q[0])
+        with empty_parametric_circuit.context as regs:
+            ops.RX(regs.p[0], regs.q[0])
 
         for op in empty_parametric_circuit.circuit:
             for p in op.parameters:
@@ -680,8 +696,8 @@ class TestParametricCircuit:
     def test_call_outside_context(self):
         """Test that the correct exception is raised when calling a circuit outside of a context."""
         circuit_1 = ParametricCircuit(1)
-        with circuit_1.context as (p, q):
-            ops.RX(p[0], q[0])
+        with circuit_1.context as regs:
+            ops.RX(regs.p[0], regs.q[0])
 
         with pytest.raises(
             CircuitError, match="Can only apply circuit object inside a circuit context."

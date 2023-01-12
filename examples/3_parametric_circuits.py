@@ -22,7 +22,7 @@ np.set_printoptions(suppress=True)
 
 # Let's create a parametric circuit which applies a rotation gate to a single qubit
 rot_circuit = ParametricCircuit(1)
-with rot_circuit.context as (p, q):
+with rot_circuit.context as (p, q, c):
     ops.RZ(p[0], q[0])
     ops.RY(p[1], q[0])
     ops.RZ(p[2], q[0])
@@ -32,7 +32,7 @@ with rot_circuit.context as (p, q):
 # parametric circuit, the parameters need to be passed when calling it, similarly to how parametric
 # operations work.
 circuit = Circuit(3)
-with circuit.context as q:
+with circuit.context as (q, c):
     rot_circuit([np.pi, np.pi / 2, np.pi], q[1])
 
 print("Circuit:", circuit.circuit)
@@ -56,7 +56,7 @@ assert np.allclose(MyRotOperation(params).matrix, ops.Rotation(params).matrix)
 # This custom gate can now be applied to the circuit in exactly the same way as any other gate. Note
 # that if we don't reset the circuit, the 'rot_circuit' operations will still be there.
 circuit.reset()
-with circuit.context as q:
+with circuit.context as (q, c):
     MyRotOperation([3 * np.pi / 2, np.pi / 2, np.pi], q[2])
 
 print("Circuit:", circuit.circuit)

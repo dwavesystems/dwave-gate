@@ -44,6 +44,11 @@ class Qubit:
         """The qubit's name."""
         return self._label
 
+    @label.setter
+    def label(self, label: Hashable) -> None:
+        """Setter method for label"""
+        self._label = label
+
     @property
     def id(self) -> str:
         """The qubit's unique identification number."""
@@ -74,30 +79,70 @@ class Bit:
     def __init__(self, label: Hashable) -> None:
         self._label = label
         self._id: str = IDCounter.next()
+        self._value: Optional[int] = None
 
     @property
     def label(self) -> Hashable:
         """The bit's label."""
         return self._label
 
+    @label.setter
+    def label(self, label: Hashable) -> None:
+        """Setter method for label"""
+        self._label = label
+
     @property
     def id(self) -> str:
         """The bit's unique identification number."""
         return self._id
 
+    @property
+    def value(self) -> Optional[int]:
+        """The bit value, if set."""
+        return self._value
+
     def __eq__(self, object: object) -> bool:
         """Two bits are equal if they share the same id."""
         if isinstance(object, Bit):
             return self.id == object.id
+        if self._value is not None and self._value == object:
+            return True
         return False
 
     def __repr__(self) -> str:
         """The representation of the variable is its label."""
+        if self._value is not None:
+            return f"<bit: {self.label}, id:{self.id}, value: {self.value}>"
         return f"<bit: {self.label}, id:{self.id}>"
 
     def __hash__(self) -> int:
         """The hash of the qubit is determined by its id."""
         return hash(self.__class__.__name__ + self.id)
+
+    def set(self, value: int, force: bool = False) -> None:
+        """Set a value for the bit.
+
+        Args:
+            value: Value that the variable should have.
+            force: Whether to replace any previously set value.
+        """
+        # leniently allow any type that evaluates to 0 or 1
+        value = int(bool(value))
+
+        if self._value is not None and not force:
+            raise ValueError("Value already set. Use 'force=True' to replace it.")
+
+        self._value = value
+
+    def reset(self) -> None:
+        """Reset the bit value to ``None``."""
+        self._value = None
+
+    def __bool__(self) -> bool:
+        """Bool representation of a bit"""
+        if self.value is not None:
+            return bool(self.value)
+        return True
 
 
 class Variable:
