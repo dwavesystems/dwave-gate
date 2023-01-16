@@ -4,11 +4,11 @@
 dwave-gate
 ==========
 
-.. include:: readme
+.. include:: README.rst
     :start-after: index-start-marker
     :end-before: index-end-marker
 
-.. include:: readme
+.. include:: README.rst
     :start-after: example-start-marker
     :end-before: example-end-marker
 
