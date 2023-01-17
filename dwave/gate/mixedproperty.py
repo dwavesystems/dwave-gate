@@ -85,13 +85,25 @@ class mixedproperty:
         if args and isinstance(args[0], Callable):
             self.__call__(args[0])
 
-    def __call__(self, callable: Callable) -> mixedproperty:
+    def __call__(self, callable_: Callable) -> mixedproperty:
         """Initialization of the decorated function.
 
         Args:
-            callable: Method decorated by the ``mixedproperty`` decorator."""
-        functools.update_wrapper(self, callable)
-        self._callable = callable
+            callable_: Method decorated by the ``mixedproperty`` decorator."""
+
+        # don't patch '__qualname__' due to Sphinx calling the mixedproperty
+        # at docsbuild, raising exceptions and thus not rendering all entries
+        for attr in ("__module__", "__name__", "__doc__", "__annotations__"):
+            try:
+                value = getattr(callable_, attr)
+            except (AttributeError, NotImplementedError):
+                pass
+            else:
+                setattr(self, attr, value)
+        getattr(self, "__dict__").update(getattr(callable_, "__dict__", {}))
+
+        self.__wrapped__ = callable_
+        self._callable = callable_
         return self
 
     def __get__(self, instance: Optional[object], cls: type) -> Any:
