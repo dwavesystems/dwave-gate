@@ -14,7 +14,7 @@
 
 """Registers for collecting qubits, bits and variables.
 
-Contains performant container classes for keeping track of and handling primitive type objects (see
+Provides performant container classes for keeping track of and handling primitive type objects (see
 :py:mod:`dwave.gate.primitives` for details on the supported objects).
 """
 
