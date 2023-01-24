@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2022-2023 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -11,6 +11,13 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+
+"""Circuit and context manager classes.
+
+Contains classes to construct and handle quantum circuits. The quantum circuits contain the quantum
+operations and instructions for running the circuits on simulators or hardware. See
+:py:mod:`dwave.gate.operations` for details on which operations are supported.
+"""
 
 from __future__ import annotations
 

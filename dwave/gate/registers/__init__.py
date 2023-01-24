@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2023-2023 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -11,5 +11,11 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+
+"""Registers for collecting qubits, bits and variables.
+
+Provides performant container classes for keeping track of and handling primitive type objects (see
+:py:mod:`dwave.gate.primitives` for details on the supported objects).
+"""
 
 from dwave.gate.registers.registers import *

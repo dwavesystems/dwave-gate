@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2022-2023 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -11,6 +11,12 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+
+""":class:`mixedproperty` decorator.
+
+Contains a decorator for creating mixed properties, which differ from regular properties by
+allowing access to both the class and the instance.
+"""
 
 from __future__ import annotations
 
@@ -79,13 +85,25 @@ class mixedproperty:
         if args and isinstance(args[0], Callable):
             self.__call__(args[0])
 
-    def __call__(self, callable: Callable) -> mixedproperty:
+    def __call__(self, callable_: Callable) -> mixedproperty:
         """Initialization of the decorated function.
 
         Args:
-            callable: Method decorated by the ``mixedproperty`` decorator."""
-        functools.update_wrapper(self, callable)
-        self._callable = callable
+            callable_: Method decorated by the ``mixedproperty`` decorator."""
+
+        # don't patch '__qualname__' due to Sphinx calling the mixedproperty
+        # at docsbuild, raising exceptions and thus not rendering all entries
+        for attr in ("__module__", "__name__", "__doc__", "__annotations__"):
+            try:
+                value = getattr(callable_, attr)
+            except (AttributeError, NotImplementedError):
+                pass
+            else:
+                setattr(self, attr, value)
+        getattr(self, "__dict__").update(getattr(callable_, "__dict__", {}))
+
+        self.__wrapped__ = callable_
+        self._callable = callable_
         return self
 
     def __get__(self, instance: Optional[object], cls: type) -> Any:
