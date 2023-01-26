@@ -13,6 +13,7 @@
 #    limitations under the License.
 
 from __future__ import annotations
+import itertools
 
 __all__ = [
     "CircuitError",
@@ -52,6 +53,8 @@ from dwave.gate.utils import cached_property
 if TYPE_CHECKING:
     from dwave.gate.operations.base import Operation
 
+Qubits = Union[Qubit, Sequence[Qubit]]
+
 
 class CircuitError(Exception):
     """Exception to be raised when there is an error with a Circuit."""
@@ -85,7 +88,7 @@ class Circuit:
 
         self._locked = False
 
-    def __call__(self, qubits: Union[Qubit, Sequence[Qubit]]) -> None:
+    def __call__(self, qubits: Qubits) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
         Args:
@@ -379,6 +382,36 @@ class Circuit:
         qb, cb = len(self.qubits), len(self.bits)
         return f"<{self.__class__.__name__}: qubits={qb}, bits={cb}, ops={len(self.circuit)}>"
 
+    def get_qubit(self, label: str, qreg_label: Optional[str] = None, return_all: bool = False) -> Qubits:
+        """Returns the Qubit(s) with a specific name.
+
+        Args:
+            label: The label of the qubit.
+            qreg_label: Label of the quantum register to search in. If None, all registers
+                are searched.
+            return_all: Whether to return all qubits if several exists with the same label,
+                or just return the first occuring qubit. Defaults to 'False'.
+
+        Returns:
+            Qubit: Qubit with the specified label. If there are several with the same name,
+            only the first occuring qubit will be returned unless 'return_all' is 'True'.
+        """
+        if qreg_label:
+            qregisters = self.qregisters[qreg_label]
+        else:
+            qregisters = itertools.chain.from_iterable(self.qregisters.values())
+
+        qubits = []
+        for qubit in qregisters:
+            if qubit.label == label:
+                if not return_all:
+                    return qubit
+                qubits.append(qubit)
+        if qubits:
+            return qubits
+
+        raise ValueError(f"Qubit '{label}' not found.")
+
     def find_qubit(self, qubit: Qubit, qreg_label: bool = False) -> Tuple[Hashable, int]:
         """Returns the register where a qubit contained and its index in the register.
 
@@ -499,7 +532,7 @@ class ParametricCircuit(Circuit):
 
         super().__init__(num_qubits, num_bits)
 
-    def __call__(self, parameters: List[complex], qubits: Union[Qubit, Sequence[Qubit]]) -> None:
+    def __call__(self, parameters: List[complex], qubits: Qubits) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
         Args:
