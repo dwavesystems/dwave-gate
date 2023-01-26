@@ -171,7 +171,7 @@ def _measure(op, state, targets):
         m = _sample(t, state)
 
         try:
-            op.bits[idx].set(m)
+            op.bits[idx].set(m, force=True)
         except (IndexError, TypeError):
             warnings.warn("Measurements not stored in the classical register.")
 
