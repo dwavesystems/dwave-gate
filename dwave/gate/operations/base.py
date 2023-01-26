@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2022-2023 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -11,6 +11,12 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+
+"""Set of base operation classes subclassed by all quantum operations.
+
+Contains all base classes for general quantum operations, including parametric operations,
+controlled operations and measurements. Also provides the utility function :func:`create_operation`
+for transforming circuits into operations."""
 
 from __future__ import annotations
 
