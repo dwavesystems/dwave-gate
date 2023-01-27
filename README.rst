@@ -69,7 +69,14 @@ The simplest way to install ``dwave-gate`` is from `PyPI <https://pypi.org/proje
 
     pip install dwave-gate
 
-It can also be installed from source by cloning this GitHub repository and running (on Unix systems):
+To install as part of the `Ocean SDK <https://github.com/dwavesystems/dwave-ocean-sdk>`_,
+use the optional ``all`` keyword:
+
+.. code-block:: bash
+
+    pip install dwave-ocean-sdk[all]
+
+``dwave-gate`` can also be installed from source by cloning this GitHub repository and running (on Unix systems):
 
 .. code-block:: bash
 
