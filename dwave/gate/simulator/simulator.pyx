@@ -25,6 +25,7 @@ import warnings
 from typing import List
 
 import numpy as np
+cimport numpy as np
 
 import dwave.gate.operations as ops
 from dwave.gate.circuit import Circuit, CircuitError
@@ -35,6 +36,11 @@ from dwave.gate.simulator.ops cimport (
     apply_gate_two_control,
     apply_swap,
     single_qubit,
+
+    apply_measurement_0,
+    norm_measurement_0,
+    apply_measurement_1,
+    norm_measurement_1,
 )
 
 
@@ -168,7 +174,8 @@ def _measure(op, state, targets):
     op._measured_state = state.copy()
 
     for idx, t in enumerate(targets):
-        m = _sample(t, state)
+        # m = _sample(t, state)
+        m = _fast_sample(t, state)
 
         try:
             op.bits[idx].set(m)
@@ -176,6 +183,52 @@ def _measure(op, state, targets):
             warnings.warn("Measurements not stored in the classical register.")
 
         op._measured_qubit_indices.append(t)
+
+
+def _fast_sample(
+    qubit: int,
+    state: np.typing.NDArray,
+    collapse_state: bool = True,
+    little_endian: bool = False,
+) -> int:
+    cdef int num_qubits = round(np.sqrt(state.shape[0]))
+    filler_gate = np.empty((2, 2), dtype=np.complex128)
+    cdef np.float64_t norm0 = norm_measurement_0(
+        num_qubits,
+        state,
+        filler_gate,
+        qubit,
+        little_endian=little_endian
+    )
+    cdef np.float64_t norm1 = norm_measurement_1(
+        num_qubits,
+        state,
+        filler_gate,
+        qubit,
+        little_endian=little_endian
+    )
+
+    sample = random.choices((0, 1), weights=[norm0, norm1])[0]
+
+    if collapse_state:
+        if sample == 0:
+            apply_measurement_0(
+                num_qubits,
+                state,
+                filler_gate,
+                qubit,
+                little_endian=little_endian
+            )
+        else:
+            apply_measurement_1(
+                num_qubits,
+                state,
+                filler_gate,
+                qubit,
+                little_endian=little_endian
+            )
+
+    return sample
 
 
 def _sample(
