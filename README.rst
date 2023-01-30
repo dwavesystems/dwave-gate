@@ -38,7 +38,7 @@ Example usage
 This example uses the ``dwave.gate.Circuit`` object's  context manager to append operations to
 a two-qubit circuit.
 
-.. code-block:: python
+.. testcode::
 
     import dwave.gate.operations as ops
     from dwave.gate import Circuit
@@ -46,6 +46,7 @@ a two-qubit circuit.
     circuit = Circuit(2)
 
     with circuit.context as (q, c):
+        ops.X(q[0])
         ops.Hadamard(q[1])
         ops.CZ(q[0], q[1])
         ops.Hadamard(q[1])

@@ -20,6 +20,7 @@ extensions = [
     'sphinx.ext.napoleon',  # must be loaded before 'sphinx_autodoc_typehints'
     'sphinx_autodoc_typehints',
     'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
 ]
 
 templates_path = ['_templates']
