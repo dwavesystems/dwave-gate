@@ -44,9 +44,10 @@ def compile_gate(
         skip_zeros: If true, rows of given matrix that have no values will be ignored.
 
     Returns:
-        A tuple where the first item is the set of substates acted on by the gate, and
-        the second item is a dictionary mapping output substates to those corresponding
-        instructions.
+        A 3-tuple where the first item is the set of "output" substates affected by the
+        gate at each iteration, the second item is the set of "input" sub states that
+        the output depends on at each iteration, and the third item is a dictionary
+        mapping output substates to corresponding multiplication instructions.
     """
 
     gate_matrix_size = len(gate_matrix)
