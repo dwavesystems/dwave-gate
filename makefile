@@ -30,6 +30,7 @@ ifndef PYTHON3
 endif
 	$(PYTHON) dwave/gate/simulator/operation_generation.py
 	$(PYTHON) setup.py build_ext --inplace
+	$(PYTHON) -m pip install .
 
 # whether coverage files should be removed (true)
 # default is to not delete coverage files (false)
@@ -53,6 +54,14 @@ test:
 .PHONY: coverage
 coverage:
 	$(PYTHON) $(TESTRUNNER) $(COVERAGE)
+
+.PHONY: docs
+docs:
+	make -C docs/ html
+
+.PHONY: clean-docs
+clean-docs:
+	make -C docs/ clean
 
 .PHONY: format
 format:
