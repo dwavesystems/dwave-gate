@@ -1,0 +1,11 @@
+---
+features:
+  - |
+    Adds the ``get_qubit`` method to the Circuit class allowing for the retrieval of qubits in the circuit by label.
+
+    .. code-block:: python
+
+      circuit = Circuit()
+      circuit.add_qubit(Qubit("my_qubit"))
+
+      qubit = circuit.get_qubit("my_qubit")
