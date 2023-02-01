@@ -67,6 +67,71 @@ class TestCircuit:
         assert [b.label for b in circuit.bits] == ["0", "1", "2"]
         assert isinstance(circuit.cregisters["creg0"], ClassicalRegister)
 
+    def test_get_qubit(self):
+        """Test finding and getting a qubit using the label."""
+        circuit = Circuit()
+        circuit.add_qregister(2, label="fruits")
+
+        apple_qubit = Qubit("apple")
+        circuit.add_qubit(apple_qubit, "fruits")
+
+        qubit = circuit.get_qubit("apple")
+        assert qubit == apple_qubit
+
+    def test_get_qubit_specific_register(self):
+        """Test finding and getting a qubit in a specified register."""
+        circuit = Circuit()
+        circuit.add_qregister(2, label="fruits")
+        circuit.add_qregister(3, label="vegetables")
+
+        fruit_qubit = Qubit("tomato")
+        circuit.add_qubit(fruit_qubit, "fruits")
+        vegetable_qubit = Qubit("tomato")
+        circuit.add_qubit(vegetable_qubit, "vegetables")
+
+        qubit = circuit.get_qubit("tomato", qreg_label="vegetables")
+        assert qubit == vegetable_qubit
+
+        qubit = circuit.get_qubit("tomato", qreg_label="fruits")
+        assert qubit == fruit_qubit
+
+    def test_get_qubit_not_found(self):
+        """Test that the correct error is raised when getting a
+        non-existing qubit using the label."""
+        circuit = Circuit()
+        circuit.add_qregister(2, label="fruits")
+
+        with pytest.raises(ValueError, match="Qubit 'apple' not found."):
+            qubit = circuit.get_qubit("apple")
+
+    def test_get_multiple_qubits(self):
+        """Test finding and getting a qubit when there are multiple qubits
+        using the same label."""
+        circuit = Circuit()
+        circuit.add_qregister(2, label="fruits")
+
+        apple_qubit_0 = Qubit("apple")
+        apple_qubit_1 = Qubit("apple")
+        circuit.add_qubit(apple_qubit_0, "fruits")
+        circuit.add_qubit(apple_qubit_1, "fruits")
+
+        qubit = circuit.get_qubit("apple")
+        assert qubit == apple_qubit_0
+
+    def test_get_multiple_qubits_return_all(self):
+        """Test finding and getting multiple qubits using the same label."""
+        circuit = Circuit()
+        circuit.add_qregister(2, label="fruits")
+
+        apple_qubit_0 = Qubit("apple")
+        apple_qubit_1 = Qubit("apple")
+        circuit.add_qubit(apple_qubit_0, "fruits")
+        circuit.add_qubit(apple_qubit_1, "fruits")
+
+        qubits = circuit.get_qubit("apple", return_all=True)
+        assert qubits == [apple_qubit_0, apple_qubit_1]
+
+
     def test_find_qubit(self):
         """Test finding a qubit in a circuit."""
         circuit = Circuit()
