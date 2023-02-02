@@ -170,7 +170,6 @@ def _measure(op, state, targets):
     op._measured_state = state.copy()
 
     for idx, t in enumerate(targets):
-        # m = _sample(t, state)
         m = _fast_sample(t, state)
 
         try:

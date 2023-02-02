@@ -110,6 +110,7 @@ def generate_op_c_code(
     precompile_gate: Optional[np.ndarray] = None,
     little_endian: bool = True,
     collect_norm: bool = False,
+    provide_amplitude_scale_factor: bool = False,
 ) -> CFuncInfo:
     """Generate the C code (and some cython headers) that implements a gate in
     an optimal way.
@@ -177,6 +178,11 @@ def generate_op_c_code(
                 (square magnitudes) of the affected sub states will be collected and
                 returned by the generated function.
 
+        provide_amplitude_scale_factor:
+            If true, the returned C/cython functions will have an "amplitude factor"
+            argument that will scale multiply all the affected amplitudes of the
+            operation. Useful for normalizing the state after measurement/noise.
+
     Returns:
         C code/cython headers that implement the gate.
 
@@ -210,7 +216,7 @@ def generate_op_c_code(
         assert precompile_gate.shape == (gate_matrix_size, gate_matrix_size)
         output_sub_states, dependent_sub_states, instructions = compile_gate(
             precompile_gate,
-            skip_identity=not collect_norm,
+            skip_identity=(not provide_amplitude_scale_factor) and (not collect_norm),
             skip_zeros=collect_norm,
         )
     else:
@@ -303,6 +309,10 @@ def generate_op_c_code(
     arguments.extend(targets)
     arguments.extend(controls)
 
+    amplitude_factor = c.Value(float64_t, "amplitude_factor")
+    if provide_amplitude_scale_factor:
+        arguments.append(amplitude_factor)
+
     body = c.Block([
         # number of total states
         c.Initializer(num_states, f"1 << {num_qubits.name}"),
@@ -389,6 +399,15 @@ def generate_op_c_code(
                         for state_i in sorted(output_sub_states)
                     ],
 
+                    *[
+                        c.Assign(
+                            amp_results[state_i].name,
+                            f"{amplitude_factor.name} * {amp_results[state_i].name}"
+                        )
+                        for state_i in sorted(output_sub_states)
+                        if provide_amplitude_scale_factor
+                    ],
+
                     # write out states
                     *[
                         c.Assign(
@@ -425,12 +444,17 @@ def generate_op_c_code(
         [f"uint64_t target{i}" for i in range(num_targets)]
         + [f"uint64_t control{i}" for i in range(num_controls)]
     )
+
+    amplitude_factor_arg_str = ""
+    if provide_amplitude_scale_factor:
+        amplitude_factor_arg_str = ",\n        np.float64_t amplitude_factor"
+
     cython_header = f"""\
     {cython_return_type} c_{op_name} "{op_name}" (
         uint64_t num_qubits,
         np.complex128_t* state_vector,
         np.complex128_t* gate_matrix,
-        {cython_qubit_args}
+        {cython_qubit_args}{amplitude_factor_arg_str}
     )"""
 
     return CFuncInfo(func, cython_qubit_args, cython_header)
@@ -589,7 +613,7 @@ def generate_op_set(
 
     full_op_options = {
         (op_idx, little_endian, collect_norm):
-            f"{op_name}_op{op_idx}_{['norm', 'apply'][collect_norm]}_{['big', 'little'][little_endian]}_endian"
+            f"{op_name}_op{op_idx}_{['apply', 'norm'][collect_norm]}_{['big', 'little'][little_endian]}_endian"
         for op_idx, little_endian, collect_norm in itertools.product(
             range(len(operators)), (False, True), (False, True)
         )
@@ -602,6 +626,7 @@ def generate_op_set(
             precompile_gate=operators[op_idx],
             little_endian=little_endian,
             collect_norm=collect_norm,
+            provide_amplitude_scale_factor=not collect_norm,
         ))
 
     qubit_args = ", ".join(
@@ -612,12 +637,17 @@ def generate_op_set(
     def norm_function_calls(little_endian):
         return [
             f"""
-        norms[{op_idx}] = c_{full_op_options[op_idx, little_endian, True]}(
-            num_qubits,
-            <np.complex128_t*>&state_vector[0],
-            NULL,
-            {qubit_args}
-        )
+        if op_idx < 0:
+            p_mag = c_{full_op_options[op_idx, little_endian, True]}(
+                num_qubits,
+                <np.complex128_t*>&state_vector[0],
+                NULL,
+                {qubit_args}
+            )
+            t += p_mag
+            if t > u:
+                op_idx = {op_idx}
+                p = p_mag
 """
             for op_idx in range(len(operators))
         ]
@@ -630,7 +660,8 @@ def generate_op_set(
                     num_qubits,
                     <np.complex128_t*>&state_vector[0],
                     NULL,
-                    {qubit_args}
+                    {qubit_args},
+                    normalization_factor
                 )
 """
             for op_idx in range(len(operators))
@@ -648,12 +679,17 @@ cdef inline {op_name}(
 
     norms = np.empty({len(operators)}, dtype=np.float64)
 
+    t = 0.0
+    u = np.random.uniform()
+    op_idx = -1
+    p = 0.0
+
     if little_endian:
 {nl.join(norm_function_calls(True))}
     else:
 {nl.join(norm_function_calls(False))}
 
-    op_idx = np.random.choice(np.arange({len(operators)}), p=norms)
+    normalization_factor = 1 / np.sqrt(p)
 
     if apply_operator:
         if little_endian:

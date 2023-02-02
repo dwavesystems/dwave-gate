@@ -193,3 +193,37 @@ class TestConditionalOps:
 
         assert np.allclose(res, expected)
         assert not x.is_blocked
+
+    def test_bell_state_measurement(self):
+        circuit = Circuit(2, 2)
+
+        with circuit.context as (q, c):
+            ops.Hadamard(q[0])
+            ops.CNOT(q[0], q[1])
+            ops.Measurement(q) | c
+
+        res = simulate(circuit)
+
+        measurement = tuple(b.value for b in circuit.bits)
+
+        if measurement == (0, 0):
+            assert np.allclose(res, [1, 0, 0, 0])
+        elif measurement == (1, 1):
+            assert np.allclose(res, [0, 0, 0, 1])
+        else:
+            assert False
+
+    def test_non_entangled_measurement(self):
+        circuit = Circuit(2, 1)
+
+        with circuit.context as (q, c):
+            ops.Hadamard(q[0])
+            ops.Hadamard(q[1])
+            ops.Measurement(q[0]) | c[0]
+
+        res = simulate(circuit)
+
+        if circuit.bits[0].value == 0:
+            assert np.allclose(res, [1/np.sqrt(2), 1/np.sqrt(2), 0, 0])
+        else:
+            assert np.allclose(res, [0, 0, 1/np.sqrt(2), 1/np.sqrt(2)])
