@@ -638,18 +638,37 @@ def generate_op_set(
         return [
             f"""
         if op_idx < 0:
-            p_mag = c_{full_op_options[op_idx, little_endian, True]}(
+            op_prob = c_{full_op_options[op_idx, little_endian, True]}(
                 num_qubits,
                 <np.complex128_t*>&state_vector[0],
                 NULL,
                 {qubit_args}
             )
-            t += p_mag
+            t += op_prob
             if t > u:
                 op_idx = {op_idx}
-                p = p_mag
+                p = op_prob
 """
-            for op_idx in range(len(operators))
+            for op_idx in range(len(operators) - 1)
+        ] + [
+            f"""
+        if op_idx < 0:
+            op_prob = c_{full_op_options[op_idx, little_endian, True]}(
+                num_qubits,
+                <np.complex128_t*>&state_vector[0],
+                NULL,
+                {qubit_args}
+            )
+            t += op_prob
+            if t <= u:
+                warnings.warn(
+                    "total probability of operators was less than uniformly random "
+                    "variable `u` (likely due to numerical errors), defaulting to final"
+                    " operator"
+                )
+            op_idx = {len(operators) - 1}
+            p = op_prob
+"""
         ]
 
     def apply_function_calls(little_endian):
@@ -680,15 +699,26 @@ cdef inline {op_name}(
 
     norms = np.empty({len(operators)}, dtype=np.float64)
 
+    # the accumlative probability
     t = 0.0
+
+    # random variable that will determine which operator is chosen
     u = rng.uniform()
+
+    # the final operator index. if none are chosen due to numerical error, this will
+    # be left as -1 and we can handle that case
     op_idx = -1
+
+    # this will be set to the probability of the chosen operator
     p = 0.0
 
     if little_endian:
 {nl.join(norm_function_calls(True))}
     else:
 {nl.join(norm_function_calls(False))}
+
+    if p == 0.0:
+        raise RuntimeError("cannot normalize state vector, norm too small")
 
     normalization_factor = 1 / np.sqrt(p)
 
@@ -811,6 +841,7 @@ cimport numpy as np
 from libc.stdint cimport uint64_t
 
 import numpy as np
+import warnings
 
 """
         + cython_imports

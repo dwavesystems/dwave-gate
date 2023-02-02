@@ -234,7 +234,7 @@ class TestConditionalOps:
 
     def test_measurement_rng_seed(self):
         """Test measurement is reproducible after setting RNG seed."""
-        num_qubits = 6
+        num_qubits = 10
         circuit = Circuit(num_qubits, num_qubits)
 
         with circuit.context as (q, c):
