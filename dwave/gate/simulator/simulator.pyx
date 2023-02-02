@@ -177,7 +177,7 @@ def _measure(op, state, targets, rng):
     op._measured_state = state.copy()
 
     for idx, t in enumerate(targets):
-        m = _fast_sample(t, state, rng)
+        m = _sample(t, state, rng)
 
         try:
             op.bits[idx].set(m)
@@ -187,7 +187,7 @@ def _measure(op, state, targets, rng):
         op._measured_qubit_indices.append(t)
 
 
-def _fast_sample(
+def _sample(
     qubit: int,
     state: np.typing.NDArray,
     rng: np.random.Generator,
@@ -201,65 +201,9 @@ def _fast_sample(
         state,
         qubit,
         rng,
-        little_endian=little_endian
+        little_endian=little_endian,
+        apply_operator=collapse_state,
     )
-
-
-def _sample(
-    qubit: int,
-    state: np.typing.NDArray,
-    collapse_state: bool = True,
-) -> int:
-    """Sample a measurement on a single qubit and collapse the state.
-
-    Note, assumes big-endian qubit indexing and will not work properly
-    with little-endian indexing.
-
-    Args:
-        qubit: Which qubit (index, from left to right) to sample.
-        collapse_state: Whether to collapse the state after a measurement.
-
-    Returns:
-        int: 0 or 1 sample of the measured qubit.
-    """
-    num_qubits = round(np.log2(len(state)))
-
-    if qubit >= num_qubits:
-        raise ValueError(f"Cannot sample qubit {qubit}. State has only {num_qubits} qubits.")
-
-    weight_0 = weight_1 = 0
-    zero_weight = False
-    num_states = 2**num_qubits
-
-    for i in range(num_states):
-        if (i >> (num_qubits - qubit - 1)) & 1 == zero_weight:
-            zero_weight = not zero_weight
-
-        if zero_weight:
-            weight_0 += np.abs(state[i])**2
-        else:
-            weight_1 += np.abs(state[i])**2
-
-    sample = random.choices((0, 1), weights=[weight_0, weight_1])[0]
-
-    if collapse_state:
-        zero_weight = False
-        for i in range(num_states):
-            if (i >> (num_qubits - qubit - 1)) & 1 == zero_weight:
-                zero_weight = not zero_weight
-
-            if sample == 0 and not zero_weight:
-                state[i] = 0
-
-            if sample == 1 and zero_weight:
-                state[i] = 0
-
-        # renormalize the state after removing the measured state values
-        norm = np.linalg.norm(state)
-        for i, s in enumerate(state):
-            state[i] = state[i] / norm
-
-    return sample
 
 
 def _simulate_circuit_density_matrix(
