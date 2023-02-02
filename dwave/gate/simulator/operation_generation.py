@@ -673,6 +673,7 @@ cdef inline {op_name}(
     uint64_t num_qubits,
     complex[::1] state_vector,
     {c_codes[0].cython_qubit_args},
+    rng,
     little_endian=True,
     apply_operator=True,
 ):
@@ -680,7 +681,7 @@ cdef inline {op_name}(
     norms = np.empty({len(operators)}, dtype=np.float64)
 
     t = 0.0
-    u = np.random.uniform()
+    u = rng.uniform()
     op_idx = -1
     p = 0.0
 

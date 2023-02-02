@@ -195,6 +195,9 @@ class TestConditionalOps:
         assert not x.is_blocked
 
     def test_bell_state_measurement(self):
+        """Test that measurement gives one of two correct states and sets the resulting
+        state vector correctly for the Bell state."""
+
         circuit = Circuit(2, 2)
 
         with circuit.context as (q, c):
@@ -214,6 +217,7 @@ class TestConditionalOps:
             assert False
 
     def test_non_entangled_measurement(self):
+        """Test single qubit measurement is correct on after Hadamards."""
         circuit = Circuit(2, 1)
 
         with circuit.context as (q, c):
@@ -227,3 +231,22 @@ class TestConditionalOps:
             assert np.allclose(res, [1/np.sqrt(2), 1/np.sqrt(2), 0, 0])
         else:
             assert np.allclose(res, [0, 0, 1/np.sqrt(2), 1/np.sqrt(2)])
+
+    def test_measurement_rng_seed(self):
+        """Test measurement is reproducible after setting RNG seed."""
+        num_qubits = 6
+        circuit = Circuit(num_qubits, num_qubits)
+
+        with circuit.context as (q, c):
+            for i in range(num_qubits):
+                ops.Hadamard(q[i])
+            ops.Measurement(q) | c
+
+        simulate(circuit, rng_seed=666)
+        expected = tuple(b.value for b in circuit.bits)
+
+        for _ in range(100):
+            for bit in circuit.bits:
+                bit.reset()
+            simulate(circuit, rng_seed=666)
+            assert expected == tuple(b.value for b in circuit.bits)
