@@ -131,7 +131,6 @@ class TestCircuit:
         qubits = circuit.get_qubit("apple", return_all=True)
         assert qubits == [apple_qubit_0, apple_qubit_1]
 
-
     def test_find_qubit(self):
         """Test finding a qubit in a circuit."""
         circuit = Circuit()
@@ -172,6 +171,70 @@ class TestCircuit:
 
         with pytest.raises(ValueError, match="not found in any register"):
             circuit.find_qubit(Qubit("apple"), qreg_label=False)
+
+    def test_get_bit(self):
+        """Test finding and getting a bit using the label."""
+        circuit = Circuit()
+        circuit.add_cregister(2, label="fruits")
+
+        apple_bit = Bit("apple")
+        circuit.add_bit(apple_bit, "fruits")
+
+        bit = circuit.get_bit("apple")
+        assert bit == apple_bit
+
+    def test_get_bit_specific_register(self):
+        """Test finding and getting a bit in a specified register."""
+        circuit = Circuit()
+        circuit.add_cregister(2, label="fruits")
+        circuit.add_cregister(3, label="vegetables")
+
+        fruit_bit = Bit("tomato")
+        circuit.add_bit(fruit_bit, "fruits")
+        vegetable_bit = Bit("tomato")
+        circuit.add_bit(vegetable_bit, "vegetables")
+
+        bit = circuit.get_bit("tomato", creg_label="vegetables")
+        assert bit == vegetable_bit
+
+        bit = circuit.get_bit("tomato", creg_label="fruits")
+        assert bit == fruit_bit
+
+    def test_get_bit_not_found(self):
+        """Test that the correct error is raised when getting a
+        non-existing bit using the label."""
+        circuit = Circuit()
+        circuit.add_cregister(2, label="fruits")
+
+        with pytest.raises(ValueError, match="Bit 'apple' not found."):
+            bit = circuit.get_bit("apple")
+
+    def test_get_multiple_bits(self):
+        """Test finding and getting a bit when there are multiple bits
+        using the same label."""
+        circuit = Circuit()
+        circuit.add_cregister(2, label="fruits")
+
+        apple_bit_0 = Bit("apple")
+        apple_bit_1 = Bit("apple")
+        circuit.add_bit(apple_bit_0, "fruits")
+        circuit.add_bit(apple_bit_1, "fruits")
+
+        bit = circuit.get_bit("apple")
+        assert bit == apple_bit_0
+
+    def test_get_multiple_bits_return_all(self):
+        """Test finding and getting multiple bits using the same label."""
+        circuit = Circuit()
+        circuit.add_cregister(2, label="fruits")
+
+        apple_bit_0 = Bit("apple")
+        apple_bit_1 = Bit("apple")
+        circuit.add_bit(apple_bit_0, "fruits")
+        circuit.add_bit(apple_bit_1, "fruits")
+
+        bits = circuit.get_bit("apple", return_all=True)
+        assert bits == [apple_bit_0, apple_bit_1]
 
     def test_find_bit_not_found(self):
         """Test that the correct exception is raised when bit is not found."""
@@ -336,6 +399,12 @@ class TestCircuit:
         assert two_qubit_circuit.num_qubits == 4
         assert [qb.label for qb in two_qubit_circuit.qubits] == ["0", "1", "pineapple", "3"]
 
+    @pytest.mark.parametrize("not_a_qubit", ["just_a_label", 3, Bit("c0")])
+    def test_add_qubit_typerror(self, two_qubit_circuit, not_a_qubit):
+        """Test that the correct error is raised when adding the wrong type."""
+        with pytest.raises(TypeError, match="Can only add qubits to circuit."):
+            two_qubit_circuit.add_qubit(not_a_qubit)
+
     def test_add_qubit_to_empty_circuit(self, empty_circuit):
         """Test adding qubits to an empty circuit."""
         assert empty_circuit.num_qubits == 0
@@ -387,6 +456,12 @@ class TestCircuit:
 
         assert two_bit_circuit.num_bits == 4
         assert [b.label for b in two_bit_circuit.bits] == ["0", "1", "pineapple", "3"]
+
+    @pytest.mark.parametrize("not_a_bit", ["just_a_label", 3, Qubit("q0")])
+    def test_add_bit_typerror(self, two_bit_circuit, not_a_bit):
+        """Test that the correct error is raised when adding the wrong type."""
+        with pytest.raises(TypeError, match="Can only add bits to circuit."):
+            two_bit_circuit.add_bit(not_a_bit)
 
     def test_add_bit_to_empty_circuit(self, empty_circuit):
         """Test adding bits to a circuit."""

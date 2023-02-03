@@ -61,6 +61,7 @@ if TYPE_CHECKING:
     from dwave.gate.operations.base import Operation
 
 Qubits = Union[Qubit, Sequence[Qubit]]
+Bits = Union[Bit, Sequence[Bit]]
 
 
 class CircuitError(Exception):
@@ -296,6 +297,9 @@ class Circuit:
             qreg_label: Label for the quantum register to which the new qubit should be
                 appended (defaults to 'r' followed by a random integer ID number).
         """
+        if qubit is not None and not isinstance(qubit, Qubit):
+            raise TypeError(f"Can only add qubits to circuit. Got '{type(qubit).__name__}'.")
+
         if qreg_label is not None:
             if qreg_label not in self.qregisters:
                 self.add_qregister(label=qreg_label)
@@ -323,6 +327,9 @@ class Circuit:
             creg_label: Label for the classical register to which the new bit should be
                 appended (defaults to 'r' followed by a random integer ID number).
         """
+        if bit is not None and not isinstance(bit, Bit):
+            raise TypeError(f"Can only add bits to circuit. Got '{type(bit).__name__}'.")
+
         if creg_label is not None:
             if creg_label not in self.cregisters:
                 self.add_cregister(label=creg_label)
@@ -355,7 +362,7 @@ class Circuit:
         if label in self._qregisters:
             raise ValueError(f"Quantum register {label} already present in the circuit.")
 
-        data = [Qubit(str(i)) for i in range(num_qubits)]
+        data = [Qubit(str(i)) for i in range(self.num_qubits, self.num_qubits + num_qubits)]
         self._qregisters[label] = QuantumRegister(data)
 
         # remove cached 'qubits' attribute when updating 'qregisters'
@@ -376,7 +383,7 @@ class Circuit:
         if label in self._cregisters:
             raise ValueError(f"Classical register {label} already present in the circuit")
 
-        data = [Bit(str(i)) for i in range(num_bits)]
+        data = [Bit(str(i)) for i in range(self.num_bits, self.num_bits + num_bits)]
         self._cregisters[label] = ClassicalRegister(data)
 
         # remove cached 'bits' attribute when updating 'cregisters'
@@ -394,14 +401,14 @@ class Circuit:
 
         Args:
             label: The label of the qubit.
-            qreg_label: Label of the quantum register to search in. If None, all registers
+            qreg_label: Label of the quantum register to search in. If ``None``, all registers
                 are searched.
             return_all: Whether to return all qubits if several exists with the same label,
-                or just return the first occuring qubit. Defaults to 'False'.
+                or just return the first occuring qubit. Defaults to ``False``.
 
         Returns:
             Qubit: Qubit with the specified label. If there are several with the same name,
-            only the first occuring qubit will be returned unless 'return_all' is 'True'.
+            only the first occuring qubit will be returned unless ``return_all`` is ``True``.
         """
         if qreg_label:
             qregisters = self.qregisters[qreg_label]
@@ -442,6 +449,36 @@ class Circuit:
                 return (i, idx)
 
         raise ValueError(f"Qubit {qubit} not found in any register.")
+
+    def get_bit(self, label: str, creg_label: Optional[str] = None, return_all: bool = False) -> Bits:
+        """Returns the Bit(s) with a specific label.
+
+        Args:
+            label: The label of the bit.
+            creg_label: Label of the classical register to search in. If ``None``, all registers
+                are searched.
+            return_all: Whether to return all bits if several exists with the same label,
+                or just return the first occuring bit. Defaults to ``False``.
+
+        Returns:
+            Bit: Bit with the specified label. If there are several with the same name,
+            only the first occuring bit will be returned unless ``return_all`` is ``True``.
+        """
+        if creg_label:
+            cregisters = self.cregisters[creg_label]
+        else:
+            cregisters = itertools.chain.from_iterable(self.cregisters.values())
+
+        bits = []
+        for bit in cregisters:
+            if bit.label == label:
+                if not return_all:
+                    return bit
+                bits.append(bit)
+        if bits:
+            return bits
+
+        raise ValueError(f"Bit '{label}' not found.")
 
     def find_bit(self, bit: Bit, creg_label: bool = False) -> Tuple[Hashable, int]:
         """Returns the register where a bit contained and its index in the register.
