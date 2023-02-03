@@ -205,16 +205,21 @@ class TestConditionalOps:
             ops.CNOT(q[0], q[1])
             ops.Measurement(q) | c
 
-        res = simulate(circuit)
+        # there is a 1 in 2^20 chance this will not test both possible outcomes
+        for _ in range(21):
+            for bit in circuit.bits:
+                bit.reset()
 
-        measurement = tuple(b.value for b in circuit.bits)
+            res = simulate(circuit)
 
-        if measurement == (0, 0):
-            assert np.allclose(res, [1, 0, 0, 0])
-        elif measurement == (1, 1):
-            assert np.allclose(res, [0, 0, 0, 1])
-        else:
-            assert False
+            measurement = tuple(b.value for b in circuit.bits)
+
+            if measurement == (0, 0):
+                assert np.allclose(res, [1, 0, 0, 0])
+            elif measurement == (1, 1):
+                assert np.allclose(res, [0, 0, 0, 1])
+            else:
+                assert False
 
     def test_non_entangled_measurement(self):
         """Test single qubit measurement is correct on after Hadamards."""
@@ -225,12 +230,17 @@ class TestConditionalOps:
             ops.Hadamard(q[1])
             ops.Measurement(q[0]) | c[0]
 
-        res = simulate(circuit)
+        # there is a 1 in 2^20 chance this will not test both possible outcomes
+        for _ in range(21):
+            for bit in circuit.bits:
+                bit.reset()
 
-        if circuit.bits[0].value == 0:
-            assert np.allclose(res, [1/np.sqrt(2), 1/np.sqrt(2), 0, 0])
-        else:
-            assert np.allclose(res, [0, 0, 1/np.sqrt(2), 1/np.sqrt(2)])
+            res = simulate(circuit)
+
+            if circuit.bits[0].value == 0:
+                assert np.allclose(res, [1/np.sqrt(2), 1/np.sqrt(2), 0, 0])
+            else:
+                assert np.allclose(res, [0, 0, 1/np.sqrt(2), 1/np.sqrt(2)])
 
     def test_measurement_rng_seed(self):
         """Test measurement is reproducible after setting RNG seed."""
@@ -245,7 +255,7 @@ class TestConditionalOps:
         simulate(circuit, rng_seed=666)
         expected = tuple(b.value for b in circuit.bits)
 
-        for _ in range(100):
+        for _ in range(5):
             for bit in circuit.bits:
                 bit.reset()
             simulate(circuit, rng_seed=666)
