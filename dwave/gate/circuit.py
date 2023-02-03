@@ -20,6 +20,7 @@ operations and instructions for running the circuits on simulators or hardware. 
 """
 
 from __future__ import annotations
+
 import itertools
 
 __all__ = [
@@ -396,7 +397,9 @@ class Circuit:
         qb, cb = len(self.qubits), len(self.bits)
         return f"<{self.__class__.__name__}: qubits={qb}, bits={cb}, ops={len(self.circuit)}>"
 
-    def get_qubit(self, label: str, qreg_label: Optional[str] = None, return_all: bool = False) -> Qubits:
+    def get_qubit(
+        self, label: str, qreg_label: Optional[str] = None, return_all: bool = False
+    ) -> Qubits:
         """Returns the Qubit(s) with a specific label.
 
         Args:
@@ -450,7 +453,9 @@ class Circuit:
 
         raise ValueError(f"Qubit {qubit} not found in any register.")
 
-    def get_bit(self, label: str, creg_label: Optional[str] = None, return_all: bool = False) -> Bits:
+    def get_bit(
+        self, label: str, creg_label: Optional[str] = None, return_all: bool = False
+    ) -> Bits:
         """Returns the Bit(s) with a specific label.
 
         Args:

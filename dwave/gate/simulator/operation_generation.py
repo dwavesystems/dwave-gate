@@ -12,11 +12,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from typing import List, Dict, Set, Tuple, Optional, NamedTuple, Union
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
 import cgen as c
 import numpy as np
-
 
 # entry of a gate matrix
 EntryType = Union[float, c.Value]
@@ -53,10 +52,7 @@ def compile_gate(
     for state_i in range(gate_matrix_size):
         nz = np.nonzero(gate_matrix[state_i])[0]
         nz_set = set(nz)
-        if (
-            nz_set == {state_i}
-            and gate_matrix[state_i][state_i] == 1
-        ):
+        if nz_set == {state_i} and gate_matrix[state_i][state_i] == 1:
             # essentially the identity operation for this sub state, can ignore
             continue
 
@@ -191,9 +187,7 @@ def generate_op_c_code(
         ]
         inits.extend(
             [
-                c.Initializer(
-                    gate_values[i][j], f"{gate_matrix.name}[{i * gate_matrix_size + j}]"
-                )
+                c.Initializer(gate_values[i][j], f"{gate_matrix.name}[{i * gate_matrix_size + j}]")
                 for i in range(gate_matrix_size)
                 for j in range(gate_matrix_size)
                 if sparse_gate_mask[i][j]
@@ -232,9 +226,7 @@ def generate_op_c_code(
         ["0"] + [shift(1, qubit_index(control.name)) for control in controls]
     )
 
-    target_masks = {
-        state: c.Value("uint64_t", f"target_mask{state}") for state in sub_states
-    }
+    target_masks = {state: c.Value("uint64_t", f"target_mask{state}") for state in sub_states}
     target_masks_init = {
         state: " | ".join(
             ["0"]
@@ -265,99 +257,86 @@ def generate_op_c_code(
     arguments.extend(targets)
     arguments.extend(controls)
 
-    body = c.Block([
-        # number of total states
-        c.Initializer(num_states, f"1 << {num_qubits.name}"),
-
-        # this array will hold every "position" of the qubits affected by the gate in
-        # sorted order
-        c.Initializer(
-            positions,
-            "{" + ", ".join([
-                qubit_index(v.name) for v in (targets + controls)
-            ]) + "}",
-        ),
-        c.Statement(
-            "std::sort("
-            f"{positions.name}, {positions.name} + {num_targets + num_controls}"
-            ")"
-        ),
-
-        # initialize all of the "masks". these will be used to generate the correct
-        # state index
-        *[
-            c.Initializer(mask, f"(1 << {positions.name}[{i}]) - 1")
-            for i, mask in enumerate(masks)
-        ],
-        c.Initializer(control_mask, control_mask_init),
-        *[
-            c.Initializer(target_masks[st], target_masks_init[st])
-            for st in sorted(sub_states)
-        ],
-
-        # rest of the variables we need to initialize
-        *inits,
-
-
-        # loop over all basis states of all qubits *not* affected by the gate
-        # c.Pragma("omp parallel for"),
-        c.For(
-            f"{partial_basis.typename} {partial_basis.name} = 0",
-            f"{partial_basis.name} < {num_iterations}",
-            f"{partial_basis.name}++",
-            c.Block(
-                [
-                    # initialize the "basis template". see docstring for details
-                    c.Initializer(basis_template, partial_basis.name),
-                    *[
+    body = c.Block(
+        [
+            # number of total states
+            c.Initializer(num_states, f"1 << {num_qubits.name}"),
+            # this array will hold every "position" of the qubits affected by the gate in
+            # sorted order
+            c.Initializer(
+                positions,
+                "{" + ", ".join([qubit_index(v.name) for v in (targets + controls)]) + "}",
+            ),
+            c.Statement(
+                "std::sort("
+                f"{positions.name}, {positions.name} + {num_targets + num_controls}"
+                ")"
+            ),
+            # initialize all of the "masks". these will be used to generate the correct
+            # state index
+            *[
+                c.Initializer(mask, f"(1 << {positions.name}[{i}]) - 1")
+                for i, mask in enumerate(masks)
+            ],
+            c.Initializer(control_mask, control_mask_init),
+            *[c.Initializer(target_masks[st], target_masks_init[st]) for st in sorted(sub_states)],
+            # rest of the variables we need to initialize
+            *inits,
+            # loop over all basis states of all qubits *not* affected by the gate
+            # c.Pragma("omp parallel for"),
+            c.For(
+                f"{partial_basis.typename} {partial_basis.name} = 0",
+                f"{partial_basis.name} < {num_iterations}",
+                f"{partial_basis.name}++",
+                c.Block(
+                    [
+                        # initialize the "basis template". see docstring for details
+                        c.Initializer(basis_template, partial_basis.name),
+                        *[
+                            c.Assign(
+                                basis_template.name,
+                                (
+                                    f"(({basis_template.name} & ~{mask.name}) << 1) | "
+                                    f"({basis_template.name} & {mask.name})"
+                                ),
+                            )
+                            for mask in masks
+                        ],
+                        # set all control bits to one in the state mask
                         c.Assign(
                             basis_template.name,
-                            (
-                                f"(({basis_template.name} & ~{mask.name}) << 1) | "
-                                f"({basis_template.name} & {mask.name})"
+                            f"{basis_template.name} | {control_mask.name}",
+                        ),
+                        # initialize the states we'll select
+                        *[
+                            c.Initializer(
+                                states[st],
+                                f"{basis_template.name} | {target_masks[st].name}",
                             )
-                        )
-                        for mask in masks
-                    ],
-
-                    # set all control bits to one in the state mask
-                    c.Assign(
-                        basis_template.name,
-                        f"{basis_template.name} | {control_mask.name}",
-                    ),
-
-                    # initialize the states we'll select
-                    *[
-                        c.Initializer(
-                            states[st],
-                            f"{basis_template.name} | {target_masks[st].name}",
-                        )
-                        for st in sorted(sub_states)
-                    ],
-
-                    # get their amplitudes
-                    *[
-                        c.Initializer(
-                            amps[st], f"{state_vector.name}[{states[st].name}]"
-                        )
-                        for st in sorted(sub_states)
-                    ],
-
-                    # perform the matrix multiplication
-                    *[
-                        c.Assign(
-                            f"{state_vector.name}[{states[state_i].name}]",
-                            multiply_val_and_amps(state_i),
-                        )
-                        for state_i in sorted(sub_states)
-                    ],
-                ]
+                            for st in sorted(sub_states)
+                        ],
+                        # get their amplitudes
+                        *[
+                            c.Initializer(amps[st], f"{state_vector.name}[{states[st].name}]")
+                            for st in sorted(sub_states)
+                        ],
+                        # perform the matrix multiplication
+                        *[
+                            c.Assign(
+                                f"{state_vector.name}[{states[state_i].name}]",
+                                multiply_val_and_amps(state_i),
+                            )
+                            for state_i in sorted(sub_states)
+                        ],
+                    ]
+                ),
             ),
-        ),
-    ])
+        ]
+    )
 
     func = c.FunctionBody(
-        c.FunctionDeclaration(c.Value("void", op_name), arguments), body,
+        c.FunctionDeclaration(c.Value("void", op_name), arguments),
+        body,
     )
 
     cython_qubit_args = ", ".join(
@@ -419,18 +398,19 @@ def generate_op(
         (False, f"{op_name}_big_endian"),
     ]
     for little_endian, full_op_name in op_options:
-        c_codes.append(generate_op_c_code(
-            full_op_name,
-            num_targets,
-            num_controls,
-            sparse_gate_mask=sparse_gate_mask,
-            precompile_gate=precompile_gate,
-            little_endian=little_endian,
-        ))
+        c_codes.append(
+            generate_op_c_code(
+                full_op_name,
+                num_targets,
+                num_controls,
+                sparse_gate_mask=sparse_gate_mask,
+                precompile_gate=precompile_gate,
+                little_endian=little_endian,
+            )
+        )
 
     qubit_args = ", ".join(
-        [f"target{i}" for i in range(num_targets)]
-        + [f"control{i}" for i in range(num_controls)]
+        [f"target{i}" for i in range(num_targets)] + [f"control{i}" for i in range(num_controls)]
     )
 
     cython_function = f"""\
@@ -458,9 +438,7 @@ cdef inline {op_name}(
 """
 
     return OpInfo(
-        "\n\n".join(
-            str(c_code.function_definition) for c_code in c_codes
-        ),
+        "\n\n".join(str(c_code.function_definition) for c_code in c_codes),
         "\n\n".join(c_code.cython_header for c_code in c_codes),
         cython_function,
     )

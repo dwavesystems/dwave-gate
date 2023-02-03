@@ -160,9 +160,7 @@ class TestOperations:
             op = Op([0 for _ in range(Op.num_parameters)])
         else:
             op = Op()
-        assert (
-            op.__repr__() == f"<{op.__class__.__base__.__name__}: {op.name}, qubits={op.qubits}>"
-        )
+        assert op.__repr__() == f"<{op.__class__.__base__.__name__}: {op.name}, qubits={op.qubits}>"
 
     def test_repr_conditional(self, Op, classical_register):
         """Test the representation of conditional operations."""
@@ -238,7 +236,9 @@ class TestCustomOperations:
             _num_control: int = 1
             _num_target: int = 1
 
-        with pytest.raises(OperationError, match="No target operation declared for controlled operation"):
+        with pytest.raises(
+            OperationError, match="No target operation declared for controlled operation"
+        ):
             CustomOp.target_operation
 
     def test_num_parameters_attribute(self):
