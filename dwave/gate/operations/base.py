@@ -220,7 +220,7 @@ class Operation(metaclass=ABCLockedAttr):
 
         if cls._num_qubits is not None and len(qubits) != cls.num_qubits:
             raise ValueError(
-                f"Operation '{cls.label}' requires " f"{cls.num_qubits} qubits, got {len(qubits)}."
+                f"Operation '{cls.name}' requires " f"{cls.num_qubits} qubits, got {len(qubits)}."
             )
 
         # cast to tuple for convention
@@ -265,12 +265,12 @@ class Operation(metaclass=ABCLockedAttr):
     def __repr__(self) -> str:
         """Returns the representation of the Operation object."""
         if self._cond:
-            return f"<{self.__class__.__base__.__name__}: {self.label}, qubits={self.qubits}, conditional: {self._cond}>"
-        return f"<{self.__class__.__base__.__name__}: {self.label}, qubits={self.qubits}>"
+            return f"<{self.__class__.__base__.__name__}: {self.name}, qubits={self.qubits}, conditional: {self._cond}>"
+        return f"<{self.__class__.__base__.__name__}: {self.name}, qubits={self.qubits}>"
 
     @mixedproperty
-    def label(cls, self) -> str:
-        """Qubit operation label."""
+    def name(cls, self) -> str:
+        """Qubit operation name."""
         if self and hasattr(self, "parameters"):
             params = f"({self.parameters})"
             return cls.__name__ + params  # type: ignore
@@ -282,7 +282,7 @@ class Operation(metaclass=ABCLockedAttr):
         decomposition = getattr(cls, "_decomposition", None)
         if not decomposition:
             raise NotImplementedError(
-                "Decomposition not implemented for the " f"'{cls.label}' operation."
+                "Decomposition not implemented for the " f"'{cls.name}' operation."
             )
         return decomposition
 
@@ -295,7 +295,7 @@ class Operation(metaclass=ABCLockedAttr):
         if isinstance(cls._num_qubits, int):
             return cls._num_qubits
 
-        raise AttributeError(f"Operation {cls.label} supports an arbitrary number of qubits.")
+        raise AttributeError(f"Operation {cls.name} supports an arbitrary number of qubits.")
 
     @property
     def qubits(self) -> Optional[Tuple[Qubit, ...]]:
@@ -417,7 +417,7 @@ class ParametricOperation(Operation):
         if isinstance(cls._num_params, int):
             return cls._num_params
 
-        raise AttributeError(f"Operations {cls.label} missing class attribute '_num_params'.")
+        raise AttributeError(f"Operations {cls.name} missing class attribute '_num_params'.")
 
     @classmethod
     def _check_parameters(cls, params: Parameters) -> List[Union[Variable, complex]]:
@@ -435,7 +435,7 @@ class ParametricOperation(Operation):
 
         if len(params) != cls._num_params:
             raise ValueError(
-                f"Operation '{cls.label} requires "
+                f"Operation '{cls.name} requires "
                 f"{cls._num_params} parameters, got {len(params)}."
             )
 
@@ -534,7 +534,7 @@ class ControlledOperation(Operation):
             return super(ControlledOperation, cls).num_qubits
         except AttributeError as e:
             raise AttributeError(
-                f"Operations {cls.label} missing class attributes '_num_control' and/or '_num_target'."
+                f"Operations {cls.name} missing class attributes '_num_control' and/or '_num_target'."
             ) from e
 
     @mixedproperty

@@ -274,10 +274,10 @@ class TestCreateOperation:
         rot_op = RotOp(params)
 
         assert RotOp.matrix is None
-        assert RotOp.label == "Rot"
+        assert RotOp.name == "Rot"
 
         assert np.allclose(rot_op.matrix, ops.Rotation(params).matrix)
-        assert rot_op.label == f"Rot({params})"
+        assert rot_op.name == f"Rot({params})"
 
     def test_non_parametric(self):
         """Test creating an operation out of a non-parametric circuit."""
@@ -291,7 +291,7 @@ class TestCreateOperation:
         ZOp = create_operation(circuit, name="Z")
 
         assert np.allclose(ZOp.matrix, ops.Z.matrix)
-        assert ZOp.label == "Z"
+        assert ZOp.name == "Z"
 
     def test_no_label(self):
         """Test creating an operation without a label."""
@@ -304,7 +304,7 @@ class TestCreateOperation:
 
         ZOp = create_operation(circuit)
 
-        assert ZOp.label == "CustomOperation"
+        assert ZOp.name == "CustomOperation"
 
     def test_parametric_mix(self):
         """Test creating an operation out of a parametric circuit with some hard-coded
@@ -323,7 +323,7 @@ class TestCreateOperation:
         rot_op = RotOp(params)
 
         assert RotOp.matrix is None
-        assert RotOp.label == "Rot"
+        assert RotOp.name == "Rot"
 
         assert np.allclose(rot_op.matrix, ops.Rotation([0.1, 0.2, 0.3]).matrix)
-        assert rot_op.label == "Rot([0.2])"
+        assert rot_op.name == "Rot([0.2])"
