@@ -62,7 +62,7 @@ class Qubit:
 
     def __repr__(self) -> str:
         """The representation of the variable is its label."""
-        return f"<qubit: {self.label}, id:{self.id}>"
+        return f"<qubit: {self.label}, id: {self.id}>"
 
     def __hash__(self) -> int:
         """The hash of the qubit is determined by its id."""
@@ -112,8 +112,8 @@ class Bit:
     def __repr__(self) -> str:
         """The representation of the variable is its label."""
         if self._value is not None:
-            return f"<bit: {self.label}, id:{self.id}, value: {self.value}>"
-        return f"<bit: {self.label}, id:{self.id}>"
+            return f"<bit: {self.label}, id: {self.id}, value: {self.value}>"
+        return f"<bit: {self.label}, id: {self.id}>"
 
     def __hash__(self) -> int:
         """The hash of the qubit is determined by its id."""

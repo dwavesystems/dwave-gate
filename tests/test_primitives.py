@@ -47,7 +47,7 @@ class TestQubit:
     def test_repr(self):
         "Test the representation of a qubit."
         qubit = Qubit("ananas")
-        assert qubit.__repr__() == f"<qubit: ananas, id:{qubit.id}>"
+        assert qubit.__repr__() == f"<qubit: ananas, id: {qubit.id}>"
 
 
 class TestBit:
@@ -80,7 +80,7 @@ class TestBit:
     def test_repr(self):
         "Test the representation of a bit."
         bit = Bit("ananas")
-        assert bit.__repr__() == f"<bit: ananas, id:{bit.id}>"
+        assert bit.__repr__() == f"<bit: ananas, id: {bit.id}>"
 
     @pytest.mark.parametrize("value", [1, 0, "1", True, 42, (1, 2, 3)])
     def test_set_value(self, value):
@@ -89,7 +89,7 @@ class TestBit:
         bit.set(value)
 
         assert bit == int(bool(value))
-        assert bit.__repr__() == f"<bit: banana, id:{bit.id}, value: {int(bool(value))}>"
+        assert bit.__repr__() == f"<bit: banana, id: {bit.id}, value: {int(bool(value))}>"
 
         bit.reset()
 
