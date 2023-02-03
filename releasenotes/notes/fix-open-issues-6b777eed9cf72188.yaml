@@ -1,0 +1,11 @@
+---
+upgrade:
+  - |
+    Check types when adding qubits/bits to a circuit and raise a ``TypeError`` if an incorrect type
+    is passed to the method.
+  - Rename ``label`` to ``name`` for operations.
+fixes:
+  - Fix inconsistent spacing in primitive object representations.
+  - Fix sequential qubit/bit labelling when adding new registers.
+  - Update operation representations to use ``repr()`` for hashables.
+
