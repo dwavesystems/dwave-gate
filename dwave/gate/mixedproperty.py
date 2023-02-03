@@ -94,12 +94,7 @@ class mixedproperty:
         # don't patch '__qualname__' due to Sphinx calling the mixedproperty
         # at docsbuild, raising exceptions and thus not rendering all entries
         for attr in ("__module__", "__name__", "__doc__", "__annotations__"):
-            try:
-                value = getattr(callable_, attr)
-            except (AttributeError, NotImplementedError):
-                pass
-            else:
-                setattr(self, attr, value)
+            self.attr = getattr(callable_, attr)
         getattr(self, "__dict__").update(getattr(callable_, "__dict__", {}))
 
         self.__wrapped__ = callable_
