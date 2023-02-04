@@ -363,7 +363,7 @@ class Circuit:
         if label in self._qregisters:
             raise ValueError(f"Quantum register {label} already present in the circuit.")
 
-        data = [Qubit(str(i)) for i in range(self.num_qubits, self.num_qubits + num_qubits)]
+        data = (Qubit(str(i)) for i in range(self.num_qubits, self.num_qubits + num_qubits))
         self._qregisters[label] = QuantumRegister(data)
 
         # remove cached 'qubits' attribute when updating 'qregisters'
@@ -384,7 +384,7 @@ class Circuit:
         if label in self._cregisters:
             raise ValueError(f"Classical register {label} already present in the circuit")
 
-        data = [Bit(str(i)) for i in range(self.num_bits, self.num_bits + num_bits)]
+        data = (Bit(str(i)) for i in range(self.num_bits, self.num_bits + num_bits))
         self._cregisters[label] = ClassicalRegister(data)
 
         # remove cached 'bits' attribute when updating 'cregisters'
