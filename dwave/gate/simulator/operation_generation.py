@@ -12,11 +12,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from typing import List, Dict, Set, Tuple, Optional, NamedTuple, Union
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
 import cgen as c
 import numpy as np
-
 
 # entry of a gate matrix
 EntryType = Union[float, c.Value]
@@ -65,17 +64,10 @@ def compile_gate(
     for state_i in range(gate_matrix_size):
         nz = np.nonzero(gate_matrix[state_i])[0]
         nz_set = set(nz)
-        if (
-            skip_identity
-            and nz_set == {state_i}
-            and gate_matrix[state_i][state_i] == 1
-        ):
+        if skip_identity and nz_set == {state_i} and gate_matrix[state_i][state_i] == 1:
             # essentially the identity operation for this sub state, can ignore
             continue
-        elif (
-            skip_zeros
-            and not nz_set
-        ):
+        elif skip_zeros and not nz_set:
             continue
 
         output_sub_states.add(state_i)
@@ -226,9 +218,7 @@ def generate_op_c_code(
         ]
         inits.extend(
             [
-                c.Initializer(
-                    gate_values[i][j], f"{gate_matrix.name}[{i * gate_matrix_size + j}]"
-                )
+                c.Initializer(gate_values[i][j], f"{gate_matrix.name}[{i * gate_matrix_size + j}]")
                 for i in range(gate_matrix_size)
                 for j in range(gate_matrix_size)
                 if sparse_gate_mask[i][j]
@@ -254,9 +244,7 @@ def generate_op_c_code(
 
     states = {state: c.Value("uint64_t", f"state{state}") for state in all_sub_states}
     amps = {state: c.Value(amplitude_t, f"amp{state}") for state in dependent_sub_states}
-    amp_results = {
-        state: c.Value(amplitude_t, f"amp_result{state}") for state in output_sub_states
-    }
+    amp_results = {state: c.Value(amplitude_t, f"amp_result{state}") for state in output_sub_states}
 
     basis_template = c.Value("uint64_t", "basis_template")
 
@@ -272,9 +260,7 @@ def generate_op_c_code(
         ["0"] + [shift(1, qubit_index(control.name)) for control in controls]
     )
 
-    target_masks = {
-        state: c.Value("uint64_t", f"target_mask{state}") for state in all_sub_states
-    }
+    target_masks = {state: c.Value("uint64_t", f"target_mask{state}") for state in all_sub_states}
     target_masks_init = {
         state: " | ".join(
             ["0"]
@@ -313,121 +299,110 @@ def generate_op_c_code(
     if provide_amplitude_scale_factor:
         arguments.append(amplitude_factor)
 
-    body = c.Block([
-        # number of total states
-        c.Initializer(num_states, f"1 << {num_qubits.name}"),
-
-        # this array will hold every "position" of the qubits affected by the gate in
-        # sorted order
-        c.Initializer(
-            positions,
-            "{" + ", ".join([
-                qubit_index(v.name) for v in (targets + controls)
-            ]) + "}",
-        ),
-        c.Statement(
-            "std::sort("
-            f"{positions.name}, {positions.name} + {num_targets + num_controls}"
-            ")"
-        ),
-
-        # initialize all of the "masks". these will be used to generate the correct
-        # state index
-        *[
-            c.Initializer(mask, f"(1 << {positions.name}[{i}]) - 1")
-            for i, mask in enumerate(masks)
-        ],
-        c.Initializer(control_mask, control_mask_init),
-        *[
-            c.Initializer(target_masks[st], target_masks_init[st])
-            for st in sorted(all_sub_states)
-        ],
-
-        # rest of the variables we need to initialize
-        *inits,
-
-        # loop over all basis states of all qubits *not* affected by the gate
-        # c.Pragma("omp parallel for"),
-        c.For(
-            f"{partial_basis.typename} {partial_basis.name} = 0",
-            f"{partial_basis.name} < {num_iterations}",
-            f"{partial_basis.name}++",
-            c.Block(
-                [
-                    # initialize the "basis template". see docstring for details
-                    c.Initializer(basis_template, partial_basis.name),
-                    *[
+    body = c.Block(
+        [
+            # number of total states
+            c.Initializer(num_states, f"1 << {num_qubits.name}"),
+            # this array will hold every "position" of the qubits affected by the gate in
+            # sorted order
+            c.Initializer(
+                positions,
+                "{" + ", ".join([qubit_index(v.name) for v in (targets + controls)]) + "}",
+            ),
+            c.Statement(
+                "std::sort("
+                f"{positions.name}, {positions.name} + {num_targets + num_controls}"
+                ")"
+            ),
+            # initialize all of the "masks". these will be used to generate the correct
+            # state index
+            *[
+                c.Initializer(mask, f"(1 << {positions.name}[{i}]) - 1")
+                for i, mask in enumerate(masks)
+            ],
+            c.Initializer(control_mask, control_mask_init),
+            *[
+                c.Initializer(target_masks[st], target_masks_init[st])
+                for st in sorted(all_sub_states)
+            ],
+            # rest of the variables we need to initialize
+            *inits,
+            # loop over all basis states of all qubits *not* affected by the gate
+            # c.Pragma("omp parallel for"),
+            c.For(
+                f"{partial_basis.typename} {partial_basis.name} = 0",
+                f"{partial_basis.name} < {num_iterations}",
+                f"{partial_basis.name}++",
+                c.Block(
+                    [
+                        # initialize the "basis template". see docstring for details
+                        c.Initializer(basis_template, partial_basis.name),
+                        *[
+                            c.Assign(
+                                basis_template.name,
+                                (
+                                    f"(({basis_template.name} & ~{mask.name}) << 1) | "
+                                    f"({basis_template.name} & {mask.name})"
+                                ),
+                            )
+                            for mask in masks
+                        ],
+                        # set all control bits to one in the state mask
                         c.Assign(
                             basis_template.name,
-                            (
-                                f"(({basis_template.name} & ~{mask.name}) << 1) | "
-                                f"({basis_template.name} & {mask.name})"
+                            f"{basis_template.name} | {control_mask.name}",
+                        ),
+                        # initialize the states we'll use
+                        *[
+                            c.Initializer(
+                                states[st],
+                                f"{basis_template.name} | {target_masks[st].name}",
                             )
-                        )
-                        for mask in masks
-                    ],
-
-                    # set all control bits to one in the state mask
-                    c.Assign(
-                        basis_template.name,
-                        f"{basis_template.name} | {control_mask.name}",
-                    ),
-
-                    # initialize the states we'll use
-                    *[
-                        c.Initializer(
-                            states[st],
-                            f"{basis_template.name} | {target_masks[st].name}",
-                        )
-                        for st in sorted(all_sub_states)
-                    ],
-
-                    # get their amplitudes
-                    *[
-                        c.Initializer(
-                            amps[st], f"{state_vector.name}[{states[st].name}]"
-                        )
-                        for st in sorted(dependent_sub_states)
-                    ],
-
-                    # perform the matrix multiplication
-                    *[
-                        c.Initializer(
-                            amp_results[state_i],
-                            multiply_val_and_amps(state_i),
-                        )
-                        for state_i in sorted(output_sub_states)
-                    ],
-
-                    *[
-                        c.Assign(
-                            amp_results[state_i].name,
-                            f"{amplitude_factor.name} * {amp_results[state_i].name}"
-                        )
-                        for state_i in sorted(output_sub_states)
-                        if provide_amplitude_scale_factor
-                    ],
-
-                    # write out states
-                    *[
-                        c.Assign(
-                            f"{state_vector.name}[{states[state_i].name}]",
-                            amp_results[state_i].name,
-                        )
-                        for state_i in sorted(output_sub_states)
-                        if not collect_norm
-                    ],
-
-                    # sum norm
-                    *[
-                        c.Statement(f"{norm_sum.name} += std::norm({amp_results[state_i].name})")
-                        for state_i in sorted(output_sub_states)
-                        if collect_norm
-                    ],
-                ]
+                            for st in sorted(all_sub_states)
+                        ],
+                        # get their amplitudes
+                        *[
+                            c.Initializer(amps[st], f"{state_vector.name}[{states[st].name}]")
+                            for st in sorted(dependent_sub_states)
+                        ],
+                        # perform the matrix multiplication
+                        *[
+                            c.Initializer(
+                                amp_results[state_i],
+                                multiply_val_and_amps(state_i),
+                            )
+                            for state_i in sorted(output_sub_states)
+                        ],
+                        *[
+                            c.Assign(
+                                amp_results[state_i].name,
+                                f"{amplitude_factor.name} * {amp_results[state_i].name}",
+                            )
+                            for state_i in sorted(output_sub_states)
+                            if provide_amplitude_scale_factor
+                        ],
+                        # write out states
+                        *[
+                            c.Assign(
+                                f"{state_vector.name}[{states[state_i].name}]",
+                                amp_results[state_i].name,
+                            )
+                            for state_i in sorted(output_sub_states)
+                            if not collect_norm
+                        ],
+                        # sum norm
+                        *[
+                            c.Statement(
+                                f"{norm_sum.name} += std::norm({amp_results[state_i].name})"
+                            )
+                            for state_i in sorted(output_sub_states)
+                            if collect_norm
+                        ],
+                    ]
+                ),
             ),
-        ),
-    ])
+        ]
+    )
 
     return_type = "void"
     cython_return_type = "void"
@@ -437,7 +412,8 @@ def generate_op_c_code(
         cython_return_type = "np.float64_t"
 
     func = c.FunctionBody(
-        c.FunctionDeclaration(c.Value(return_type, op_name), arguments), body,
+        c.FunctionDeclaration(c.Value(return_type, op_name), arguments),
+        body,
     )
 
     cython_qubit_args = ", ".join(
@@ -510,19 +486,20 @@ def generate_op(
         (False, f"{op_name}_big_endian"),
     ]
     for little_endian, full_op_name in op_options:
-        c_codes.append(generate_op_c_code(
-            full_op_name,
-            num_targets,
-            num_controls,
-            sparse_gate_mask=sparse_gate_mask,
-            precompile_gate=precompile_gate,
-            little_endian=little_endian,
-            collect_norm=collect_norm,
-        ))
+        c_codes.append(
+            generate_op_c_code(
+                full_op_name,
+                num_targets,
+                num_controls,
+                sparse_gate_mask=sparse_gate_mask,
+                precompile_gate=precompile_gate,
+                little_endian=little_endian,
+                collect_norm=collect_norm,
+            )
+        )
 
     qubit_args = ", ".join(
-        [f"target{i}" for i in range(num_targets)]
-        + [f"control{i}" for i in range(num_controls)]
+        [f"target{i}" for i in range(num_targets)] + [f"control{i}" for i in range(num_controls)]
     )
 
     cython_function = f"""\
@@ -550,9 +527,7 @@ cdef inline {op_name}(
 """
 
     return OpInfo(
-        "\n\n".join(
-            str(c_code.function_definition) for c_code in c_codes
-        ),
+        "\n\n".join(str(c_code.function_definition) for c_code in c_codes),
         "\n\n".join(c_code.cython_header for c_code in c_codes),
         cython_function,
     )
@@ -612,31 +587,36 @@ def generate_op_set(
     import itertools
 
     full_op_options = {
-        (op_idx, little_endian, collect_norm):
-            f"{op_name}_op{op_idx}_{['apply', 'norm'][collect_norm]}_{['big', 'little'][little_endian]}_endian"
+        (
+            op_idx,
+            little_endian,
+            collect_norm,
+        ): f"{op_name}_op{op_idx}_{['apply', 'norm'][collect_norm]}_{['big', 'little'][little_endian]}_endian"
         for op_idx, little_endian, collect_norm in itertools.product(
             range(len(operators)), (False, True), (False, True)
         )
     }
     for (op_idx, little_endian, collect_norm), full_op_name in full_op_options.items():
-        c_codes.append(generate_op_c_code(
-            full_op_name,
-            num_targets,
-            num_controls,
-            precompile_gate=operators[op_idx],
-            little_endian=little_endian,
-            collect_norm=collect_norm,
-            provide_amplitude_scale_factor=not collect_norm,
-        ))
+        c_codes.append(
+            generate_op_c_code(
+                full_op_name,
+                num_targets,
+                num_controls,
+                precompile_gate=operators[op_idx],
+                little_endian=little_endian,
+                collect_norm=collect_norm,
+                provide_amplitude_scale_factor=not collect_norm,
+            )
+        )
 
     qubit_args = ", ".join(
-        [f"target{i}" for i in range(num_targets)]
-        + [f"control{i}" for i in range(num_controls)]
+        [f"target{i}" for i in range(num_targets)] + [f"control{i}" for i in range(num_controls)]
     )
 
     def norm_function_calls(little_endian):
-        return [
-            f"""
+        return (
+            [
+                f"""
         if op_idx < 0:
             op_prob = c_{full_op_options[op_idx, little_endian, True]}(
                 num_qubits,
@@ -649,9 +629,10 @@ def generate_op_set(
                 op_idx = {op_idx}
                 p = op_prob
 """
-            for op_idx in range(len(operators) - 1)
-        ] + [
-            f"""
+                for op_idx in range(len(operators) - 1)
+            ]
+            + [
+                f"""
         if op_idx < 0:
             op_prob = c_{full_op_options[op_idx, little_endian, True]}(
                 num_qubits,
@@ -669,7 +650,8 @@ def generate_op_set(
             op_idx = {len(operators) - 1}
             p = op_prob
 """
-        ]
+            ]
+        )
 
     def apply_function_calls(little_endian):
         return [
@@ -733,9 +715,7 @@ cdef inline {op_name}(
 """
 
     return OpInfo(
-        "\n\n".join(
-            str(c_code.function_definition) for c_code in c_codes
-        ),
+        "\n\n".join(str(c_code.function_definition) for c_code in c_codes),
         "\n\n".join(c_code.cython_header for c_code in c_codes),
         cython_function,
     )
@@ -768,32 +748,14 @@ cdef extern from "./ops.h" nogil:
 
     eps = 0.01
 
-    dephase0 = np.array([
-        [np.sqrt(1 - eps), 0],
-        [0, np.sqrt(1 - eps)]
-    ])
-    dephase1 = np.array([
-        [np.sqrt(eps), 0],
-        [0, -np.sqrt(eps)]
-    ])
+    dephase0 = np.array([[np.sqrt(1 - eps), 0], [0, np.sqrt(1 - eps)]])
+    dephase1 = np.array([[np.sqrt(eps), 0], [0, -np.sqrt(eps)]])
 
-    amp_damp0 = np.array([
-        [1, 0],
-        [0, np.sqrt(1 - eps)]
-    ])
-    amp_damp1 = np.array([
-        [0, np.sqrt(eps)],
-        [0, 0]
-    ])
+    amp_damp0 = np.array([[1, 0], [0, np.sqrt(1 - eps)]])
+    amp_damp1 = np.array([[0, np.sqrt(eps)], [0, 0]])
 
-    measurement_0 = np.array([
-        [1, 0],
-        [0, 0]
-    ])
-    measurement_1 = np.array([
-        [0, 0],
-        [0, 1]
-    ])
+    measurement_0 = np.array([[1, 0], [0, 0]])
+    measurement_1 = np.array([[0, 0], [0, 1]])
 
     gate_defintions: List[Tuple[str, int, int, Dict]] = [
         ("single_qubit", 1, 0, {}),
@@ -810,15 +772,9 @@ cdef extern from "./ops.h" nogil:
         cython_functions += op.cython_function + "\n"
 
     op_set_definitions = [
-        ("measurement_computational_basis", 1, 0, dict(
-            operators=[measurement_0, measurement_1]
-        )),
-        ("dephase_noise", 1, 0, dict(
-            operators=[dephase0, dephase1]
-        )),
-        ("amplitude_dampening_noise", 1, 0, dict(
-            operators=[amp_damp0, amp_damp1]
-        )),
+        ("measurement_computational_basis", 1, 0, dict(operators=[measurement_0, measurement_1])),
+        ("dephase_noise", 1, 0, dict(operators=[dephase0, dephase1])),
+        ("amplitude_dampening_noise", 1, 0, dict(operators=[amp_damp0, amp_damp1])),
     ]
 
     for name, num_targets, num_controls, kwargs in op_set_definitions:
