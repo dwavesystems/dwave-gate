@@ -77,7 +77,7 @@ It can also be installed from source by cloning this GitHub repository and runni
     make install
 
 The makefile will also simplify running tests (``make test``), coverage (``make coverage``),
-documentation (``make docs```), as well as formatting (``make format``) the code using the `Black
+documentation (``make docs``), as well as formatting (``make format``) the code using the `Black
 <https://black.readthedocs.io/>`_ formatter (set to a line-length of 100) and `isort
 <https://pycqa.github.io/isort/>`_. It's available on both Unix as well as Windows systems, via the
 `make.bat` batch file.
