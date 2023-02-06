@@ -160,9 +160,7 @@ class TestOperations:
             op = Op([0 for _ in range(Op.num_parameters)])
         else:
             op = Op()
-        assert (
-            op.__repr__() == f"<{op.__class__.__base__.__name__}: {op.label}, qubits={op.qubits}>"
-        )
+        assert op.__repr__() == f"<{op.__class__.__base__.__name__}: {op.name}, qubits={op.qubits}>"
 
     def test_repr_conditional(self, Op, classical_register):
         """Test the representation of conditional operations."""
@@ -173,7 +171,7 @@ class TestOperations:
         op._cond = classical_register
         assert (
             op.__repr__()
-            == f"<{op.__class__.__base__.__name__}: {op.label}, qubits={op.qubits}, conditional: {op._cond}>"
+            == f"<{op.__class__.__base__.__name__}: {op.name}, qubits={op.qubits}, conditional: {op._cond}>"
         )
 
     def test_conditional(self, Op, classical_register):
@@ -238,7 +236,9 @@ class TestCustomOperations:
             _num_control: int = 1
             _num_target: int = 1
 
-        with pytest.raises(OperationError, match="No target operation declared for controlled operation"):
+        with pytest.raises(
+            OperationError, match="No target operation declared for controlled operation"
+        ):
             CustomOp.target_operation
 
     def test_num_parameters_attribute(self):
@@ -268,14 +268,14 @@ class TestParametricOperations:
         """Test initializing a parametric operation."""
         params = list(range(ParamOp.num_parameters))
         qubits = tuple(f"q{i}" for i in range(ParamOp.num_qubits))
-        label = ParamOp.label
+        label = ParamOp.name
 
         op = ParamOp(params, qubits)
 
         assert op.parameters == params
         assert op.qubits == qubits
 
-        assert op.label == f"{label}({params})"
+        assert op.name == f"{label}({params})"
 
     def test_incorrect_number_of_params(self, ParamOp):
         """Test calling a parametric operation with the incorrect number of parameters."""
@@ -377,7 +377,7 @@ class TestParametricOperations:
         assert op.qubits is None
         with pytest.raises(
             ValueError,
-            match=f"Operation '{ParamOp.label}' requires {op.num_qubits} qubits, got {op.num_qubits + 6}.",
+            match=f"Operation '{ParamOp.name}' requires {op.num_qubits} qubits, got {op.num_qubits + 6}.",
         ):
             op.qubits = qubits
 
@@ -446,13 +446,13 @@ class TestControlledOperations:
         """Test initializing a controlled operation."""
         control = tuple(f"c{i}" for i in range(ControlledOp.num_control))
         target = tuple(f"t{i}" for i in range(ControlledOp.num_control))
-        label = ControlledOp.label
+        label = ControlledOp.name
 
         op = ControlledOp(control, target)
 
         assert op.control == control
         assert op.target == target
-        assert op.label == label
+        assert op.name == label
 
     def test_initialize_operation_qubits_as_kwargs(self, ControlledOp):
         """Test initializing a controlled operation passing qubits as kwargs."""
@@ -460,13 +460,13 @@ class TestControlledOperations:
         target = tuple(f"t{i}" for i in range(ControlledOp.num_control))
         qubits = control + target
 
-        label = ControlledOp.label
+        label = ControlledOp.name
 
         op = ControlledOp(qubits=qubits)
 
         assert op.control == control
         assert op.target == target
-        assert op.label == label
+        assert op.name == label
 
     def test_initializing_gate_in_context(self, empty_circuit, ControlledOp):
         """Test initializing a controlled operation within a context."""
@@ -534,13 +534,13 @@ class TestParametricControlledOperations:
         params = [f"p{i}" for i in range(ParametricControlledOp.num_parameters)]
         control = tuple(f"c{i}" for i in range(ParametricControlledOp.num_control))
         target = tuple(f"t{i}" for i in range(ParametricControlledOp.num_control))
-        label = ParametricControlledOp.label
+        label = ParametricControlledOp.name
 
         op = ParametricControlledOp(params, control, target)
 
         assert op.control == control
         assert op.target == target
-        assert op.label == f"{label}({op.parameters})"
+        assert op.name == f"{label}({op.parameters})"
 
     def test_initializing_gate_in_context(self, empty_circuit, ParametricControlledOp):
         """Test initializing a parametric controlled operation within a context."""
@@ -624,12 +624,12 @@ class TestOtherOperations:
     def test_initialize_operation(self, Op):
         """Test initializing an operation."""
         qubits = tuple(f"c{i}" for i in range(Op.num_qubits))
-        label = Op.label
+        label = Op.name
 
         op = Op(qubits)
 
         assert op.qubits == qubits
-        assert op.label == label
+        assert op.name == label
 
     def test_initializing_gate_in_context(self, empty_circuit, Op):
         """Test initializing an operation within a context."""
@@ -708,6 +708,6 @@ class TestOtherOperations:
         assert op.qubits is None
         with pytest.raises(
             ValueError,
-            match=f"Operation '{Op.label}' requires {op.num_qubits} qubits, got {op.num_qubits + 6}.",
+            match=f"Operation '{Op.name}' requires {op.num_qubits} qubits, got {op.num_qubits + 6}.",
         ):
             op.qubits = qubits

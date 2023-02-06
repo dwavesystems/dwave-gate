@@ -25,6 +25,7 @@ import warnings
 from typing import List, Optional
 
 import numpy as np
+
 cimport numpy as np
 
 import dwave.gate.operations as ops
@@ -35,8 +36,8 @@ from dwave.gate.simulator.ops cimport (
     apply_gate_control,
     apply_gate_two_control,
     apply_swap,
-    single_qubit,
     measurement_computational_basis,
+    single_qubit,
 )
 
 
