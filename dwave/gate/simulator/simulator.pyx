@@ -22,9 +22,10 @@ __all__ = [
 
 import random
 import warnings
-from typing import List
+from typing import List, Optional
 
 import numpy as np
+cimport numpy as np
 
 import dwave.gate.operations as ops
 from dwave.gate.circuit import Circuit, CircuitError
@@ -35,6 +36,7 @@ from dwave.gate.simulator.ops cimport (
     apply_gate_two_control,
     apply_swap,
     single_qubit,
+    measurement_computational_basis,
 )
 
 
@@ -44,6 +46,7 @@ def apply_instruction(
     op: ops.Operation,
     targets: list[int],
     little_endian: bool,
+    rng: np.random.Generator,
     conjugate_gate: bool = False,
 ):
     if op.is_blocked:
@@ -52,7 +55,7 @@ def apply_instruction(
     if isinstance(op, ops.Measurement):
         if little_endian:
             raise CircuitError("Measurements only supports big-endian qubit indexing.")
-        _measure(op, state, targets)
+        _measure(op, state, targets, rng)
 
     elif isinstance(op, ops.SWAP):
         gate = op.matrix
@@ -127,7 +130,10 @@ def apply_instruction(
 
 
 def simulate(
-    circuit: Circuit, mixed_state: bool = False, little_endian: bool = False
+    circuit: Circuit,
+    mixed_state: bool = False,
+    little_endian: bool = False,
+    rng_seed: Optional[int] = None,
 ) -> np.typing.NDArray:
     """Simulate the given circuit with either a state vector or density matrix
     simulation.
@@ -147,28 +153,31 @@ def simulate(
         The resulting state vector or density matrix.
 
     """
+
     num_qubits = circuit.num_qubits
     if num_qubits == 0:
         return np.empty(0, dtype=np.complex128)
 
+    rng = np.random.default_rng(rng_seed)
+
     if mixed_state:
-        return _simulate_circuit_density_matrix(circuit)
+        return _simulate_circuit_density_matrix(circuit, rng)
 
     state = np.zeros(1 << num_qubits, dtype=np.complex128)
     state[0] = 1
 
     for op in circuit.circuit:
         targets = [circuit.qubits.index(qb) for qb in op.qubits]
-        apply_instruction(num_qubits, state, op, targets, little_endian)
+        apply_instruction(num_qubits, state, op, targets, little_endian, rng)
 
     return state
 
 
-def _measure(op, state, targets):
+def _measure(op, state, targets, rng):
     op._measured_state = state.copy()
 
     for idx, t in enumerate(targets):
-        m = _sample(t, state)
+        m = _sample(t, state, rng)
 
         try:
             op.bits[idx].set(m, force=True)
@@ -181,61 +190,28 @@ def _measure(op, state, targets):
 def _sample(
     qubit: int,
     state: np.typing.NDArray,
+    rng: np.random.Generator,
     collapse_state: bool = True,
+    little_endian: bool = False,
 ) -> int:
-    """Sample a measurement on a single qubit and collapse the state.
+    cdef int num_qubits = round(np.log2(state.shape[0]))
 
-    Note, assumes big-endian qubit indexing and will not work properly
-    with little-endian indexing.
-
-    Args:
-        qubit: Which qubit (index, from left to right) to sample.
-        collapse_state: Whether to collapse the state after a measurement.
-
-    Returns:
-        int: 0 or 1 sample of the measured qubit.
-    """
-    num_qubits = round(np.log2(len(state)))
-
-    if qubit >= num_qubits:
-        raise ValueError(f"Cannot sample qubit {qubit}. State has only {num_qubits} qubits.")
-
-    weight_0 = weight_1 = 0
-    zero_weight = False
-    num_states = 2**num_qubits
-
-    for i in range(num_states):
-        if (i >> (num_qubits - qubit - 1)) & 1 == zero_weight:
-            zero_weight = not zero_weight
-
-        if zero_weight:
-            weight_0 += np.abs(state[i])**2
-        else:
-            weight_1 += np.abs(state[i])**2
-
-    sample = random.choices((0, 1), weights=[weight_0, weight_1])[0]
-
-    if collapse_state:
-        zero_weight = False
-        for i in range(num_states):
-            if (i >> (num_qubits - qubit - 1)) & 1 == zero_weight:
-                zero_weight = not zero_weight
-
-            if sample == 0 and not zero_weight:
-                state[i] = 0
-
-            if sample == 1 and zero_weight:
-                state[i] = 0
-
-        # renormalize the state after removing the measured state values
-        norm = np.linalg.norm(state)
-        for i, s in enumerate(state):
-            state[i] = state[i] / norm
-
-    return sample
+    return measurement_computational_basis(
+        num_qubits,
+        state,
+        qubit,
+        rng,
+        little_endian=little_endian,
+        apply_operator=collapse_state,
+    )
 
 
-def _simulate_circuit_density_matrix(circuit: Circuit, little_endian: bool = False) -> np.typing.NDArray:
+def _simulate_circuit_density_matrix(
+    circuit: Circuit,
+    rng: np.random.Generator,
+    little_endian: bool = False,
+) -> np.typing.NDArray:
+
     num_qubits = circuit.num_qubits
     num_virtual_qubits = 2 * num_qubits
     state = np.zeros(1 << num_virtual_qubits, dtype=np.complex128)
@@ -243,17 +219,17 @@ def _simulate_circuit_density_matrix(circuit: Circuit, little_endian: bool = Fal
 
     for op in circuit.circuit:
         if isinstance(op, ops.Measurement):
-            _measure(op, state, circuit)
+            _measure(op, state, circuit, rng)
         else:
             # first apply the gate normally
             targets = [circuit.qubits.index(qb) for qb in op.qubits]
             apply_instruction(
-                num_virtual_qubits, state, op, targets, little_endian
+                num_virtual_qubits, state, op, targets, little_endian, rng
             )
             # then apply conjugate transpose to corresponding virtual qubit
             virtual_targets = [t + num_qubits for t in targets]
             apply_instruction(
-                num_virtual_qubits, state, op, virtual_targets, little_endian,
+                num_virtual_qubits, state, op, virtual_targets, little_endian, rng,
                 conjugate_gate=True,
             )
     density_matrix = state.reshape((1 << num_qubits, 1 << num_qubits))

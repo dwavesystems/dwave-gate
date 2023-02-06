@@ -193,3 +193,70 @@ class TestConditionalOps:
 
         assert np.allclose(res, expected)
         assert not x.is_blocked
+
+    def test_bell_state_measurement(self):
+        """Test that measurement gives one of two correct states and sets the resulting
+        state vector correctly for the Bell state."""
+
+        circuit = Circuit(2, 2)
+
+        with circuit.context as (q, c):
+            ops.Hadamard(q[0])
+            ops.CNOT(q[0], q[1])
+            ops.Measurement(q) | c
+
+        # there is a 1 in 2^20 chance this will not test both possible outcomes
+        for _ in range(21):
+            for bit in circuit.bits:
+                bit.reset()
+
+            res = simulate(circuit)
+
+            measurement = tuple(b.value for b in circuit.bits)
+
+            if measurement == (0, 0):
+                assert np.allclose(res, [1, 0, 0, 0])
+            elif measurement == (1, 1):
+                assert np.allclose(res, [0, 0, 0, 1])
+            else:
+                assert False
+
+    def test_non_entangled_measurement(self):
+        """Test single qubit measurement is correct on after Hadamards."""
+        circuit = Circuit(2, 1)
+
+        with circuit.context as (q, c):
+            ops.Hadamard(q[0])
+            ops.Hadamard(q[1])
+            ops.Measurement(q[0]) | c[0]
+
+        # there is a 1 in 2^20 chance this will not test both possible outcomes
+        for _ in range(21):
+            for bit in circuit.bits:
+                bit.reset()
+
+            res = simulate(circuit)
+
+            if circuit.bits[0].value == 0:
+                assert np.allclose(res, [1/np.sqrt(2), 1/np.sqrt(2), 0, 0])
+            else:
+                assert np.allclose(res, [0, 0, 1/np.sqrt(2), 1/np.sqrt(2)])
+
+    def test_measurement_rng_seed(self):
+        """Test measurement is reproducible after setting RNG seed."""
+        num_qubits = 10
+        circuit = Circuit(num_qubits, num_qubits)
+
+        with circuit.context as (q, c):
+            for i in range(num_qubits):
+                ops.Hadamard(q[i])
+            ops.Measurement(q) | c
+
+        simulate(circuit, rng_seed=666)
+        expected = tuple(b.value for b in circuit.bits)
+
+        for _ in range(5):
+            for bit in circuit.bits:
+                bit.reset()
+            simulate(circuit, rng_seed=666)
+            assert expected == tuple(b.value for b in circuit.bits)
