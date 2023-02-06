@@ -238,9 +238,9 @@ class TestConditionalOps:
             res = simulate(circuit)
 
             if circuit.bits[0].value == 0:
-                assert np.allclose(res, [1/np.sqrt(2), 1/np.sqrt(2), 0, 0])
+                assert np.allclose(res, [1 / np.sqrt(2), 1 / np.sqrt(2), 0, 0])
             else:
-                assert np.allclose(res, [0, 0, 1/np.sqrt(2), 1/np.sqrt(2)])
+                assert np.allclose(res, [0, 0, 1 / np.sqrt(2), 1 / np.sqrt(2)])
 
     def test_measurement_rng_seed(self):
         """Test measurement is reproducible after setting RNG seed."""
