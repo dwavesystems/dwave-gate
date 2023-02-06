@@ -15,8 +15,8 @@ dwave-gate
 
 .. index-start-marker
 
-``dwave-gate`` is a software package for constructing, modifying and running quantum circuits. It
-provides a set of tools that enables you to:
+``dwave-gate`` is a software package for constructing, modifying and running quantum circuits on the
+included simulator. It provides a set of tools that enables you to:
 
 * Construct quantum circuits using an intuitive context-manager interface.
 
@@ -70,23 +70,28 @@ The simplest way to install ``dwave-gate`` is from `PyPI <https://pypi.org/proje
 
     pip install dwave-gate
 
-It can also be installed from source by cloning this GitHub repository and running (on Unix systems):
+It can also be installed from source by cloning this GitHub repository and running:
 
 .. code-block:: bash
 
     make install
 
-The makefile will also simplify running tests (``make test``), coverage (``make coverage``) and
-formatting (``make format``) the code using the `Black <https://black.readthedocs.io/>`_ formatter
-(set to a line-length of 100) and `isort <https://pycqa.github.io/isort/>`_.
+The makefile will also simplify running tests (``make test``), coverage (``make coverage``),
+documentation (``make docs```), as well as formatting (``make format``) the code using the `Black
+<https://black.readthedocs.io/>`_ formatter (set to a line-length of 100) and `isort
+<https://pycqa.github.io/isort/>`_. It's available on both Unix as well as Windows systems, via the
+`make.bat` batch file.
 
-Alternatively, the package can be built and installed using Python (on any supported system):
+Alternatively, the package can be built and installed in development mode using Python and pip. The
+simulator operations would need to be generated first by executing `operation_generation.py`, found
+in `dwave/gate/simulator`.
 
 .. code-block:: bash
 
     python setup.py build_ext --inplace
+    pip install -e .
 
-and tests and coverage can be run using Pytest:
+Tests and coverage can be run using Pytest.
 
 .. code-block:: bash
 

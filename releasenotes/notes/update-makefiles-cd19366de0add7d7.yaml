@@ -1,0 +1,12 @@
+---
+features:
+  - Add a Windows executable makefile (``make.bat``)
+  - |
+    Add ``make docs`` and ``make clean-docs`` commands to the makefile for building and
+    cleaning/removing the documentation locally.
+fixes:
+  - Adds ``pip`` installation step to ``make install`` command.
+  - |
+    Expand installation section in the README to include installation on Windows (using
+    ``make.bat``) and add details to installation steps.
+
