@@ -2,8 +2,7 @@
 branch = True
 plugins = Cython.Coverage
 omit =
-    dwave/gate/simulator/ops.pxd
-    dwave/gate/simulator/operation_generation.py
+    */dwave/gate/simulator/operation_generation.py
 
 [report]
 exclude_lines =
