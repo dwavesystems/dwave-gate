@@ -17,5 +17,8 @@
 Contains a state-vector simulator able to return the resulting state vector after running a circuit
 on an all-zero initialized basis state. Supports both the little- and big-endian conventions.
 """
-
-from dwave.gate.simulator.simulator import *
+try: 
+    from dwave.gate.simulator.simulator import *
+except Exception as e:
+    print(f"module not yet complied, error: {e}")
+    print("you should only see this if you're building from source")

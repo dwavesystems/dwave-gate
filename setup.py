@@ -13,8 +13,12 @@
 #    limitations under the License.
 
 import os
+
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
+from setuptools.command.build_py import build_py
+
+from dwave.gate.simulator import operation_generation
 
 import numpy
 from Cython.Build import cythonize
@@ -30,9 +34,10 @@ extra_link_args = {
     'unix': [],
 }
 
-
 class build_ext_compiler_check(build_ext):
+    
     def build_extensions(self):
+        
         compiler = self.compiler.compiler_type
 
         compile_args = extra_compile_args[compiler]
@@ -45,6 +50,7 @@ class build_ext_compiler_check(build_ext):
 
         build_ext.build_extensions(self)
 
+operation_generation.main_build()
 
 setup(
     name="dwave-gate",
@@ -53,8 +59,8 @@ setup(
     ],
     ext_modules=cythonize(
         ["dwave/gate/simulator/simulator.pyx",
-         "dwave/gate/registers/cyregister.pyx"
-         ],
+        "dwave/gate/registers/cyregister.pyx"
+        ],
         annotate=bool(os.getenv("CYTHON_ANNOTATE", False))
     ),
     include_dirs=[numpy.get_include()],
