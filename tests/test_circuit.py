@@ -12,6 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import numpy as np
 import pytest
 
 import dwave.gate.operations as ops
@@ -66,6 +67,90 @@ class TestCircuit:
 
         assert [b.label for b in circuit.bits] == ["0", "1", "2"]
         assert isinstance(circuit.cregisters["creg0"], ClassicalRegister)
+
+    @pytest.mark.parametrize("force", [False, True])
+    def test_set_state(self, force):
+        """Test the ``Circuit.set_state`` method."""
+        circuit = Circuit(2)
+        state = np.array([1, 2, 3, 4]) / np.sqrt(30)
+        circuit.set_state(state, force=force, normalize=False)
+
+        assert circuit._density_matrix is None
+        assert np.allclose(circuit.state, state)
+
+    @pytest.mark.parametrize("force", [False, True])
+    def test_set_state_normalize(self, force):
+        """Test the ``Circuit.set_state`` method with an unnormalized state."""
+        circuit = Circuit(2)
+        state = np.array([1, 2, 3, 4])
+        circuit.set_state(state, force=force, normalize=True)
+
+        assert circuit._density_matrix is None
+        assert np.allclose(circuit.state, state / np.sqrt(30))
+
+    @pytest.mark.parametrize("force", [False, True])
+    def test_set_dm(self, force):
+        """Test ``Circuit.set_state`` with a density matrix."""
+        circuit = Circuit(2)
+        state = np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]) / 30
+        circuit.set_state(state, force=force, normalize=False)
+
+        with pytest.raises(CircuitError, match="State is mixed."):
+            circuit.state
+        assert np.allclose(circuit.density_matrix, state)
+
+    @pytest.mark.parametrize("force", [False, True])
+    def test_set_dm_normalize(self, force):
+        """Test ``Circuit.set_state`` with an unnormalized density matrix."""
+        circuit = Circuit(2)
+        state = np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]])
+        circuit.set_state(state, force=force, normalize=True)
+
+        with pytest.raises(CircuitError, match="State is mixed."):
+            circuit.state
+        assert np.allclose(circuit.density_matrix, state / 30)
+
+    @pytest.mark.parametrize("force", [False, True])
+    def test_set_state_normalize_error(self, force):
+        """Test that the correct error is raised when setting an unnormalized state."""
+        circuit = Circuit(2)
+        state = np.array([1, 2, 3, 4])
+        with pytest.raises(ValueError, match="State is not normalized."):
+            circuit.set_state(state, force=force, normalize=False)
+
+    @pytest.mark.parametrize("force", [False, True])
+    def test_set_state_shape_error(self, force):
+        """Test that the correct error is raised when setting a state with incorrect shape."""
+        circuit = Circuit(2)
+        state = np.array([1, 2, 3, 4, 5, 6, 7, 8])  # 3-qubit state
+        with pytest.raises(ValueError, match="State has incorrect shape."):
+            circuit.set_state(state, force=force, normalize=False)
+
+    def test_force_set_state(self):
+        """Test the ``Circuit.set_state`` method twice."""
+        circuit = Circuit(2)
+        state_0 = np.array([1, 2, 3, 4]) / np.sqrt(30)
+        state_1 = np.array([4, 3, 2, 1]) / np.sqrt(30)
+
+        circuit.set_state(state_0, force=False)
+
+        with pytest.raises(CircuitError, match="State already set."):
+            circuit.set_state(state_1, force=False)
+
+        circuit.set_state(state_1, force=True)
+
+        assert circuit._density_matrix is None
+        assert np.allclose(circuit.state, state_1)
+
+    @pytest.mark.parametrize("force", [False, True])
+    def test_get_dm_from_sv(self, force):
+        """Test getting the density matrix from a state vector."""
+        circuit = Circuit(2)
+        state = np.array([1, 2, 3, 4]) / np.sqrt(30)
+        circuit.set_state(state, force=force)
+
+        expected_dm = np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]) / 30
+        assert np.allclose(circuit.density_matrix, expected_dm)
 
     def test_get_qubit(self):
         """Test finding and getting a qubit using the label."""

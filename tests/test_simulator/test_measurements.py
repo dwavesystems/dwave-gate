@@ -31,7 +31,7 @@ class TestSimulateMeasurements:
             ops.X(q[0])
             m = ops.Measurement(q[0]) | c[0]
 
-        _ = simulate(circuit)
+        simulate(circuit)
 
         assert m.bits
         assert m.bits[0] == c[0]
@@ -45,7 +45,7 @@ class TestSimulateMeasurements:
             ops.X(q[0])
             ops.Measurement(q[0]) | c[0]
         with pytest.raises(CircuitError, match="only supports big-endian"):
-            _ = simulate(circuit, little_endian=True)
+            simulate(circuit, little_endian=True)
 
     def test_measurement_state(self):
         """Test accessing a state from a measurement."""
@@ -55,7 +55,7 @@ class TestSimulateMeasurements:
             ops.X(q[0])
             m = ops.Measurement(q[0]) | c[0]
 
-        _ = simulate(circuit)
+        simulate(circuit)
 
         assert np.all(m.state == np.array([0, 1]))
 
@@ -68,7 +68,7 @@ class TestSimulateMeasurements:
             ops.Hadamard(q[0])
             m = ops.Measurement(q[0]) | c[0]
 
-        _ = simulate(circuit)
+        simulate(circuit)
 
         samples = m.sample(num_samples=n) or []
         assert len(samples) == n
@@ -82,7 +82,7 @@ class TestSimulateMeasurements:
             ops.X(q[0])
             m = ops.Measurement(q) | c
 
-        _ = simulate(circuit)
+        simulate(circuit)
 
         with pytest.raises(ValueError, match="Must specify which to sample"):
             _ = m.sample()
@@ -98,7 +98,7 @@ class TestSimulateMeasurements:
             ops.X(q[0])
             m = ops.Measurement(q) | c
 
-        _ = simulate(circuit)
+        simulate(circuit)
 
         assert m.sample(0) == [1]
         with pytest.raises(ValueError, match="Cannot sample qubit"):
@@ -112,7 +112,7 @@ class TestSimulateMeasurements:
             ops.Hadamard(q[0])
             m = ops.Measurement(q[0]) | c[0]
 
-        _ = simulate(circuit)
+        simulate(circuit)
         # expectation values are random; assert that it's between 0.4 and 0.6
         assert 0.5 == pytest.approx(m.expval(), 0.2)
 
@@ -141,11 +141,11 @@ class TestConditionalOps:
             ops.Measurement(q[0]) | c[0]  # state is |10>
             ops.X(q[1]).conditional(c[0])
 
-        res = simulate(circuit)
+        simulate(circuit)
         # should apply X on qubit 1 changing state to |11>
         expected = np.array([0, 0, 0, 1])
 
-        assert np.allclose(res, expected)
+        assert np.allclose(circuit.state, expected)
 
     def test_conditional_op_false(self):
         """Test simulating a circuit with a conditional op (false)."""
@@ -155,11 +155,11 @@ class TestConditionalOps:
             ops.Measurement(q[0]) | c[0]  # state is |00>
             ops.X(q[1]).conditional(c[0])
 
-        res = simulate(circuit)
+        simulate(circuit)
         # should NOT apply X on qubit 1 leaving state in |00>
         expected = np.array([1, 0, 0, 0])
 
-        assert np.allclose(res, expected)
+        assert np.allclose(circuit.state, expected)
 
     def test_conditional_op_multiple_qubits_false(self):
         """Test simulating a circuit with a multiple conditional ops (false)."""
@@ -170,11 +170,11 @@ class TestConditionalOps:
             ops.Measurement(q) | c  # state is |10>
             x = ops.X(q[1]).conditional(c)
 
-        res = simulate(circuit)
+        simulate(circuit)
         # should NOT apply X on qubit 1 leaving state in |10>
         expected = np.array([0, 0, 1, 0])
 
-        assert np.allclose(res, expected)
+        assert np.allclose(circuit.state, expected)
         assert x.is_blocked
 
     def test_conditional_op_multiple_qubits_true(self):
@@ -187,11 +187,11 @@ class TestConditionalOps:
             ops.Measurement(q) | c  # state is |11>
             x = ops.X(q[0]).conditional(c)
 
-        res = simulate(circuit)
+        simulate(circuit)
         # should apply X on qubit 0 changing state to |01>
         expected = np.array([0, 1, 0, 0])
 
-        assert np.allclose(res, expected)
+        assert np.allclose(circuit.state, expected)
         assert not x.is_blocked
 
     def test_bell_state_measurement(self):
@@ -210,14 +210,14 @@ class TestConditionalOps:
             for bit in circuit.bits:
                 bit.reset()
 
-            res = simulate(circuit)
+            simulate(circuit)
 
             measurement = tuple(b.value for b in circuit.bits)
 
             if measurement == (0, 0):
-                assert np.allclose(res, [1, 0, 0, 0])
+                assert np.allclose(circuit.state, [1, 0, 0, 0])
             elif measurement == (1, 1):
-                assert np.allclose(res, [0, 0, 0, 1])
+                assert np.allclose(circuit.state, [0, 0, 0, 1])
             else:
                 assert False
 
@@ -235,12 +235,12 @@ class TestConditionalOps:
             for bit in circuit.bits:
                 bit.reset()
 
-            res = simulate(circuit)
+            simulate(circuit)
 
             if circuit.bits[0].value == 0:
-                assert np.allclose(res, [1 / np.sqrt(2), 1 / np.sqrt(2), 0, 0])
+                assert np.allclose(circuit.state, [1 / np.sqrt(2), 1 / np.sqrt(2), 0, 0])
             else:
-                assert np.allclose(res, [0, 0, 1 / np.sqrt(2), 1 / np.sqrt(2)])
+                assert np.allclose(circuit.state, [0, 0, 1 / np.sqrt(2), 1 / np.sqrt(2)])
 
     def test_measurement_rng_seed(self):
         """Test measurement is reproducible after setting RNG seed."""

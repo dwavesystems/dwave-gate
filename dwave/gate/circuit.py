@@ -22,6 +22,13 @@ operations and instructions for running the circuits on simulators or hardware. 
 from __future__ import annotations
 
 import itertools
+import warnings
+from typing import TYPE_CHECKING
+
+import numpy as np
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 __all__ = [
     "CircuitError",
@@ -95,7 +102,10 @@ class Circuit:
         if num_bits is not None:
             self.add_cregister(num_bits=num_bits)
 
-        self._locked = False
+        self._state: NDArray = None
+        self._density_matrix: NDArray = None
+
+        self._locked: bool = False
 
     def __call__(self, qubits: Qubits) -> None:
         """Apply all the operations in the circuit within a circuit context.
@@ -219,6 +229,57 @@ class Circuit:
             bit_reg += creg
 
         return bit_reg
+
+    @property
+    def state(self) -> Optional[NDArray]:
+        """The resulting state after simulating the circuit."""
+        if self._state is None and self._density_matrix is not None:
+            raise CircuitError("State is mixed. Use 'Circuit.density_matrix' to access.")
+        return self._state
+
+    @property
+    def density_matrix(self) -> Optional[NDArray]:
+        """The density matrix representation of the state."""
+        if self._state is not None and self._density_matrix is None:
+            self._density_matrix = self._state.reshape(-1, 1) @ self._state.reshape(1, -1)
+        return self._density_matrix
+
+    def set_state(self, state: NDArray, force: bool = False, normalize: bool = False) -> None:
+        """Set the state of the circuit (used primarily with simulator).
+
+        Sets either the ``Circuit.state`` attribute or the ``Circuit.density_matrix`` attribute
+        depending on the shape of the state.
+
+        Args:
+            state: The state (pure or mixed) to set.
+            force: Whether to overwrite an already set state or not.
+            normalize: Whether to normalize the state before setting.
+        """
+        state_is_set = self._state is not None or self._density_matrix is not None
+        if not force and state_is_set:
+            raise CircuitError("State already set. Use 'force=True' to force set new state.")
+
+        if normalize:
+            state = state / np.linalg.norm(state)
+
+        self._assert_state(state)
+
+        if state.ndim == 1:
+            self._state = state
+            self._density_matrix = None
+
+        else:  # if state.ndim == 2:
+            self._state = None
+            self._density_matrix = state
+
+    def _assert_state(self, state: NDArray) -> None:
+        """Check whether a state is the correct shape and is normalized."""
+        size = 2 << (self.num_qubits - 1)
+        if state.shape != (size,) and state.shape != (size, size):
+            raise ValueError(f"State has incorrect shape. Should have size {size}.")
+
+        if not np.isclose(np.linalg.norm(state), 1):
+            raise ValueError("State is not normalized.")
 
     @property
     def num_qubits(self) -> int:

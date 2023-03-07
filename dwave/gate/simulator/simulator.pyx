@@ -135,9 +135,11 @@ def simulate(
     mixed_state: bool = False,
     little_endian: bool = False,
     rng_seed: Optional[int] = None,
-) -> np.typing.NDArray:
-    """Simulate the given circuit with either a state vector or density matrix
-    simulation.
+) -> None:
+    """Simulate the given circuit with either a state vector or density matrix simulation.
+
+    The resulting state is stored in the circuit object, together with the measured value in the
+    classical register.
 
     Args:
         circuit: The circuit to simulate.
@@ -150,28 +152,25 @@ def simulate(
             If true, return the state vector using little-endian indexing for
             the qubits. Otherwise use big-endian.
 
-    Returns:
-        The resulting state vector or density matrix.
-
     """
 
     num_qubits = circuit.num_qubits
     if num_qubits == 0:
-        return np.empty(0, dtype=np.complex128)
+        return
 
     rng = np.random.default_rng(rng_seed)
 
     if mixed_state:
-        return _simulate_circuit_density_matrix(circuit, rng)
+        state = _simulate_circuit_density_matrix(circuit, rng)
+    else:
+        state = np.zeros(1 << num_qubits, dtype=np.complex128)
+        state[0] = 1
 
-    state = np.zeros(1 << num_qubits, dtype=np.complex128)
-    state[0] = 1
+        for op in circuit.circuit:
+            targets = [circuit.qubits.index(qb) for qb in op.qubits]
+            apply_instruction(num_qubits, state, op, targets, little_endian, rng)
 
-    for op in circuit.circuit:
-        targets = [circuit.qubits.index(qb) for qb in op.qubits]
-        apply_instruction(num_qubits, state, op, targets, little_endian, rng)
-
-    return state
+    circuit.set_state(state, force=True)
 
 
 def _measure(op, state, targets, rng):

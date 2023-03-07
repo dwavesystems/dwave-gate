@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    A density matrix representation of the state can be accessed via the ``Circuit.density_matrix``
+    property, for both pure and mixed states (with the former being lazily calculated from the state
+    vector).
+
+upgrade:
+  - |
+    The state is now stored in the ``Circuit`` object (same as the bits/measurement results) instead
+    of being returned by the ``simulate()`` function. It can now be accessed via the
+    ``Circuit.state`` property.
