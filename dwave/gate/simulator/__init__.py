@@ -18,4 +18,4 @@ Contains a state-vector simulator able to return the resulting state vector afte
 on an all-zero initialized basis state. Supports both the little- and big-endian conventions.
 """
 
-from dwave.gate.simulator.simulator import *
+from dwave.gate.simulator.simulator import *  # type: ignore
