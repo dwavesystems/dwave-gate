@@ -40,8 +40,8 @@ print("Circuit", circuit.circuit)
 # We can simulate this circuit as usual which will return it's state-vector, but due to the
 # measurement the state will collapse into a substate. The resulting state after running the above
 # circuit depends on the measurement outcome since the state before the measurment is entangled.
-state = simulate(circuit)
-print(state)
+simulate(circuit)
+print(circuit.state)
 
 # We can easily check the classical register, and the containing bits, to see which value was
 # measured. Since we measured the first bit in the register, we choose it in the register.

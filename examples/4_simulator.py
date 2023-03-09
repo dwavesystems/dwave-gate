@@ -33,11 +33,11 @@ with circuit.context as (q, c):
 
 print("Circuit", circuit.circuit)
 
-# We can now simulate this circuit which will return it's state-vector.
-state = simulate(circuit)
+# We can now simulate this circuit and print the circuits state-vector.
+simulate(circuit)
 
 # Note that it returns the vector representing the state |11>, which is expected.
-print(state)
+print(circuit.state)
 
 # Using the tools and operations explained in the previous examples, arbitrary circuits can be
 # constructed and simulated, returning the final state. Note also that the state is always

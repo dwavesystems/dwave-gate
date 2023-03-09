@@ -16,61 +16,65 @@ import numpy as np
 import pytest
 
 import dwave.gate.operations as ops
-from dwave.gate.circuit import Circuit
+from dwave.gate.circuit import Circuit, CircuitError
 from dwave.gate.operations.operations import __all__ as all_ops
 from dwave.gate.simulator.simulator import simulate
 
 
 def test_simulate_sv_empty_circuit(empty_circuit):
-    state = simulate(empty_circuit)
-    assert state.shape == (0,)
+    simulate(empty_circuit)
+    assert empty_circuit.state is None
 
 
 def test_simulate_sv_no_ops_one_qubit():
     circuit = Circuit(1)
-    state = simulate(circuit)
-    assert np.all(state == np.array([1, 0]))
+    simulate(circuit)
+    assert np.all(circuit.state == np.array([1, 0]))
 
 
 def test_simulate_sv_no_ops_two_qubit():
     circuit = Circuit(2)
-    state = simulate(circuit)
-    assert np.all(state == np.array([1, 0, 0, 0]))
+    simulate(circuit)
+    assert np.all(circuit.state == np.array([1, 0, 0, 0]))
 
 
 def test_simulate_dm_empty_circuit(empty_circuit):
-    state = simulate(empty_circuit, mixed_state=True)
-    assert state.shape == (0,)
+    simulate(empty_circuit, mixed_state=True)
+    assert empty_circuit.state is None
 
 
 def test_simulate_dm_no_ops_one_qubit():
     circuit = Circuit(1)
-    state = simulate(circuit, mixed_state=True)
-    assert np.all(state == np.array([[1, 0], [0, 0]]))
+    simulate(circuit, mixed_state=True)
+    with pytest.raises(CircuitError, match="State is mixed."):
+        circuit.state
+    assert np.all(circuit.density_matrix == np.array([[1, 0], [0, 0]]))
 
 
 def test_simulate_dm_no_ops_two_qubit():
     circuit = Circuit(2)
-    state = simulate(circuit, mixed_state=True)
+    simulate(circuit, mixed_state=True)
     pure_zero = np.zeros((4, 4))
     pure_zero[0, 0] = 1
-    assert np.all(state == pure_zero)
+    with pytest.raises(CircuitError, match="State is mixed."):
+        circuit.state
+    assert np.all(circuit.density_matrix == pure_zero)
 
 
 def test_simulate_sv_not():
     circuit = Circuit(1)
     with circuit.context as regs:
         ops.X(regs.q[0])
-    state = simulate(circuit)
-    assert np.all(state == np.array([0, 1]))
+    simulate(circuit)
+    assert np.all(circuit.state == np.array([0, 1]))
 
 
 def test_simulate_dm_not():
     circuit = Circuit(1)
     with circuit.context as regs:
         ops.X(regs.q[0])
-    state = simulate(circuit, mixed_state=True)
-    assert np.all(state == np.array([[0, 0], [0, 1]]))
+    simulate(circuit, mixed_state=True)
+    assert np.all(circuit.density_matrix == np.array([[0, 0], [0, 1]]))
 
 
 def test_simulate_sv_cnot():
@@ -78,9 +82,9 @@ def test_simulate_sv_cnot():
     with circuit.context as regs:
         ops.X(regs.q[0])
         ops.CNOT(regs.q[0], regs.q[1])
-    state = simulate(circuit)
+    simulate(circuit)
     # should be |11>
-    assert np.all(state == np.array([0, 0, 0, 1]))
+    assert np.all(circuit.state == np.array([0, 0, 0, 1]))
 
 
 def test_simulate_dm_cnot():
@@ -88,11 +92,11 @@ def test_simulate_dm_cnot():
     with circuit.context as regs:
         ops.X(regs.q[0])
         ops.CNOT(regs.q[0], regs.q[1])
-    state = simulate(circuit, mixed_state=True)
+    simulate(circuit, mixed_state=True)
     # should be |11>
     pure_11 = np.zeros((4, 4))
     pure_11[3, 3] = 1
-    assert np.all(state == pure_11)
+    assert np.all(circuit.density_matrix == pure_11)
 
 
 def test_simulate_sv_big_endian():
@@ -100,8 +104,8 @@ def test_simulate_sv_big_endian():
     with circuit.context as regs:
         ops.X(regs.q[1])
 
-    state = simulate(circuit, little_endian=False)
-    assert np.all(state == np.array([0, 1, 0, 0]))
+    simulate(circuit, little_endian=False)
+    assert np.all(circuit.state == np.array([0, 1, 0, 0]))
 
 
 def test_simulate_sv_little_endian():
@@ -109,8 +113,8 @@ def test_simulate_sv_little_endian():
     with circuit.context as regs:
         ops.X(regs.q[1])
 
-    state = simulate(circuit, little_endian=True)
-    assert np.all(state == np.array([0, 0, 1, 0]))
+    simulate(circuit, little_endian=True)
+    assert np.all(circuit.state == np.array([0, 0, 1, 0]))
 
 
 def test_simulate_sv_swap():
@@ -121,9 +125,9 @@ def test_simulate_sv_swap():
         ops.Hadamard(regs.q[1])
         ops.SWAP([regs.q[0], regs.q[1]])
 
-    state = simulate(circuit, little_endian=False)
+    simulate(circuit, little_endian=False)
 
-    assert np.all(np.isclose(state, 0.5 * np.array([1, -1, 1, -1])))
+    assert np.all(np.isclose(circuit.state, 0.5 * np.array([1, -1, 1, -1])))
 
 
 def test_simulate_dm_swap():
@@ -134,9 +138,9 @@ def test_simulate_dm_swap():
         ops.Hadamard(regs.q[1])
         ops.SWAP([regs.q[0], regs.q[1]])
 
-    state = simulate(circuit, little_endian=False)
+    simulate(circuit, little_endian=False)
 
-    assert np.all(np.isclose(state, 0.5 * np.array([1, -1, 1, -1])))
+    assert np.all(np.isclose(circuit.state, 0.5 * np.array([1, -1, 1, -1])))
 
 
 def test_simulate_sv_ccx():
@@ -146,10 +150,10 @@ def test_simulate_sv_ccx():
         ops.X(regs.q[2])
         ops.CCX([regs.q[0], regs.q[2], regs.q[1]])
 
-    state = simulate(circuit)
+    simulate(circuit)
 
     # CCX should have taken |101> to |111>
-    assert np.all(state == np.array([0, 0, 0, 0, 0, 0, 0, 1]))
+    assert np.all(circuit.state == np.array([0, 0, 0, 0, 0, 0, 0, 1]))
 
 
 def test_simulate_dm_ccx():
@@ -159,13 +163,13 @@ def test_simulate_dm_ccx():
         ops.X(regs.q[2])
         ops.CCX([regs.q[0], regs.q[2], regs.q[1]])
 
-    state = simulate(circuit, mixed_state=True)
+    simulate(circuit, mixed_state=True)
 
     # CCX should have taken |101> to |111>
     pure_111 = np.zeros((8, 8))
     pure_111[7, 7] = 1
 
-    assert np.all(state == pure_111)
+    assert np.all(circuit.density_matrix == pure_111)
 
 
 def test_simulate_sv_cswap():
@@ -175,10 +179,10 @@ def test_simulate_sv_cswap():
         ops.X(regs.q[1])
         ops.CSWAP([regs.q[1], regs.q[0], regs.q[2]])
 
-    state = simulate(circuit, little_endian=False)
+    simulate(circuit, little_endian=False)
 
     # CSWAP should have mapped |011> to |110>
-    assert np.all(state == np.array([0, 0, 0, 1, 0, 0, 0, 0]))
+    assert np.all(circuit.state == np.array([0, 0, 0, 1, 0, 0, 0, 0]))
 
 
 def test_simulate_dm_cswap():
@@ -188,13 +192,13 @@ def test_simulate_dm_cswap():
         ops.X(regs.q[1])
         ops.CSWAP([regs.q[1], regs.q[0], regs.q[2]])
 
-    state = simulate(circuit, little_endian=False, mixed_state=True)
+    simulate(circuit, little_endian=False, mixed_state=True)
 
     # CSWAP should have mapped |011> to |110>
     pure_110 = np.zeros((8, 8))
     pure_110[3, 3] = 1
 
-    assert np.all(state == pure_110)
+    assert np.all(circuit.density_matrix == pure_110)
 
 
 @pytest.mark.parametrize("op", [getattr(ops, name) for name in all_ops])
@@ -211,9 +215,9 @@ def test_simulate_all_gates(op, little_endian, mixed_state):
 
         op(**kwargs)
 
-    state = simulate(circuit, little_endian=little_endian, mixed_state=mixed_state)
+    simulate(circuit, little_endian=little_endian, mixed_state=mixed_state)
 
     if mixed_state:
-        assert 1 == pytest.approx(np.trace(state))
+        assert 1 == pytest.approx(np.trace(circuit.density_matrix))
     else:
-        assert 1 == pytest.approx(np.sum(state * state.conj()))
+        assert 1 == pytest.approx(np.sum(circuit.state * circuit.state.conj()))
