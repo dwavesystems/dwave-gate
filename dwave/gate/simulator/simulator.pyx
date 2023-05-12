@@ -18,6 +18,7 @@
 
 __all__ = [
     "simulate",
+    "sample_qubit",
 ]
 
 import random
@@ -173,27 +174,26 @@ def simulate(
     circuit.set_state(state, force=True)
 
 
-def _measure(op, state, targets, rng):
-    op._measured_state = state.copy()
-
-    for idx, t in enumerate(targets):
-        m = _sample(t, state, rng)
-
-        try:
-            op.bits[idx].set(m, force=True)
-        except (IndexError, TypeError):
-            warnings.warn("Measurements not stored in the classical register.")
-
-        op._measured_qubit_indices.append(t)
-
-
-def _sample(
+def sample_qubit(
     qubit: int,
     state: np.typing.NDArray,
     rng: np.random.Generator,
     collapse_state: bool = True,
     little_endian: bool = False,
 ) -> int:
+    """Sample a single qubit.
+
+    Args:
+        qubit: The qubit index that is measured.
+        state: The state to sample from.
+        rng: Random number generator to use for measuring in the computational basis.
+        collapse_state: Whether to collapse the state after measuring.
+        little_endian: If true, return the state vector using little-endian indexing for
+            the qubits. Otherwise use big-endian.
+
+    Returns:
+        int: The measurement sample (0 or 1).
+    """
     cdef int num_qubits = round(np.log2(state.shape[0]))
 
     return measurement_computational_basis(
@@ -204,6 +204,20 @@ def _sample(
         little_endian=little_endian,
         apply_operator=collapse_state,
     )
+
+
+def _measure(op, state, targets, rng):
+    op._measured_state = state.copy()
+
+    for idx, t in enumerate(targets):
+        m = sample_qubit(t, state, rng)
+
+        try:
+            op.bits[idx].set(m, force=True)
+        except (IndexError, TypeError):
+            warnings.warn("Measurements not stored in the classical register.")
+
+        op._measured_qubit_indices.append(t)
 
 
 def _simulate_circuit_density_matrix(

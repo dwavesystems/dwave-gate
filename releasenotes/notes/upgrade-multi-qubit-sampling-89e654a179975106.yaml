@@ -1,0 +1,23 @@
+---
+upgrade:
+  - |
+    Adds support for multi-qubit sampling in measurements. ``Measurement.sample()`` and
+    ``Measurement.expval()`` are updated to accept a sequence of qubit indices to sample, sampling
+    all measured qubits if none are given.
+
+    .. code-block:: python
+
+      circuit = Circuit(2, 2)
+
+      with circuit.context as (q, c):
+          ops.X(q[0])
+          m = ops.Measurement(q) | c
+
+      simulate(circuit)
+
+      m.sample(num_samples=3, as_bitstring=True)
+      # ['10', '10', '10']
+
+features:
+  - Measurement samples can be returned as bitstrings instead of integers in nested lists.
+
