@@ -17,5 +17,26 @@
 Contains the QIR compiler, loader and related files and functions.
 """
 
+from typing import Tuple
+
+try:
+    import pyqir  # noqa: F401
+except ImportError:  # pragma: no cover
+    pyqir_installed = False
+else:
+    # pyqir>=0.8 required
+    # after deprecating py3.7 use importlib.metadata.version instead'
+    from pkg_resources import get_distribution
+    version = lambda v: get_distribution(v).version  # noqa: E731
+
+    def parse(version: str) -> Tuple[str, str, str]:
+        "Parse a MAJOR.MINOR.PATCH version string into a tuple."
+        return tuple(version.split("."))[:3]
+
+    pyqir_installed = parse(version("pyqir")) >= parse("0.8.0")
+
+if not pyqir_installed:  # pragma: no cover
+    raise ImportError("PyQIR not installed.")
+
 from dwave.gate.qir.compiler import *
 from dwave.gate.qir.loader import *

@@ -17,13 +17,16 @@ import re
 from operator import attrgetter
 from typing import Callable
 
-import pyqir
 import pytest
+
 
 from dwave.gate import Circuit
 from dwave.gate import operations as ops
-from dwave.gate.qir.compiler import BaseModule, CompileError, qir_module
-from dwave.gate.qir.instructions import InstrType, Instruction, Operations
+
+pyqir = pytest.importorskip("pyqir")
+# QIR submodule imports must postcede PyQIR importorskip
+from dwave.gate.qir.compiler import BaseModule, CompileError, qir_module  # noqa: E402
+from dwave.gate.qir.instructions import InstrType, Instruction, Operations  # noqa: E402
 
 
 @pytest.fixture(scope="function")

@@ -50,7 +50,6 @@ setup(
     name="dwave-gate",
     install_requires=[
         "numpy",
-        "pyqir>=0.8",
     ],
     ext_modules=cythonize(
         ["dwave/gate/simulator/simulator.pyx",

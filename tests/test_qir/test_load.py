@@ -19,7 +19,10 @@ import pytest
 from dwave.gate import operations as ops
 from dwave.gate.circuit import Circuit
 from dwave.gate.operations.base import Measurement, ParametricOperation
-from dwave.gate.qir.loader import load_qir_string
+
+pyqir = pytest.importorskip("pyqir")
+# QIR submodule imports must postcede PyQIR importorskip
+from dwave.gate.qir.loader import load_qir_string  # noqa: E402
 
 
 def assert_equal(circuit_0, circuit_1):

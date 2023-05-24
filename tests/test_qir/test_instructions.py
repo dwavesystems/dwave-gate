@@ -16,8 +16,10 @@ import itertools
 
 import pytest
 
-from dwave.gate.qir.compiler import BaseModule
-from dwave.gate.qir.instructions import InstrType, Instruction
+pyqir = pytest.importorskip("pyqir")
+# QIR submodule imports must postcede PyQIR importorskip
+from dwave.gate.qir.compiler import BaseModule  # noqa: E402
+from dwave.gate.qir.instructions import InstrType, Instruction  # noqa: E402
 
 
 class TestInstruction:
