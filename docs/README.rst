@@ -51,10 +51,14 @@ a two-qubit circuit.
         ops.CZ(q[0], q[1])
         ops.Hadamard(q[1])
 
-You can run the ``dwave.gate.simulator`` simulator on such circuits.
+You can run the ``dwave.gate.simulator`` simulator on such circuits,
 
 >>> from dwave.gate.simulator import simulate
 >>> simulate(circuit)
+
+and then access the resulting state via the state attribute.
+
+>>> circuit.state
 array([0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j])
 
 .. example-end-marker
