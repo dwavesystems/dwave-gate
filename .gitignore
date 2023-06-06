@@ -47,6 +47,7 @@ cov.xml
 
 # Sphinx documentation
 docs/_build/
+docs/demos/out
 
 # Jupyter Notebook
 .ipynb_checkpoints

@@ -18,6 +18,7 @@ Documentation
     :maxdepth: 1
 
     reference/index
+    demos/index
     release_notes
 
 .. toctree::
