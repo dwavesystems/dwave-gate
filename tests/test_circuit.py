@@ -715,6 +715,63 @@ class TestCircuit:
         ):
             circuit_1(circuit_1.qubits[0])
 
+    def test_call_bits(self):
+        """Test calling the circuit with measurments and bits."""
+        circuit_1 = Circuit(2, 2)
+        operations = [
+            ops.Hadamard(circuit_1.qubits[0]),
+            ops.Hadamard(circuit_1.qubits[1]),
+            ops.Measurement(circuit_1.qubits) | circuit_1.bits,
+        ]
+        circuit_1.extend(operations)
+
+        circuit_2 = Circuit(3, 3)
+        with circuit_2.context as regs:
+            circuit_1((regs.q[0], regs.q[2]), (regs.c[0], regs.c[2]))
+
+        assert circuit_2.circuit == [
+            ops.Hadamard(circuit_2.qubits[0]),
+            ops.Hadamard(circuit_2.qubits[2]),
+            ops.Measurement((circuit_2.qubits[0], circuit_2.qubits[2]))
+            | (circuit_2.bits[0], circuit_2.bits[2]),
+        ]
+
+    def test_call_single_bit(self):
+        """Test calling the circuit within a context to apply it to the active context
+        when passing a single bit."""
+        circuit_1 = Circuit(1, 1)
+        operations = [ops.Measurement(circuit_1.qubits) | circuit_1.bits]
+        circuit_1.extend(operations)
+
+        circuit_2 = Circuit(2, 2)
+        with circuit_2.context as regs:
+            circuit_1(regs.q[1], regs.c[1])
+
+        assert circuit_2.circuit == [ops.Measurement(circuit_2.qubits[1]) | circuit_2.bits[1]]
+
+    def test_call_bits_invalid_length(self):
+        """Test that the correct exception is raised when calling a circuit
+        with an incorrect number of bits."""
+        circuit_1 = Circuit(2, 2)
+        operations = [ops.Measurement(circuit_1.qubits) | circuit_1.bits]
+        circuit_1.extend(operations)
+
+        circuit_2 = Circuit(2, 2)
+        with pytest.raises(ValueError, match="requires 2 bits, got 1"):
+            with circuit_2.context as regs:
+                circuit_1(regs.q, regs.c[1])
+
+    def test_call_no_bits(self):
+        """Test calling circuit with measurement but not passing bits."""
+        circuit_1 = Circuit(2, 2)
+        operations = [ops.Measurement(circuit_1.qubits) | circuit_1.bits]
+        circuit_1.extend(operations)
+
+        circuit_2 = Circuit(2, 2)
+        with pytest.warns(UserWarning, match="Measurements not stored in circuit bits"):
+            with circuit_2.context as regs:
+                circuit_1(regs.q)
+
     def test_num_parameters_non_parametric_circuit(self):
         """Test that the ``num_parameters`` property returns the correct value when calling it on a
         non-parametric circuit."""

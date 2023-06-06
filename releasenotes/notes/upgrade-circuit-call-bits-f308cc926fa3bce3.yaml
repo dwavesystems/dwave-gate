@@ -1,0 +1,19 @@
+---
+upgrade:
+  - |
+    Upgrade circuit call to accept classical bits in which to store measurement values. If no bits
+    are passed to the circuit call, measurements will not be stored when circuit is simulated.
+
+    .. code-block:: python
+
+      circuit = Circuit(2, 2)
+
+      with circuit.context as (q, c):
+          ops.Hadamard(q[0])
+          ops.Hadamard(q[1])
+          ops.Measurement(q) | c
+
+      circuit_2 = Circuit(2, 2)
+
+      with circuit_2.context as (q, c):
+          circuit(q, c)  # pass bits to 'circuit'

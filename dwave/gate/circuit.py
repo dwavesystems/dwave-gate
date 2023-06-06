@@ -107,35 +107,61 @@ class Circuit:
 
         self._locked: bool = False
 
-    def __call__(self, qubits: Qubits) -> None:
+    def __call__(self, qubits: Qubits, bits: Optional[Bits] = None) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
         Args:
             qubits: Qubits on which the circuit operations should be applied. The qubits used in
                 the circuit will be exchanged with the corresponding ones (e.g., with the same
                 index as) in the active context.
+            bits: Bits in which to store measurement values if measurements have been made.
 
         Raises:
             ValueError: If an invalid number of qubits is passed.
             CircuitError: If called outside of an active context.
         """
+        if CircuitContext.active_context is None:
+            raise CircuitError("Can only apply circuit object inside a circuit context.")
+        if CircuitContext.active_context.circuit is self:
+            raise TypeError("Cannot apply circuit in its own context.")
+
         if isinstance(qubits, Qubit):
             qubits = [qubits]
 
         if len(qubits) != len(self.qubits):
             raise ValueError(f"Circuit requires {len(self.qubits)} qubits, got {len(qubits)}.")
 
-        if CircuitContext.active_context is None:
-            raise CircuitError("Can only apply circuit object inside a circuit context.")
-        if CircuitContext.active_context.circuit is self:
-            raise TypeError("Cannot apply circuit in its own context.")
+        if bits:
+            if isinstance(bits, Bit):
+                bits = [bits]
+
+            if len(bits) != len(self.bits):
+                raise ValueError(f"Circuit requires {len(self.bits)} bits, got {len(bits)}.")
+
+            bit_map = dict(zip(self.bits, bits))
 
         qubit_map = dict(zip(self.qubits, qubits))
+
         for op in self.circuit:
             mapped_qubits = [qubit_map[qb] for qb in op.qubits or []]
 
             # NOTE: avoid circular imports; needed to check operation type
-            from dwave.gate.operations.base import ControlledOperation, ParametricOperation
+            from dwave.gate.operations.base import (
+                ControlledOperation,
+                Measurement,
+                ParametricOperation,
+            )
+
+            if isinstance(op, Measurement):
+                if bits:
+                    mapped_bits = [bit_map[qb] for qb in op.bits or []]
+                    op.__class__(qubits=mapped_qubits) | mapped_bits
+                    continue
+                else:
+                    warnings.warn(
+                        "Measurements not stored in circuit bits. "
+                        "Must pass bits to circuit call."
+                    )
 
             if isinstance(op, ParametricOperation):
                 op.__class__(op.parameters, qubits=mapped_qubits)
@@ -642,7 +668,9 @@ class ParametricCircuit(Circuit):
 
         super().__init__(num_qubits, num_bits)
 
-    def __call__(self, parameters: List[complex], qubits: Qubits) -> None:
+    def __call__(
+        self, parameters: List[complex], qubits: Qubits, bits: Optional[Bits] = None
+    ) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
         Args:
@@ -650,6 +678,7 @@ class ParametricCircuit(Circuit):
             qubits: Qubits on which the circuit operations should be applied. The qubits used in
                 the circuit will be exchanged with the corresponding ones (e.g., with the same
                 index as) in the active context.
+            bits: Bits in which to store measurement values if measurements have been made.
 
         Raises:
             ValueError: If an invalid number of qubits are passed.
@@ -662,7 +691,7 @@ class ParametricCircuit(Circuit):
         # delay reset variables function call to on context exit
         CircuitContext.on_exit_functions.append(self.reset_variables)
 
-        return super().__call__(qubits=qubits)
+        return super().__call__(qubits=qubits, bits=bits)
 
     def unlock(self) -> None:
         """Unlocks the circuit allowing for further operations to be applied."""
