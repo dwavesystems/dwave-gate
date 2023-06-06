@@ -53,7 +53,6 @@ from dwave.gate.circuit import Circuit, CircuitContext, CircuitError, Parametric
 from dwave.gate.mixedproperty import mixedproperty
 from dwave.gate.primitives import Bit, Qubit
 from dwave.gate.registers.registers import ClassicalRegister, Variable
-from dwave.gate.simulator.simulator import sample_qubit
 from dwave.gate.tools.unitary import build_controlled_unitary, build_unitary
 
 if TYPE_CHECKING:
@@ -709,6 +708,9 @@ class Measurement(Operation):
         Returns:
             List[Union[int, str]]: The measurement samples for each qubit.
         """
+        # NOTE: avoid circular imports; operations used in simulator
+        from dwave.gate.simulator.simulator import sample_qubit
+
         if self.state is None:
             raise CircuitError(
                 "Measurement has no state. Likely due to circuit not having been simulated."
