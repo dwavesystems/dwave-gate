@@ -27,6 +27,7 @@ else:
     # pyqir>=0.8 required
     # after deprecating py3.7 use importlib.metadata.version instead'
     from pkg_resources import get_distribution
+
     version = lambda v: get_distribution(v).version  # noqa: E731
 
     def parse(version: str) -> Tuple[str, str, str]:

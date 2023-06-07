@@ -14,11 +14,11 @@
 
 import inspect
 import re
+from contextlib import suppress
 from operator import attrgetter
 from typing import Callable
 
 import pytest
-
 
 from dwave.gate import Circuit
 from dwave.gate import operations as ops
@@ -38,9 +38,9 @@ def two_op_module():
     args_op_1 = (mod.qubits[0], mod.qubits[1])
     args_meas = (mod.qubits[0], mod.results[0])
 
-    instruction_0 = Instruction(InstrType.base, "x", args_op_0)
-    instruction_1 = Instruction(InstrType.base, "cx", args_op_1)
-    instruction_2 = Instruction(InstrType.measurement, "mz", args_meas)
+    instruction_0 = Instruction(InstrType.BASE, "x", args_op_0)
+    instruction_1 = Instruction(InstrType.BASE, "cx", args_op_1)
+    instruction_2 = Instruction(InstrType.MEASUREMENT, "mz", args_meas)
 
     mod.add_instruction("body", instruction_0)
     mod.add_instruction("body", instruction_1)
@@ -50,10 +50,28 @@ def two_op_module():
 
 
 def assert_equal(str_0: str, str_1: str) -> bool:
-    """Assert that two multi-line strings are equal."""
-    for r, e in zip(str_0.split("\n"), str_1.split("\n")):
-        # strip whitespace from each line and check
-        assert r.strip() == e.strip()
+    """Assert that two multi-line strings are equal apart from newlines
+    and spaces padding lines."""
+
+    def _strip(str_):
+        for line in str_.splitlines():
+            stripped = line.strip()
+            if stripped != "":
+                yield stripped
+
+    strip_0 = _strip(str_0)
+    strip_1 = _strip(str_1)
+    while True:
+        n1 = n2 = None
+        with suppress(StopIteration):
+            n1 = next(strip_0)
+        with suppress(StopIteration):
+            n2 = next(strip_1)
+
+        if n1 is None and n2 is None:
+            break
+
+        assert n1 == n2
 
 
 class TestBaseModule:
@@ -165,7 +183,7 @@ class TestBaseModule:
         assert "__quantum__qis__z__body" not in two_op_module.qir
 
         two_op_module.add_instruction(
-            "body", Instruction(InstrType.base, "z", [two_op_module.qubits[0]])
+            "body", Instruction(InstrType.BASE, "z", [two_op_module.qubits[0]])
         )
 
         two_op_module.reset(rm_instructions=False)
@@ -178,7 +196,7 @@ class TestBaseModule:
     def test_bitcode(self, two_op_module, compile_first):
         """Test retrieving the QIR bitcode."""
         two_op_module.add_instruction(
-            "body", Instruction(InstrType.base, "z", [two_op_module.qubits[0]])
+            "body", Instruction(InstrType.BASE, "z", [two_op_module.qubits[0]])
         )
 
         if compile_first:
@@ -209,7 +227,7 @@ class TestBaseModule:
         """Test setting a different return value than ``Void``."""
 
         two_op_module.add_instruction(
-            "body", Instruction(InstrType.base, "z", [two_op_module.qubits[0]])
+            "body", Instruction(InstrType.BASE, "z", [two_op_module.qubits[0]])
         )
 
         ret_value = two_op_module.results[0]
@@ -227,7 +245,7 @@ class TestBaseModule:
         """Test validation error."""
 
         two_op_module.add_instruction(
-            "body", Instruction(InstrType.base, "z", [two_op_module.qubits[0]])
+            "body", Instruction(InstrType.BASE, "z", [two_op_module.qubits[0]])
         )
 
         ret_value = two_op_module.results[0]
@@ -240,7 +258,7 @@ class TestBaseModule:
         """Test that the correct error is raised when setting already set return."""
 
         two_op_module.add_instruction(
-            "body", Instruction(InstrType.base, "z", [two_op_module.qubits[0]])
+            "body", Instruction(InstrType.BASE, "z", [two_op_module.qubits[0]])
         )
 
         ret_value = two_op_module.results[0]
@@ -253,7 +271,7 @@ class TestBaseModule:
         """Test compiling a module twice."""
 
         two_op_module.add_instruction(
-            "body", Instruction(InstrType.base, "z", [two_op_module.qubits[0]])
+            "body", Instruction(InstrType.BASE, "z", [two_op_module.qubits[0]])
         )
 
         two_op_module.compile()
@@ -283,16 +301,16 @@ class TestQirModuleFunction:
         assert len(mod.qubits) == 2
         assert len(mod.results) == 2
 
-        x_instr = Instruction(InstrType.base, "x", [mod.qubits[0]])
-        y_instr = Instruction(InstrType.base, "y", [mod.qubits[1]])
+        x_instr = Instruction(InstrType.BASE, "x", [mod.qubits[0]])
+        y_instr = Instruction(InstrType.BASE, "y", [mod.qubits[1]])
         assert mod._instructions["body"] == [x_instr, y_instr]
 
-        q0_meas = Instruction(InstrType.measurement, "mz", [mod.qubits[0], mod.results[0]])
-        q1_meas = Instruction(InstrType.measurement, "mz", [mod.qubits[1], mod.results[1]])
+        q0_meas = Instruction(InstrType.MEASUREMENT, "mz", [mod.qubits[0], mod.results[0]])
+        q1_meas = Instruction(InstrType.MEASUREMENT, "mz", [mod.qubits[1], mod.results[1]])
         assert mod._instructions["measurements"] == [q0_meas, q1_meas]
 
-        r0_meas = Instruction(InstrType.output, "out", [mod.results[0]])
-        r1_meas = Instruction(InstrType.output, "out", [mod.results[1]])
+        r0_meas = Instruction(InstrType.OUTPUT, "out", [mod.results[0]])
+        r1_meas = Instruction(InstrType.OUTPUT, "out", [mod.results[1]])
         assert mod._instructions["output"] == [r0_meas, r1_meas]
 
     def test_compile_circuit_with_parametric_op(self):
@@ -308,8 +326,8 @@ class TestQirModuleFunction:
         assert len(mod.qubits) == 2
         assert len(mod.results) == 0
 
-        x_instr = Instruction(InstrType.base, "x", [mod.qubits[0]])
-        rx_instr = Instruction(InstrType.base, "rx", [1.2, mod.qubits[1]])
+        x_instr = Instruction(InstrType.BASE, "x", [mod.qubits[0]])
+        rx_instr = Instruction(InstrType.BASE, "rx", [1.2, mod.qubits[1]])
         assert mod._instructions["body"] == [x_instr, rx_instr]
 
     def test_mid_circuit_measurment(self):
@@ -336,10 +354,10 @@ class TestQirModuleFunction:
             ops.Rotation((0.1, 0.2, 0.3), reg.q[0])
 
         new_operations_to_qir = Operations.to_qir.copy()
-        new_operations_to_qir.update({"Rotation": Operations.Op(InstrType.decompose, "rot")})
+        new_operations_to_qir.update({"Rotation": Operations.Op(InstrType.DECOMPOSE, "rot")})
         monkeypatch.setattr(Operations, "to_qir", new_operations_to_qir)
 
-        assert Operations.to_qir["Rotation"].type == InstrType.decompose
+        assert Operations.to_qir["Rotation"].type == InstrType.DECOMPOSE
 
         with pytest.raises(NotImplementedError, match="Operation decompositions not supported."):
             _ = qir_module(circuit)
@@ -353,7 +371,7 @@ class TestQirModuleFunction:
         with circuit.context as reg:
             ops.Rotation((0.1, 0.2, 0.3), reg.q[0])
 
-        assert Operations.to_qir["Rotation"].type == InstrType.external
+        assert Operations.to_qir["Rotation"].type == InstrType.EXTERNAL
 
         with pytest.raises(NotImplementedError, match="Operation decompositions not supported."):
             _ = qir_module(circuit)

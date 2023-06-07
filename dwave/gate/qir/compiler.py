@@ -221,7 +221,7 @@ class BaseModule:
         """
         external = self._external_functions.get(name, None)
 
-        return Instruction(InstrType.external, name, args, external)
+        return Instruction(InstrType.EXTERNAL, name, args, external)
 
     @property
     def qir(self) -> str:
@@ -331,7 +331,7 @@ class BaseModule:
         for block, instructions in self._instructions.items():
             instr_len = len(instructions)
             for i, instr in enumerate(reversed(instructions)):
-                if instr.type is InstrType.external:
+                if instr.type is InstrType.EXTERNAL:
                     del self._instructions[block][instr_len - i - 1]
 
 
@@ -350,7 +350,7 @@ def qir_module(circuit: Circuit, add_external: bool = False) -> BaseModule:
     block = "body"
     for op in circuit.circuit:
         type_, pyqir_op = Operations.to_qir.get(op.__class__.name, (None, None))
-        if add_external and type_ is InstrType.external:
+        if add_external and type_ is InstrType.EXTERNAL:
             qubit_type = module.Types.QUBIT
             param_type = module.Types.DOUBLE
 
@@ -360,7 +360,7 @@ def qir_module(circuit: Circuit, add_external: bool = False) -> BaseModule:
             module.add_external_function(pyqir_op, parameter_types=parameter_types)
 
         args = []
-        if type_ is InstrType.measurement:
+        if type_ is InstrType.MEASUREMENT:
             block = "measurements"
 
             for qb, b in zip(op.qubits, op.bits):
@@ -368,14 +368,13 @@ def qir_module(circuit: Circuit, add_external: bool = False) -> BaseModule:
                 _, bit_idx = circuit.find_bit(b)
                 args = (module.qubits[qubit_idx], module.results[bit_idx])
 
-                measurement_instruction = Instruction(InstrType.measurement, pyqir_op, args)
+                measurement_instruction = Instruction(InstrType.MEASUREMENT, pyqir_op, args)
                 module.add_instruction("measurements", measurement_instruction)
 
-                output_instruction = Instruction(InstrType.output, "out", [args[1]])
+                output_instruction = Instruction(InstrType.OUTPUT, "out", [args[1]])
                 module.add_instruction("output", output_instruction)
 
-            continue
-        elif type_ is InstrType.base or (type_ is InstrType.external and add_external):
+        elif type_ is InstrType.BASE or (type_ is InstrType.EXTERNAL and add_external):
             if block == "measurements":
                 raise ValueError(
                     "Mid-circuit measurements are not supported when compiling to QIR."
@@ -389,13 +388,13 @@ def qir_module(circuit: Circuit, add_external: bool = False) -> BaseModule:
                 _, qubit_idx = circuit.find_qubit(qb)
                 args.append(module.qubits[qubit_idx])
 
-            if type_ is InstrType.external:
+            if type_ is InstrType.EXTERNAL:
                 body_instruction = module.get_external_instruction(pyqir_op, args)
             else:
-                body_instruction = Instruction(InstrType.base, pyqir_op, args)
+                body_instruction = Instruction(InstrType.BASE, pyqir_op, args)
 
             module.add_instruction("body", body_instruction)
-        elif type_ is InstrType.decompose or (type_ is InstrType.external and not add_external):
+        elif type_ is InstrType.DECOMPOSE or (type_ is InstrType.EXTERNAL and not add_external):
             raise NotImplementedError("Operation decompositions not supported.")
         else:
             raise NotImplementedError(f"Support not implemented for {op.__class__.name} gate.")

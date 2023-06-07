@@ -163,7 +163,7 @@ class Circuit:
         Args:
             operation: Operation to append to the circuit.
         """
-        if self.is_locked() is True:
+        if self.is_locked():
             raise CircuitError(
                 "Circuit is locked and no more operations can be appended. To "
                 "unlock the circuit, call 'Circuit.unlock()' first."
@@ -574,7 +574,7 @@ class Circuit:
 
         Args:
             add_external: Whether to add external functions (not defined in QIR). If ``False``,
-                functions marks as external will be decomposed into valid operations (if possible).
+                functions marked as external will be decomposed into valid operations (if possible).
             bitcode: Whether to return QIR as a legible string or as bitcode.
 
         Returns:
@@ -650,14 +650,14 @@ class ParametricCircuit(Circuit):
         return super().unlock()
 
     def eval(
-        self, parameters: Optional[Sequence[Sequence[complex]]] = None, in_place: bool = False
+        self, parameters: Optional[Sequence[Sequence[complex]]] = None, inplace: bool = False
     ) -> ParametricCircuit:
         """Evaluate circuit operations with explicit parameters.
 
         Args:
             parameters: Parameters to replace operation variables with. Overrides potential variable
                 values. If ``None`` then variable values are used (if existent).
-            in_place: Whether to evaluate the parameters on ``self`` or on a copy
+            inplace: Whether to evaluate the parameters on ``self`` or on a copy
                 of ``self`` (returned).
 
         Returns:
@@ -666,12 +666,12 @@ class ParametricCircuit(Circuit):
         Raises:
             ValueError: If no parameters are passed and if variable has no set value.
         """
-        circuit = self if in_place else copy.deepcopy(self)
+        circuit = self if inplace else copy.deepcopy(self)
 
         for i, op in enumerate(circuit.circuit):
             eval = getattr(op, "eval", None)
             params = parameters[i] if parameters else None
-            circuit.circuit[i] = eval(params, in_place) if eval else op
+            circuit.circuit[i] = eval(params, inplace) if eval else op
 
         return circuit
 

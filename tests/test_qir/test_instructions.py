@@ -26,7 +26,7 @@ class TestInstruction:
     """Tests for the ``Instruction`` class."""
 
     @pytest.mark.parametrize(
-        "type_name", ["base", "external", "decompose", "invalid", "skip", "measurement", "output"]
+        "type_name", ["BASE", "EXTERNAL", "DECOMPOSE", "INVALID", "SKIP", "MEASUREMENT", "OUTPUT"]
     )
     def test_instruction(self, type_name, dummy_function):
         """Test the ``Instruction`` initializer."""
@@ -44,9 +44,9 @@ class TestInstruction:
         """Test that the correct exception is raised when passing invalid argument types."""
 
         with pytest.raises(TypeError, match="Incorrect type"):
-            Instruction(InstrType.base, "pomelo", args)
+            Instruction(InstrType.BASE, "pomelo", args)
 
-    @pytest.mark.parametrize("type_name", ["base", "measurement"])
+    @pytest.mark.parametrize("type_name", ["BASE", "MEASUREMENT"])
     def test_excecute_instruction(self, type_name, mocker):
         """Test excecuting instructions."""
         type_ = getattr(InstrType, type_name)
@@ -55,7 +55,7 @@ class TestInstruction:
         mod = BaseModule("QIR_module", 2, 1)
 
         def _assert_qis_called():
-            assert instr.type in (InstrType.base, InstrType.measurement)
+            assert instr.type in (InstrType.BASE, InstrType.MEASUREMENT)
 
         module = Instruction.__module__
         qis_mock = mocker.patch(f"{module}.Instruction._execute_qis")
@@ -67,12 +67,12 @@ class TestInstruction:
 
     def test_excecute_instruction_ext(self, mocker, dummy_function):
         """Test excecuting instructions."""
-        instr = Instruction(InstrType.external, "pomelo", [], external=dummy_function)
+        instr = Instruction(InstrType.EXTERNAL, "pomelo", [], external=dummy_function)
 
         mod = BaseModule("QIR_module", 2, 1)
 
         def _assert_ext_called():
-            assert instr.type is InstrType.external
+            assert instr.type is InstrType.EXTERNAL
 
         module = Instruction.__module__
         ext_mock = mocker.patch(f"{module}.Instruction._execute_external")
@@ -90,9 +90,9 @@ class TestInstruction:
         with pytest.raises(
             ValueError, match="Instruction with type 'external' missing external function."
         ):
-            _ = Instruction(InstrType.external, "pomelo", [])
+            _ = Instruction(InstrType.EXTERNAL, "pomelo", [])
 
-    @pytest.mark.parametrize("type_name", ["decompose", "invalid", "skip", "output"])
+    @pytest.mark.parametrize("type_name", ["DECOMPOSE", "INVALID", "SKIP", "OUTPUT"])
     def test_excecute_instruction_error(self, type_name, monkeypatch):
         """Assert that the correct exception is raised when attempting
         to excecute a non-excecutable instructions."""
@@ -108,16 +108,16 @@ class TestInstruction:
     def test_instruction_equality(self, dummy_function):
         """Test equality between ``Instruction`` objects."""
 
-        instr_0 = Instruction(InstrType.base, "pomelo", [1.2, 2.3])
-        instr_1 = Instruction(InstrType.external, "pomelo", [1.2, 2.3], external=dummy_function)
-        instr_2 = Instruction(InstrType.base, "grapefruit", [1.2, 2.3])
-        instr_3 = Instruction(InstrType.base, "pomelo", [9, 8, 7, 6])
+        instr_0 = Instruction(InstrType.BASE, "pomelo", [1.2, 2.3])
+        instr_1 = Instruction(InstrType.EXTERNAL, "pomelo", [1.2, 2.3], external=dummy_function)
+        instr_2 = Instruction(InstrType.BASE, "grapefruit", [1.2, 2.3])
+        instr_3 = Instruction(InstrType.BASE, "pomelo", [9, 8, 7, 6])
 
         for i0, i1 in itertools.combinations([instr_0, instr_1, instr_2, instr_3], r=2):
             assert i0 != i1
 
-        instr_0_dup = Instruction(InstrType.base, "pomelo", [1.2, 2.3])
-        instr_3_dup = Instruction(InstrType.base, "pomelo", [9.0, 8.0, 7.0, 6.0])
+        instr_0_dup = Instruction(InstrType.BASE, "pomelo", [1.2, 2.3])
+        instr_3_dup = Instruction(InstrType.BASE, "pomelo", [9.0, 8.0, 7.0, 6.0])
 
         assert instr_0 == instr_0_dup
         assert instr_3 == instr_3_dup

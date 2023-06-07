@@ -75,7 +75,7 @@ def _module_to_circuit(module: Module, circuit: Optional[Circuit] = None) -> Cir
     """Parses a PyQIR module into a ``Circuit`` object.
 
     Args:
-        module: PyyQIR module containing the QIR representation of the circuit.
+        module: PyQIR module containing the QIR representation of the circuit.
         circuit: Optional circuit into which to load QIR bitcode. If ``None``
             a new circuit is created (default).
 
@@ -93,14 +93,14 @@ def _module_to_circuit(module: Module, circuit: Optional[Circuit] = None) -> Cir
     for func in module.functions:
         for block in func.basic_blocks:
             for instr in block.instructions:
-                if instr.opcode == Opcode.RET:
+                if instr.opcode is Opcode.RET:
                     # break block on return code
                     break
 
                 if instr.opcode == Opcode.CALL:
                     # construct and add operations to circuit
                     op_name = Operations.from_qis_operation.get(instr.callee.name, None)
-                    if op_name is InstrType.invalid or "__qis__" not in instr.callee.name:
+                    if "__qis__" not in instr.callee.name:
                         # only add non-ignored QIS operations
                         continue
                     elif op_name is None:
@@ -170,7 +170,7 @@ def _deconstruct_call_instruction(
                 qubits.append(0)
             else:
                 pattern = "\%Qubit\* inttoptr \(i64 (\d+) to \%Qubit\*\)"
-                qubit = re.search(pattern, arg.__str__()).groups()[0]
+                qubit = re.search(pattern, str(arg)).groups()[0]
                 qubits.append(int(qubit) if qubit.isdigit() else None)
         else:
             assert arg.type.pointee.name == "Result"

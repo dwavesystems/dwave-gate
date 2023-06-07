@@ -25,32 +25,32 @@ __all__ = [
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, NamedTuple, Optional, Sequence
+from typing import Any, NamedTuple, Optional, Sequence, Union
 
 import pyqir
 
 
 class InstrType(Enum):
-    base = auto()
+    BASE = auto()
     """Valid QIR base profile instructions"""
 
-    external = auto()
+    EXTERNAL = auto()
     """Externally defined instructions. Falls back to decompositions if external
     functions are disallowed."""
 
-    decompose = auto()
+    DECOMPOSE = auto()
     """Decomposes operation into valid QIR instructions (or external if allowed)"""
 
-    invalid = auto()
+    INVALID = auto()
     """Invalid instructions that should raise an error if used"""
 
-    skip = auto()
+    SKIP = auto()
     """Instructions which are ignored when compiling to QIR (e.g., identity operation)"""
 
-    measurement = auto()
+    MEASUREMENT = auto()
     """Measurement instructions"""
 
-    output = auto()
+    OUTPUT = auto()
     """QIR output instructions"""
 
 
@@ -61,37 +61,37 @@ class Operations:
     Op = NamedTuple("Op", [("type", InstrType), ("name", str)])
 
     to_qir = {
-        "Identity": Op(InstrType.skip, "id"),
-        "X": Op(InstrType.base, "x"),
-        "Y": Op(InstrType.base, "y"),
-        "Z": Op(InstrType.base, "z"),
-        "Hadamard": Op(InstrType.base, "h"),
-        "S": Op(InstrType.base, "s"),
-        "T": Op(InstrType.base, "t"),
-        "RX": Op(InstrType.base, "rx"),
-        "RY": Op(InstrType.base, "ry"),
-        "RZ": Op(InstrType.base, "rz"),
-        "Rotation": Op(InstrType.external, "rot"),
-        "CX": Op(InstrType.base, "cx"),
-        "CY": Op(InstrType.external, "cy"),
-        "CZ": Op(InstrType.base, "cz"),
-        "SWAP": Op(InstrType.external, "swap"),
-        "CHadamard": Op(InstrType.external, "ch"),
-        "CRX": Op(InstrType.external, "crx"),
-        "CRY": Op(InstrType.external, "cry"),
-        "CRZ": Op(InstrType.external, "crz"),
-        "CRotation": Op(InstrType.external, "crot"),
-        "CSWAP": Op(InstrType.external, "cswap"),
-        "CCX": Op(InstrType.external, "ccnot"),
-        "Measurement": Op(InstrType.measurement, "mz"),
+        "Identity": Op(InstrType.SKIP, "id"),
+        "X": Op(InstrType.BASE, "x"),
+        "Y": Op(InstrType.BASE, "y"),
+        "Z": Op(InstrType.BASE, "z"),
+        "Hadamard": Op(InstrType.BASE, "h"),
+        "S": Op(InstrType.BASE, "s"),
+        "T": Op(InstrType.BASE, "t"),
+        "RX": Op(InstrType.BASE, "rx"),
+        "RY": Op(InstrType.BASE, "ry"),
+        "RZ": Op(InstrType.BASE, "rz"),
+        "Rotation": Op(InstrType.EXTERNAL, "rot"),
+        "CX": Op(InstrType.BASE, "cx"),
+        "CY": Op(InstrType.EXTERNAL, "cy"),
+        "CZ": Op(InstrType.BASE, "cz"),
+        "SWAP": Op(InstrType.EXTERNAL, "swap"),
+        "CHadamard": Op(InstrType.EXTERNAL, "ch"),
+        "CRX": Op(InstrType.EXTERNAL, "crx"),
+        "CRY": Op(InstrType.EXTERNAL, "cry"),
+        "CRZ": Op(InstrType.EXTERNAL, "crz"),
+        "CRotation": Op(InstrType.EXTERNAL, "crot"),
+        "CSWAP": Op(InstrType.EXTERNAL, "cswap"),
+        "CCX": Op(InstrType.EXTERNAL, "ccnot"),
+        "Measurement": Op(InstrType.MEASUREMENT, "mz"),
     }
 
-    from_qir = {v[1]: k for k, v in to_qir.items()}
+    from_qir = {v.name: k for k, v in to_qir.items()}
 
     from_qis_operation = {
-        f"__quantum__qis__{tup[1]}__body": name
-        for name, tup in to_qir.items()
-        if tup.type not in (InstrType.decompose, InstrType.invalid)
+        f"__quantum__qis__{op.name}__body": name
+        for name, op in to_qir.items()
+        if op.type not in (InstrType.DECOMPOSE, InstrType.INVALID)
     }
 
     # add special cases
@@ -116,7 +116,7 @@ class Instruction:
         self,
         type_: InstrType,
         name: str,
-        args: Sequence[Any],
+        args: Sequence[Union[int, float, pyqir.Constant]],
         external: Optional[pyqir.Function] = None,
     ) -> None:
         self._type = type_
@@ -125,7 +125,7 @@ class Instruction:
         self._assert_args(args)
         self._args = args
 
-        if self.type is InstrType.external and not external:
+        if self.type is InstrType.EXTERNAL and not external:
             raise ValueError("Instruction with type 'external' missing external function.")
 
         self._external = external
@@ -161,9 +161,9 @@ class Instruction:
         Args:
             builder: PyQIR module builder.
         """
-        if self._type in (InstrType.base, InstrType.measurement):
+        if self._type in (InstrType.BASE, InstrType.MEASUREMENT):
             self._execute_qis(builder)
-        elif self._type is InstrType.external:
+        elif self._type is InstrType.EXTERNAL:
             self._execute_external(builder)
         else:
             raise TypeError(f"Cannot execute instruction of type '{self._type.name}'")

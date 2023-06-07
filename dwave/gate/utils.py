@@ -24,7 +24,6 @@ from typing import _GenericAlias
 try:  # pragma: no cover
     from functools import cached_property
 except ImportError:  # pragma: no cover
-
     # Copyright (C) 2006-2013 Python Software Foundation.
     _NOT_FOUND = object()
 
