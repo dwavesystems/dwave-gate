@@ -16,7 +16,7 @@ OUTFOLDER    = demos/out
 ADD_DOWNLOAD_BUTTONS ="$\
 \$$a$\
 :download:\`Download Python source code \<$$(basename $$1 .rst).py\>\`\n\n$\
-:download:\`Download as Jupyter notebook \<$$(basename $$1 .rst).ipynb\>\`\n"
+:download:\`Download as Jupyter Notebook \<$$(basename $$1 .rst).ipynb\>\`\n"
 
 # Put it first so that "make" without argument is like "make help".
 help:
@@ -33,7 +33,7 @@ demos:
 	cp -a $(DEMOFOLDER)/. $(OUTFOLDER)
 
 	find $(DEMOFOLDER) -name '*.py' -exec sh -c '$(JUPYTEXT) --to ipynb $$1 --output "$(OUTFOLDER)/$$(basename $$1 .py).ipynb"' sh {} \;
-	find $(OUTFOLDER) -name '*.ipynb' -exec $(NBCONVERT) {} --to rst --output-dir=$(OUTFOLDER) --execute \;
+	find $(OUTFOLDER) -name '*.ipynb' -exec $(NBCONVERT) {} --to rst --output-dir=$(OUTFOLDER) --execute --RegexRemovePreprocessor.patterns="^%" \;
 	find $(OUTFOLDER) -name '*.rst' -exec sh -c 'sed -i "1s/^/.. _$$(basename $$1 .rst):\n\n/" $$1' sh {} \;
 
 	find $(OUTFOLDER) -name '*.rst' -exec sh -c 'sed -i -e $(ADD_DOWNLOAD_BUTTONS) $$1' sh {} \;

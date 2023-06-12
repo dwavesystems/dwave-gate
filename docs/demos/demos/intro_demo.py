@@ -13,32 +13,40 @@
 # ---
 
 """
-# Beginner's guide to `dwave-gate`
+# Beginner's Guide to `dwave-gate`
 
-With `dwave-gate` you can easily contruct and simulate quantum circuits. This tutorial will guide
-you through how to use the `dwave-gate` library to inspect different quantum gates, construct
-circuits out of them, and then simulate them using our performant state-vector simulator.
+`dwave-gate` lets you easily construct and simulate quantum circuits.
 
-We begin by importing the necessary modules.
+This tutorial guides you through using the `dwave-gate` library to inspect,
+construct circuits from, and simulate quantum gates using a performant
+state-vector simulator.
+
+## Circuits and Operations
+Begin by importing the necessary modules.
+
+*   `Circuit` objects contain the full quantum circuit, with all the operations,
+    measurements, qubits and bits.
+*   Operations, or gates, are objects that contain information related to a
+    particular operation, including its matrix representation, potential
+    decompositions, and how to apply it to a circuit.
 """
 
 from dwave.gate.circuit import Circuit
 import dwave.gate.operations as ops
 
 ###############################################################################
-# The `Circuit` object contains the full quantum circuit, with all the operations, measurements,
-# qubits and bits. Operations, or gates, are objects that contain information related to that
-# specific operation, including its matrix representation, potential decompositions, and how to
-# apply it to a circuit. Via the `operations` module, here shortened to `ops`, a variety of quantum
-# gates can be accessed.
+# You can use the `operations` module (shortened above to `ops`) to access a
+# variety of quantum gates; for example, a Pauli X operator.
 
 ops.X()
 
 ###############################################################################
-# As we can see, any operation can be instantiated without declaring which qubits it should be
-# applied to. We can also call the matrix property on either the gate class itself or on an instance
-# (i.e., an instantiated operation, which can contain additional parameters and/or qubit
-# information).
+# Notice above that an operation can be instantiated without declaring which qubits
+# it should be applied to.
+#
+# The matrix property can be accessed either via the gate class itself or an
+# instance (i.e., an instantiated operation, which can contain additional
+# parameters and qubit information).
 
 ops.X.matrix
 
@@ -50,19 +58,25 @@ ops.X.matrix
 ops.RZ(4.2).matrix
 
 ###############################################################################
-# Operations are applied when either the class, or an instance of the class, is called within a
-# circuit's context. They can be applied to the circuit in several different ways, as detailed
-# below. Both qubits and parameters can be passed either as single values (if supported by the gate)
-# or as sequences. Note that different types of gates accept slightly different argument, although
-# the qubits can _always_ be passed as sequences via the keyword argument `qubits`.
+# ## Circuit Context
+# Operations are applied by calling, within the context of a circuit, either a
+# class or an instance of a class.
 #
-# When instantiated within a circuit context, operations must always be applied to specific qubits
-# which in turn must be part of the circuits qubit register. The qubit register can be accessed via
-# the named tuple returned by the context manager as `q`, indexing into it to retrieve the
-# corresponding qubit.
+# You can apply operations to a circuit in several different ways, as demonstrated
+# below. You can pass both qubits and parameters as either single values (when
+# supported by the gate) or sequences. Note that different types of gates accept
+# slightly different arguments, although you can _always_ pass the qubits as
+# sequences via the keyword argument `qubits`.
 #
-# Let's start by creating a circuit object with 2 qubits in its register, and apply a single X-gate
-# to the first qubit.
+# Always apply any operations you instantiate within a circuit context to
+# specific qubits in the circuit's qubit register. You can access the qubit
+# register via the named tuple returned by the context manager as `q`, indexing
+# into it to retrieve the corresponding qubit.
+
+###############################################################################
+# ## Registers
+# This example starts by creating a circuit object with two qubits in its
+# register and applying a single X gate to the first qubit.
 
 circuit = Circuit(2)
 
@@ -70,16 +84,22 @@ with circuit.context as reg:
     ops.X(reg.q[0])
 
 ###############################################################################
-# We can access the qubit register via the `Circuit.qregisters` attribute, which currently should
-# contain a single qubit register with 2 qubits in it, but could contain any number of qubit
-# registers. If we'd want to, we could add another register with the `Circuit.add_qregister(n)`
-# method, where `n` would be the number of qubits in the new register, or add a qubit with
-# `Circuit.add_qubit()`, optinally passing a qubit object and/or a register to which to add it.
+# You can access the qubit register via the `Circuit.qregisters` attribute.
 #
-# The registers tuple can also be unwrapped directly into a qubit register `q` (and a classical
-# register `c`, but we'll get into that later).
+# In the current example, this attribute contains a single qubit register with
+# two qubits; it could contain any number of qubit registers. You can
 #
-# Below follows a few examples for how to apply different gates to the circuit.
+# * add another register with the `Circuit.add_qregister(n)` method, where `n`
+#   is the number of qubits in the new register
+# * add a qubit with `Circuit.add_qubit()`, optionally passing a qubit object
+#   and/or a register to which to add it.
+#
+# The registers tuple can also be unwrapped directly into a qubit register `q` (and a
+# classical register `c`).
+
+
+###############################################################################
+# ## Example: Applying Various gates to a Circuit
 
 
 circuit = Circuit(3)
@@ -109,26 +129,23 @@ with circuit.context as (q, c):
     ops.Toffoli(q)
 
 ###############################################################################
-# Printing the above circuit gives us some general information about the circuit: the type of
-# circuit, the number of qubits/bits and the number of operations.
+# Print the circuit above to see general information about it: type of circuit,
+# number of qubits/bits, and number of operations.
 
 print(circuit)
 
 ###############################################################################
-# We can also access the operations in the circuit via the `Circuit.circuit` attribute. This will
-# return a list of all operations which we can iterate over and print in the console.
+# You can also access operations in a circuit using the `Circuit.circuit`
+# attribute. The code below iterates over the returned list of all operations.
 
 
 for op in circuit.circuit:
     print(op)
 
 ###############################################################################
-# Note that e.g., CNOT and CX apply the exact same gate. CNOT is only an alias for CX (so they both
-# are labelled as CX in the circuit). There are also other aliases which you can spot either in the
-# source code for the operations module or read more about in the documentation.
-#
+# Note that the CNOT alias for the controlled NOT gate is labelled CX in the
+# circuit. You can find all operation aliases in the source code and documentation
+# for the operations module.
 
 ###############################################################################
 # ## Simulating a circuit
-
-""

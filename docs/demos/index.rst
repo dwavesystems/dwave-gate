@@ -1,4 +1,4 @@
-Demos and examples
+Demos and Examples
 ==================
 
 ``dwave-gate`` demonstrations and examples.
@@ -7,7 +7,7 @@ Demos and examples
 Tutorials
 ---------
 
-.. card:: Beginner's guide to ``dwave-gate``
+.. card:: Beginner's Guide to ``dwave-gate``
     :link: intro_demo
     :link-type: ref
 
