@@ -51,8 +51,8 @@ __all__ = [
     "CRotation",
     "CSWAP",
     "Fredkin",  # alias
-    "CCNOT",
-    "CCX",  # alias
+    "CCX",
+    "CCNOT",  # alias
     "Toffoli",  # alias
 ]
 
@@ -70,7 +70,6 @@ from dwave.gate.operations.base import (
     ParametricControlledOperation,
     ParametricOperation,
 )
-from dwave.gate.primitives import Qubit
 
 #####################################
 # Non-parametric single-qubit gates #

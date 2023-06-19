@@ -382,14 +382,14 @@ class ParametricOperation(Operation):
         return self._parameters
 
     def eval(
-        self, parameters: Optional[Sequence[complex]] = None, in_place: bool = False
+        self, parameters: Optional[Sequence[complex]] = None, inplace: bool = False
     ) -> ParametricOperation:
         """Evaluate operation with explicit parameters.
 
         Args:
             parameters: Parameters to replace operation variables with. Overrides potential variable
                 values. If ``None`` then variable values are used (if existent).
-            in_place: Whether to evaluate the parameters on ``self`` or on a copy of ``self`` (returned).
+            inplace: Whether to evaluate the parameters on ``self`` or on a copy of ``self`` (returned).
 
         Returns:
             ParametricOperation: Either ``self`` or a copy of ``self``.
@@ -397,7 +397,7 @@ class ParametricOperation(Operation):
         Raises:
             ValueError: If no parameters are passed and if variable has no set value.
         """
-        op = self if in_place else copy.deepcopy(self)
+        op = self if inplace else copy.deepcopy(self)
 
         for i, p in enumerate(op.parameters):
             if isinstance(p, Variable):

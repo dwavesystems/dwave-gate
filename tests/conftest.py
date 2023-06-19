@@ -24,6 +24,12 @@ from dwave.gate.registers import ClassicalRegister, QuantumRegister
 
 
 @pytest.fixture(scope="function")
+def dummy_function():
+    """Dummy function."""
+    return lambda _: None
+
+
+@pytest.fixture(scope="function")
 def two_qubit_circuit():
     """Circuit with two qubits and three operations."""
     circuit = Circuit(2)
@@ -77,7 +83,6 @@ def two_qubit_op(monkeypatch):
     """Empty two-qubit operation."""
 
     class DummyOp(Operation):
-
         _num_qubits: int = 2
 
     monkeypatch.setattr(DummyOp, "__abstractmethods__", set())
@@ -90,7 +95,6 @@ def two_qubit_parametric_op(monkeypatch):
     """Empty two-qubit parametric operation."""
 
     class DummyOp(ParametricOperation):
-
         _num_qubits: int = 2
         _num_params: int = 1
 
@@ -104,7 +108,6 @@ def two_qubit_controlled_op(monkeypatch):
     """Empty two-qubit controlled operation."""
 
     class DummyOp(ControlledOperation):
-
         _num_control: int = 1
         _num_target: int = 1
         _target_operation: Type[Operation] = ops.X

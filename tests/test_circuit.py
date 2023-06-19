@@ -939,7 +939,7 @@ class TestParametricCircuit:
             for p in op.parameters:
                 assert isinstance(p, Variable)
 
-        circuit = empty_parametric_circuit.eval([[4.2]], in_place=False)
+        circuit = empty_parametric_circuit.eval([[4.2]], inplace=False)
         for op in circuit.circuit:
             assert op.parameters == [4.2]
             assert isinstance(op.parameters[0], float)
@@ -957,7 +957,7 @@ class TestParametricCircuit:
             for p in op.parameters:
                 assert isinstance(p, Variable)
 
-        empty_parametric_circuit.eval([[4.2]], in_place=True)
+        empty_parametric_circuit.eval([[4.2]], inplace=True)
         for op in empty_parametric_circuit.circuit:
             assert op.parameters == [4.2]
             assert isinstance(op.parameters[0], float)

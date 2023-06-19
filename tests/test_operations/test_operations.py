@@ -389,7 +389,7 @@ class TestParametricOperations:
             assert isinstance(p, Variable)
 
         params = [complex(i) for i in range(ParamOp.num_parameters)]
-        new_op = op.eval(params, in_place=False)
+        new_op = op.eval(params, inplace=False)
         for i, p in enumerate(new_op.parameters):
             assert isinstance(p, complex)
             assert p == params[i]
@@ -406,7 +406,7 @@ class TestParametricOperations:
             assert isinstance(p, Variable)
 
         params = [complex(i) for i in range(ParamOp.num_parameters)]
-        op.eval(params, in_place=True)
+        op.eval(params, inplace=True)
         for i, p in enumerate(op.parameters):
             assert isinstance(p, complex)
             assert p == params[i]

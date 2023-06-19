@@ -199,7 +199,7 @@ class Circuit:
         Args:
             operation: Operation to append to the circuit.
         """
-        if self.is_locked() == True:
+        if self.is_locked():
             raise CircuitError(
                 "Circuit is locked and no more operations can be appended. To "
                 "unlock the circuit, call 'Circuit.unlock()' first."
@@ -442,7 +442,8 @@ class Circuit:
 
         Args:
             num_qubits: Number of qubits in the quantum register (defaults to 0, i.e., empty).
-            label: Quantum register label (defaults to 'qreg' followed by a incrementing integer starting at 0).
+            label: Quantum register label (defaults to 'qreg' followed by a incrementing
+                integer starting at 0).
         """
         if label is None:
             label = f"qreg{len(self.qregisters)}"
@@ -463,7 +464,8 @@ class Circuit:
 
         Args:
             num_qubits: Number of bits in the classical register (defaults to 0, i.e., empty).
-            label: Classical register label (defaults to 'creg' followed by a incrementing integer starting at 0).
+            label: Classical register label (defaults to 'creg' followed by a incrementing
+                integer starting at 0).
         """
         if label is None:
             label = f"creg{len(self.cregisters)}"
@@ -654,6 +656,45 @@ class Circuit:
 
         return header_str.strip() + "\n\n" + qasm_str.strip()
 
+    def to_qir(self, add_external: bool = False, bitcode: bool = False) -> Union[str, bytes]:
+        """Compile a circuit into QIR.
+
+        Args:
+            add_external: Whether to add external functions (not defined in QIR). If ``False``,
+                functions marked as external will be decomposed into valid operations (if possible).
+            bitcode: Whether to return QIR as a legible string or as bitcode.
+
+        Returns:
+            Union[str, bytes]: The QIR representation of the circuit.
+        """
+        # import outside toplevel to avoid circular imports
+        from dwave.gate.qir.compiler import qir_module
+
+        module = qir_module(self, add_external=add_external)
+        module.compile()
+
+        if bitcode:
+            return module.bitcode
+        return module.qir
+
+    @classmethod
+    def from_qir(cls, qir: Union[str, bytes], bitcode: bool = False) -> Circuit:
+        """Load a circuit from a QIR string or bitcode.
+
+        Args:
+            qir: The QIR string or bitcode to load into a circuit.
+            bitcode: Whether to expect the QIR as a string or as bitcode.
+
+        Returns:
+            Circuit: The circuit represented by the QIR string or bitcode.
+        """
+        # import outside toplevel to avoid circular imports
+        from dwave.gate.qir.loader import load_qir_bitcode, load_qir_string
+
+        if bitcode:
+            return load_qir_bitcode(qir, cls())
+        return load_qir_string(qir, cls())
+
 
 class ParametricCircuit(Circuit):
     """Class to build and manipulate parametric quantum circuits.
@@ -699,14 +740,15 @@ class ParametricCircuit(Circuit):
         return super().unlock()
 
     def eval(
-        self, parameters: Optional[Sequence[Sequence[complex]]] = None, in_place: bool = False
+        self, parameters: Optional[Sequence[Sequence[complex]]] = None, inplace: bool = False
     ) -> ParametricCircuit:
         """Evaluate circuit operations with explicit parameters.
 
         Args:
             parameters: Parameters to replace operation variables with. Overrides potential variable
                 values. If ``None`` then variable values are used (if existent).
-            in_place: Whether to evaluate the parameters on ``self`` or on a copy of ``self`` (returned).
+            inplace: Whether to evaluate the parameters on ``self`` or on a copy
+                of ``self`` (returned).
 
         Returns:
             ParametricOperation: Either ``self`` or a copy of ``self``.
@@ -714,12 +756,12 @@ class ParametricCircuit(Circuit):
         Raises:
             ValueError: If no parameters are passed and if variable has no set value.
         """
-        circuit = self if in_place else copy.deepcopy(self)
+        circuit = self if inplace else copy.deepcopy(self)
 
         for i, op in enumerate(circuit.circuit):
             eval = getattr(op, "eval", None)
             params = parameters[i] if parameters else None
-            circuit.circuit[i] = eval(params, in_place) if eval else op
+            circuit.circuit[i] = eval(params, inplace) if eval else op
 
         return circuit
 
@@ -767,7 +809,7 @@ class CircuitContext:
     """
 
     _active_context: Optional[CircuitContext] = None
-    """Optional[CircuitContext]: Current active context; can only be one at a time during runtime."""
+    """Current active context; can only be one at a time during runtime."""
     on_exit_functions: List[Callable] = []
     """List of functions that should be called on context exit. Cleared on context exit."""
 
@@ -833,7 +875,7 @@ class CircuitContext:
         self,
     ) -> Registers:
         """Enters the context and sets itself as active."""
-        if self.circuit.is_locked() == True:
+        if self.circuit.is_locked() is True:
             raise CircuitError(
                 "Circuit is locked and no more operations can be appended. To "
                 "unlock the circuit, call 'Circuit.unlock()' first."
