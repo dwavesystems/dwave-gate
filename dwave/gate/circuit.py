@@ -22,6 +22,13 @@ operations and instructions for running the circuits on simulators or hardware. 
 from __future__ import annotations
 
 import itertools
+import warnings
+from typing import TYPE_CHECKING
+
+import numpy as np
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 __all__ = [
     "CircuitError",
@@ -95,37 +102,66 @@ class Circuit:
         if num_bits is not None:
             self.add_cregister(num_bits=num_bits)
 
-        self._locked = False
+        self._state: NDArray = None
+        self._density_matrix: NDArray = None
 
-    def __call__(self, qubits: Qubits) -> None:
+        self._locked: bool = False
+
+    def __call__(self, qubits: Qubits, bits: Optional[Bits] = None) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
         Args:
             qubits: Qubits on which the circuit operations should be applied. The qubits used in
                 the circuit will be exchanged with the corresponding ones (e.g., with the same
                 index as) in the active context.
+            bits: Bits in which to store measurement values if measurements have been made.
 
         Raises:
             ValueError: If an invalid number of qubits is passed.
             CircuitError: If called outside of an active context.
         """
+        if CircuitContext.active_context is None:
+            raise CircuitError("Can only apply circuit object inside a circuit context.")
+        if CircuitContext.active_context.circuit is self:
+            raise TypeError("Cannot apply circuit in its own context.")
+
         if isinstance(qubits, Qubit):
             qubits = [qubits]
 
         if len(qubits) != len(self.qubits):
             raise ValueError(f"Circuit requires {len(self.qubits)} qubits, got {len(qubits)}.")
 
-        if CircuitContext.active_context is None:
-            raise CircuitError("Can only apply circuit object inside a circuit context.")
-        if CircuitContext.active_context.circuit is self:
-            raise TypeError("Cannot apply circuit in its own context.")
+        if bits:
+            if isinstance(bits, Bit):
+                bits = [bits]
+
+            if len(bits) != len(self.bits):
+                raise ValueError(f"Circuit requires {len(self.bits)} bits, got {len(bits)}.")
+
+            bit_map = dict(zip(self.bits, bits))
 
         qubit_map = dict(zip(self.qubits, qubits))
+
         for op in self.circuit:
             mapped_qubits = [qubit_map[qb] for qb in op.qubits or []]
 
             # NOTE: avoid circular imports; needed to check operation type
-            from dwave.gate.operations.base import ControlledOperation, ParametricOperation
+            from dwave.gate.operations.base import (
+                ControlledOperation,
+                Measurement,
+                ParametricOperation,
+            )
+
+            if isinstance(op, Measurement):
+                if bits:
+                    mapped_bits = [bit_map[qb] for qb in op.bits or []]
+                    op.__class__(qubits=mapped_qubits) | mapped_bits
+                    continue
+                else:
+                    warnings.warn(
+                        "Measurements not stored in circuit bits. "
+                        "Must pass bits to circuit call."
+                    )
 
             if isinstance(op, ParametricOperation):
                 op.__class__(op.parameters, qubits=mapped_qubits)
@@ -163,7 +199,7 @@ class Circuit:
         Args:
             operation: Operation to append to the circuit.
         """
-        if self.is_locked() == True:
+        if self.is_locked():
             raise CircuitError(
                 "Circuit is locked and no more operations can be appended. To "
                 "unlock the circuit, call 'Circuit.unlock()' first."
@@ -219,6 +255,57 @@ class Circuit:
             bit_reg += creg
 
         return bit_reg
+
+    @property
+    def state(self) -> Optional[NDArray]:
+        """The resulting state after simulating the circuit."""
+        if self._state is None and self._density_matrix is not None:
+            raise CircuitError("State is mixed. Use 'Circuit.density_matrix' to access.")
+        return self._state
+
+    @property
+    def density_matrix(self) -> Optional[NDArray]:
+        """The density matrix representation of the state."""
+        if self._state is not None and self._density_matrix is None:
+            self._density_matrix = self._state.reshape(-1, 1) @ self._state.reshape(1, -1)
+        return self._density_matrix
+
+    def set_state(self, state: NDArray, force: bool = False, normalize: bool = False) -> None:
+        """Set the state of the circuit (used primarily with simulator).
+
+        Sets either the ``Circuit.state`` attribute or the ``Circuit.density_matrix`` attribute
+        depending on the shape of the state.
+
+        Args:
+            state: The state (pure or mixed) to set.
+            force: Whether to overwrite an already set state or not.
+            normalize: Whether to normalize the state before setting.
+        """
+        state_is_set = self._state is not None or self._density_matrix is not None
+        if not force and state_is_set:
+            raise CircuitError("State already set. Use 'force=True' to force set new state.")
+
+        if normalize:
+            state = state / np.linalg.norm(state)
+
+        self._assert_state(state)
+
+        if state.ndim == 1:
+            self._state = state
+            self._density_matrix = None
+
+        else:  # if state.ndim == 2:
+            self._state = None
+            self._density_matrix = state
+
+    def _assert_state(self, state: NDArray) -> None:
+        """Check whether a state is the correct shape and is normalized."""
+        size = 2 << (self.num_qubits - 1)
+        if state.shape != (size,) and state.shape != (size, size):
+            raise ValueError(f"State has incorrect shape. Should have size {size}.")
+
+        if not np.isclose(np.linalg.norm(state), 1):
+            raise ValueError("State is not normalized.")
 
     @property
     def num_qubits(self) -> int:
@@ -355,7 +442,8 @@ class Circuit:
 
         Args:
             num_qubits: Number of qubits in the quantum register (defaults to 0, i.e., empty).
-            label: Quantum register label (defaults to 'qreg' followed by a incrementing integer starting at 0).
+            label: Quantum register label (defaults to 'qreg' followed by a incrementing
+                integer starting at 0).
         """
         if label is None:
             label = f"qreg{len(self.qregisters)}"
@@ -376,7 +464,8 @@ class Circuit:
 
         Args:
             num_qubits: Number of bits in the classical register (defaults to 0, i.e., empty).
-            label: Classical register label (defaults to 'creg' followed by a incrementing integer starting at 0).
+            label: Classical register label (defaults to 'creg' followed by a incrementing
+                integer starting at 0).
         """
         if label is None:
             label = f"creg{len(self.cregisters)}"
@@ -567,6 +656,45 @@ class Circuit:
 
         return header_str.strip() + "\n\n" + qasm_str.strip()
 
+    def to_qir(self, add_external: bool = False, bitcode: bool = False) -> Union[str, bytes]:
+        """Compile a circuit into QIR.
+
+        Args:
+            add_external: Whether to add external functions (not defined in QIR). If ``False``,
+                functions marked as external will be decomposed into valid operations (if possible).
+            bitcode: Whether to return QIR as a legible string or as bitcode.
+
+        Returns:
+            Union[str, bytes]: The QIR representation of the circuit.
+        """
+        # import outside toplevel to avoid circular imports
+        from dwave.gate.qir.compiler import qir_module
+
+        module = qir_module(self, add_external=add_external)
+        module.compile()
+
+        if bitcode:
+            return module.bitcode
+        return module.qir
+
+    @classmethod
+    def from_qir(cls, qir: Union[str, bytes], bitcode: bool = False) -> Circuit:
+        """Load a circuit from a QIR string or bitcode.
+
+        Args:
+            qir: The QIR string or bitcode to load into a circuit.
+            bitcode: Whether to expect the QIR as a string or as bitcode.
+
+        Returns:
+            Circuit: The circuit represented by the QIR string or bitcode.
+        """
+        # import outside toplevel to avoid circular imports
+        from dwave.gate.qir.loader import load_qir_bitcode, load_qir_string
+
+        if bitcode:
+            return load_qir_bitcode(qir, cls())
+        return load_qir_string(qir, cls())
+
 
 class ParametricCircuit(Circuit):
     """Class to build and manipulate parametric quantum circuits.
@@ -581,7 +709,9 @@ class ParametricCircuit(Circuit):
 
         super().__init__(num_qubits, num_bits)
 
-    def __call__(self, parameters: List[complex], qubits: Qubits) -> None:
+    def __call__(
+        self, parameters: List[complex], qubits: Qubits, bits: Optional[Bits] = None
+    ) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
         Args:
@@ -589,6 +719,7 @@ class ParametricCircuit(Circuit):
             qubits: Qubits on which the circuit operations should be applied. The qubits used in
                 the circuit will be exchanged with the corresponding ones (e.g., with the same
                 index as) in the active context.
+            bits: Bits in which to store measurement values if measurements have been made.
 
         Raises:
             ValueError: If an invalid number of qubits are passed.
@@ -601,7 +732,7 @@ class ParametricCircuit(Circuit):
         # delay reset variables function call to on context exit
         CircuitContext.on_exit_functions.append(self.reset_variables)
 
-        return super().__call__(qubits=qubits)
+        return super().__call__(qubits=qubits, bits=bits)
 
     def unlock(self) -> None:
         """Unlocks the circuit allowing for further operations to be applied."""
@@ -609,14 +740,15 @@ class ParametricCircuit(Circuit):
         return super().unlock()
 
     def eval(
-        self, parameters: Optional[Sequence[Sequence[complex]]] = None, in_place: bool = False
+        self, parameters: Optional[Sequence[Sequence[complex]]] = None, inplace: bool = False
     ) -> ParametricCircuit:
         """Evaluate circuit operations with explicit parameters.
 
         Args:
             parameters: Parameters to replace operation variables with. Overrides potential variable
                 values. If ``None`` then variable values are used (if existent).
-            in_place: Whether to evaluate the parameters on ``self`` or on a copy of ``self`` (returned).
+            inplace: Whether to evaluate the parameters on ``self`` or on a copy
+                of ``self`` (returned).
 
         Returns:
             ParametricOperation: Either ``self`` or a copy of ``self``.
@@ -624,12 +756,12 @@ class ParametricCircuit(Circuit):
         Raises:
             ValueError: If no parameters are passed and if variable has no set value.
         """
-        circuit = self if in_place else copy.deepcopy(self)
+        circuit = self if inplace else copy.deepcopy(self)
 
         for i, op in enumerate(circuit.circuit):
             eval = getattr(op, "eval", None)
             params = parameters[i] if parameters else None
-            circuit.circuit[i] = eval(params, in_place) if eval else op
+            circuit.circuit[i] = eval(params, inplace) if eval else op
 
         return circuit
 
@@ -677,7 +809,7 @@ class CircuitContext:
     """
 
     _active_context: Optional[CircuitContext] = None
-    """Optional[CircuitContext]: Current active context; can only be one at a time during runtime."""
+    """Current active context; can only be one at a time during runtime."""
     on_exit_functions: List[Callable] = []
     """List of functions that should be called on context exit. Cleared on context exit."""
 
@@ -743,7 +875,7 @@ class CircuitContext:
         self,
     ) -> Registers:
         """Enters the context and sets itself as active."""
-        if self.circuit.is_locked() == True:
+        if self.circuit.is_locked() is True:
             raise CircuitError(
                 "Circuit is locked and no more operations can be appended. To "
                 "unlock the circuit, call 'Circuit.unlock()' first."

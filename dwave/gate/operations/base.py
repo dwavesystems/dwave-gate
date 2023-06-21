@@ -31,7 +31,7 @@ __all__ = [
 
 import copy
 import warnings
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -49,11 +49,10 @@ from typing import (
 
 import numpy as np
 
-from dwave.gate.circuit import Circuit, CircuitContext, ParametricCircuit
+from dwave.gate.circuit import Circuit, CircuitContext, CircuitError, ParametricCircuit
 from dwave.gate.mixedproperty import mixedproperty
 from dwave.gate.primitives import Bit, Qubit
 from dwave.gate.registers.registers import ClassicalRegister, Variable
-from dwave.gate.tools.samples import sample
 from dwave.gate.tools.unitary import build_controlled_unitary, build_unitary
 
 if TYPE_CHECKING:
@@ -383,14 +382,14 @@ class ParametricOperation(Operation):
         return self._parameters
 
     def eval(
-        self, parameters: Optional[Sequence[complex]] = None, in_place: bool = False
+        self, parameters: Optional[Sequence[complex]] = None, inplace: bool = False
     ) -> ParametricOperation:
         """Evaluate operation with explicit parameters.
 
         Args:
             parameters: Parameters to replace operation variables with. Overrides potential variable
                 values. If ``None`` then variable values are used (if existent).
-            in_place: Whether to evaluate the parameters on ``self`` or on a copy of ``self`` (returned).
+            inplace: Whether to evaluate the parameters on ``self`` or on a copy of ``self`` (returned).
 
         Returns:
             ParametricOperation: Either ``self`` or a copy of ``self``.
@@ -398,7 +397,7 @@ class ParametricOperation(Operation):
         Raises:
             ValueError: If no parameters are passed and if variable has no set value.
         """
-        op = self if in_place else copy.deepcopy(self)
+        op = self if inplace else copy.deepcopy(self)
 
         for i, p in enumerate(op.parameters):
             if isinstance(p, Variable):
@@ -692,26 +691,55 @@ class Measurement(Operation):
         """The circuit state when measured."""
         return self._measured_state
 
-    def sample(self, qubit: Optional[int] = None, num_samples: int = 1) -> Optional[Sequence[int]]:
+    def sample(
+        self,
+        qubits: Optional[Sequence[int]] = None,
+        num_samples: int = 1,
+        as_bitstring: bool = False,
+    ) -> List[Union[int, str]]:
         """Sample the measured state.
 
         Args:
-            qubit: The qubit to sample. Not required if measurement is on a single qubit.
-            num_samples: The number of samples to measure.
+            qubits: The qubits to sample. If not given, all measured qubits are sampled.
+            num_samples: The number of samples to to return.
+            as_bitstring: Whether to return the samples as bitstrings or as
+                lists of integers (default).
 
         Returns:
-            Sequence[int]: The measurement samples.
+            List[Union[int, str]]: The measurement samples for each qubit.
         """
-        if qubit is None and self.num_qubits != 1:
-            raise ValueError("Measurement has several qubit. Must specify which to sample.")
+        # NOTE: avoid circular imports; operations used in simulator
+        from dwave.gate.simulator.simulator import sample_qubit
 
-        if self.state is not None:
-            return sample(
-                qubit or self._measured_qubit_indices[0], self.state, num_samples=num_samples
+        if self.state is None:
+            raise CircuitError(
+                "Measurement has no state. Likely due to circuit not having been simulated."
             )
-        return None
 
-    def expval(self, qubit: Optional[int] = None, num_samples: int = 1000) -> Optional[float]:
+        if qubits is None:
+            qubits = self._measured_qubit_indices
+
+        num_qubits = len(self.state).bit_length() - 1
+
+        if max(qubits) >= num_qubits:
+            raise ValueError(
+                f"Cannot sample qubit {max(qubits)} (count. from 0). "
+                f"State has only {num_qubits} qubits."
+            )
+
+        rng = np.random.default_rng()
+        samples = []
+        for _ in range(num_samples):
+            state_copy = self.state.copy()
+            samples.append(
+                [sample_qubit(qb, state_copy, rng, collapse_state=True) for qb in qubits]
+            )
+
+        if as_bitstring:
+            return ["".join(map(str, s)) for s in samples]
+        return samples
+
+    def expval(self, qubits: Optional[int] = None, num_samples: int = 1000) -> List[float]:
         """Calculate the expectation value of a measurement.
 
         Args:
@@ -719,13 +747,10 @@ class Measurement(Operation):
             num_samples: The number of samples to use when calculating the expectation value.
 
         Returns:
-            float: The expectation value of the measurement.
+            list[float]: The expectation values for each qubit measurement.
         """
-        samples = self.sample(qubit, num_samples)
-
-        if samples is not None:
-            return np.mean(samples, dtype=float)
-        return None
+        samples = self.sample(qubits, num_samples=num_samples)
+        return np.transpose(samples).mean(axis=1).tolist()
 
 
 class Barrier(Operation):
