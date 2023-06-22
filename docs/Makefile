@@ -43,8 +43,16 @@ demos:
 		-e $(ADD_FILE_NAME_LABEL) \
 		-e "s/\`\`Circuit\`\`/:class:\`~dwave.gate.circuit.Circuit\`/g" \
 		-e "s/\`\`Circuit\.\(\w*\)\`\`/:meth:\`~dwave.gate.circuit.Circuit.\1\`/g" \
+		-e "s/\`\`ParametricCircuit\`\`/:class:\`~dwave.gate.circuit.ParametricCircuit\`/g" \
+		-e "s/\`\`Operation\`\`/:class:\`~dwave.gate.operations.base.Operation\`/g" \
 		-e "s/\`\`operations\`\`/:mod:\`~dwave.gate.operations\`/g" \
 		-e "s/\`\`ops\.\(\w*\)\`\`/:class:\`~dwave.gate.operations.operations.\1\`/g" \
+		-e "s/\`\`Measurement\`\`/:mod:\`~dwave.gate.operations.base.Measurement\`/g" \
+		-e "s/\`\`ParametricOperation\`\`/:mod:\`~dwave.gate.operations.base.ParametricOperation\`/g" \
+		-e "s/\`\`ControlledOperation\`\`/:mod:\`~dwave.gate.operations.base.ControlledOperation\`/g" \
+		-e "s/\`\`ParametricControlledOperation\`\`/:mod:\`~dwave.gate.operations.base.ParametricControlledOperation\`/g" \
+		-e "s/\`\`simulate\`\`/:mod:\`~dwave.gate.simulator.simulate\`/g" \
+		-e "s/\`\`simulator\.\(\w*\)\`\`/:class:\`~dwave.gate.simulator.\1\`/g" \
 		-e $(ADD_DOWNLOAD_BUTTONS) \
 	$$1' sh {} \; \
 
