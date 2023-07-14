@@ -194,6 +194,20 @@ class TestOperations:
         op.conditional(classical_register[0])
         assert op._cond == (classical_register[0],)
 
+    def test_call_instance(self, Op):
+        """Test returning a new instance by calling an operation instance."""
+        if issubclass(Op, ParametricOperation):
+            op_1 = Op([0 for _ in range(Op.num_parameters)])
+        else:
+            op_1 = Op()
+
+        # parametric operation instances will already contain the set parameters
+        # and can thus directly be called without parameter argument
+        op_2 = op_1()
+
+        assert op_1 == op_2
+        assert op_1 is not op_2
+
 
 class TestCustomOperations:
     """Unit tests for custom operation inheriting from one of the base classes."""

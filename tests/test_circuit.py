@@ -625,6 +625,19 @@ class TestCircuit:
         with pytest.raises(ValueError, match="already present in the circuit"):
             two_bit_circuit.add_cregister(label="creg0")
 
+    def test_call_operation_instance(self):
+        """Test calling an operation instance."""
+        circuit = Circuit(3)
+        with circuit.context as reg:
+            ops.CNOT(reg.q[0], reg.q[1])(reg.q[1], reg.q[2])(reg.q[2], reg.q[0])
+
+        q0, q1, q2 = circuit.qubits
+
+        assert len(circuit.circuit) == 3
+        assert circuit.circuit[0] == ops.CNOT(q0, q1)
+        assert circuit.circuit[1] == ops.CNOT(q1, q2)
+        assert circuit.circuit[2] == ops.CNOT(q2, q0)
+
     def test_call(self):
         """Test calling the circuit within a context to apply it to the active context."""
         circuit_1 = Circuit(2)
