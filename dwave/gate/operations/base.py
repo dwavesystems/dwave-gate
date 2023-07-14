@@ -66,6 +66,12 @@ Parameters = Union[Variable, complex, Sequence[Union[Variable, complex]]]
 CustomOperation = TypeVar("CustomOperation", bound="Operation")
 CustomParametricOperation = TypeVar("CustomParametricOperation", bound="ParametricOperation")
 
+# Bounded type operations; exchange for 'typing.Self' after deprecating Python 3.10
+TOperation = TypeVar("TOperation", bound="Operation")
+TPOperation = TypeVar("TPOperation", bound="ParametricOperation")
+TCOperation = TypeVar("TCOperation", bound="ControlledOperation")
+TPCOperation = TypeVar("TPCOperation", bound="ParametricControlledOperation")
+
 
 class OperationError(Exception):
     """Exception to be raised when there is an error with an OperationError."""
@@ -242,15 +248,18 @@ class Operation(metaclass=ABCLockedAttr):
             return [f"{mapping[qb][0]}[{mapping[qb][1]}]" for qb in self.qubits]
         return [f"q[{i}]" for i in range(self.num_qubits)]
 
-    def __call__(self, qubits: Optional[Sequence[Qubit]] = None) -> None:
+    def __call__(self, qubits: Optional[Sequence[Qubit]] = None) -> TOperation:
         """Apply (or reapply) the operation within a context.
 
         Args:
             qubits: Qubits on which the operation should be applied. Only
                 required if not already declared in operation.
+
+        Returns:
+            Operation: The applied operation (copy of the called operation).
         """
         qubits = qubits or self.qubits
-        self.__class__(qubits)
+        return self.__class__(qubits)
 
     def __eq__(self, op: Operation) -> bool:
         """Returns whether two operations are considered equal."""
@@ -441,15 +450,18 @@ class ParametricOperation(Operation):
         # cast to list for convention
         return list(params)
 
-    def __call__(self, qubits: Optional[Sequence[Qubit]] = None):
+    def __call__(self, qubits: Optional[Sequence[Qubit]] = None) -> TPOperation:
         """Apply (or reapply) the operation within a context.
 
         Args:
             qubits: Qubits on which the operation should be applied. Only
                 required if not already declared in operation.
+
+        Returns:
+            Operation: The applied operation (copy of the called operation).
         """
         qubits = qubits or self.qubits
-        self.__class__(self.parameters, qubits)
+        return self.__class__(self.parameters, qubits)
 
 
 class ControlledOperation(Operation):
@@ -505,18 +517,21 @@ class ControlledOperation(Operation):
         self,
         control: Optional[Sequence[Qubit]] = None,
         target: Optional[Sequence[Qubit]] = None,
-    ):
+    ) -> TCOperation:
         """Apply (or reapply) the operation within a context.
 
         Args:
             control: Control qubits. Only required if not already declared in operation.
             target: Target qubits on which the operation should be applied. Only
                 required if not already declared in operation.
+
+        Returns:
+            Operation: The applied operation (copy of the called operation).
         """
         control = control or self.control
         target = target or self.target
 
-        self.__class__(control, target)  # type: ignore
+        return self.__class__(control, target)  # type: ignore
 
     @mixedproperty
     def num_qubits(cls, self) -> int:
@@ -620,18 +635,21 @@ class ParametricControlledOperation(ControlledOperation, ParametricOperation):
 
     def __call__(
         self, control: Optional[Sequence[Qubit]] = None, target: Optional[Sequence[Qubit]] = None
-    ):
+    ) -> TPCOperation:
         """Apply (or reapply) the operation within a context.
 
         Args:
             control: Control qubits. Only required if not already declared in operation.
             target: Target qubits on which the operation should be applied. Only
                 required if not already declared in operation.
+
+        Returns:
+            Operation: The applied operation (copy of the called operation).
         """
         control = control or self.control
         target = target or self.target
 
-        self.__class__(self.parameters, control, target)  # type: ignore
+        return self.__class__(self.parameters, control, target)  # type: ignore
 
     @mixedproperty(self_required=True)
     def matrix(cls, self) -> NDArray:

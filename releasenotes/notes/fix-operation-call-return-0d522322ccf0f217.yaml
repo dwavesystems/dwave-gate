@@ -1,0 +1,3 @@
+---
+fixes:
+  - Fix return type from ``Operation.__call__`` and subclasses.
