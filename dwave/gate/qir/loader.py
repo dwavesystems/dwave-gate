@@ -91,10 +91,16 @@ def _module_to_circuit(module: Module, circuit: Optional[Circuit] = None) -> Cir
     meas_bits = []
 
     for func in module.functions:
+        ret_set = False
         for block in func.basic_blocks:
+            # if return has been set, then ignore rest of blocks
+            if ret_set:
+                break
+
             for instr in block.instructions:
-                if instr.opcode is Opcode.RET:
+                if instr.opcode == Opcode.RET:
                     # break block on return code
+                    ret_set = True
                     break
 
                 if instr.opcode == Opcode.CALL:
