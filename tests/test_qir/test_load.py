@@ -225,3 +225,35 @@ class TestLoader:
         circuit.append(ops.Z(circuit.qubits[0]))
 
         assert [op.name for op in circuit.circuit] == ["X", "Y", "Z"]
+
+    def test_early_ret(self):
+        """Test setting a return in an earlier block."""
+        qir_string = inspect.cleandoc(
+            r"""
+            ; ModuleID = 'Citrus'
+            source_filename = "Citrus"
+
+            %Qubit = type opaque
+
+            define void @main() {
+              entry:
+              call void @__quantum__rt__initialize(i8* null)
+              call void @__quantum__qis__x__body(%Qubit* null)
+              ret void
+
+              body:                                             ; preds = %entry
+              call void @__quantum__qis__y__body(%Qubit* null)
+              ret void
+            }
+
+            declare void @__quantum__rt__initialize(i8*)
+            declare void @__quantum__qis__x__body(%Qubit*)
+            declare void @__quantum__qis__y__body(%Qubit*)
+        """
+        )
+        circuit = Circuit(2)
+
+        circuit = load_qir_string(qir_string, circuit=circuit)
+
+        assert len(circuit.circuit) == 1
+        assert [op.name for op in circuit.circuit] == ["X"]

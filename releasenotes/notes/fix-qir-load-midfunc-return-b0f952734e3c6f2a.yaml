@@ -1,0 +1,3 @@
+---
+fixes:
+  - Fixes loading QIR scripts with a return mid-function.
