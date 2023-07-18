@@ -39,6 +39,7 @@ __all__ = [
 ]
 
 import copy
+from functools import cached_property
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -63,7 +64,6 @@ from dwave.gate.registers.registers import (
     QuantumRegister,
     SelfIncrementingRegister,
 )
-from dwave.gate.utils import cached_property
 
 if TYPE_CHECKING:
     from dwave.gate.operations.base import Operation
