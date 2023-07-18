@@ -25,10 +25,7 @@ except ImportError:  # pragma: no cover
     pyqir_installed = False
 else:
     # pyqir>=0.8 required
-    # after deprecating py3.7 use importlib.metadata.version instead'
-    from pkg_resources import get_distribution
-
-    version = lambda v: get_distribution(v).version  # noqa: E731
+    from importlib.metadata import version
 
     def parse(version: str) -> Tuple[str, str, str]:
         "Parse a MAJOR.MINOR.PATCH version string into a tuple."
