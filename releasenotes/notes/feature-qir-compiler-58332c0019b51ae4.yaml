@@ -1,0 +1,53 @@
+---
+features:
+  - |
+    Adds support for compiling circuits into the Quantum Intermediate Representation (QIR)
+    language using PyQIR API and qirlib LLVM wrapper.
+
+    .. code-block:: python
+
+      circuit = Circuit(2)
+
+      with circuit.context as reg:
+          ops.X(reg.q[0])
+          ops.Y(reg.q[1])
+
+      qir_string = circuit.to_qir()
+
+    Circuits can also be compiled directly into bitcode.
+
+    .. code-block:: python
+
+      qir_string = circuit.to_qir(bitcode=True)
+
+  - |
+    Adds a Quantum Intermediate Representation (QIR) loader which consumes a QIR script and returns
+    a corresponding circuit containing the same instruction.
+
+    .. code-block::
+
+      ; ModuleID = 'Citrus'
+      source_filename = "Citrus"
+
+      %Qubit = type opaque
+
+      define void @main() {
+        entry:
+        call void @__quantum__rt__initialize(i8* null)
+        call void @__quantum__qis__x__body(%Qubit* null)
+        call void @__quantum__qis__y__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+        ret void
+      }
+
+      declare void @__quantum__rt__initialize(i8*)
+      declare void @__quantum__qis__x__body(%Qubit*)
+      declare void @__quantum__qis__y__body(%Qubit*)
+
+    The above QIR script can be loaded into a dwave-gate circuit using the
+    ``dwave.gate.qir.loader.load_qir_string`` function.
+
+    .. code-block:: python
+
+      from dwave.gate.qir.loader import load_qir_string
+
+      circuit = load_qir_string(qir_string, circuit=circuit)
