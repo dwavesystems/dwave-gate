@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import itertools
 
+from dwave.gate.drawer import CircuitDrawer
+
 __all__ = [
     "CircuitError",
     "Circuit",
@@ -363,7 +365,7 @@ class Circuit:
         if label in self._qregisters:
             raise ValueError(f"Quantum register {label} already present in the circuit.")
 
-        data = (Qubit(str(i)) for i in range(self.num_qubits, self.num_qubits + num_qubits))
+        data = (Qubit(i) for i in range(self.num_qubits, self.num_qubits + num_qubits))
         self._qregisters[label] = QuantumRegister(data)
 
         # remove cached 'qubits' attribute when updating 'qregisters'
@@ -508,6 +510,10 @@ class Circuit:
                 return (i, idx)
 
         raise ValueError(f"Bit {bit} not found in any register.")
+
+    def draw(self):
+        """Draw the circuit in the console using the built-in Circuit Drawer."""
+        return CircuitDrawer.draw_circuit(circuit=self)
 
     def to_qasm(self, version: str = "2.0", **kwargs) -> str:
         """Converts the Circuit into an OpenQASM string.

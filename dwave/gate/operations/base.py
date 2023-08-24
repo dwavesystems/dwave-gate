@@ -264,15 +264,17 @@ class Operation(metaclass=ABCLockedAttr):
 
     def __repr__(self) -> str:
         """Returns the representation of the Operation object."""
+        qubits = tuple(q.label for q in self.qubits)
+        class_name = self.__class__.__base__.__name__
         if self._cond:
-            return f"<{self.__class__.__base__.__name__}: {self.name}, qubits={self.qubits}, conditional: {self._cond}>"
-        return f"<{self.__class__.__base__.__name__}: {self.name}, qubits={self.qubits}>"
+            return f"<{class_name}: {self.name}, qubits={qubits}, conditional: {tuple(self._cond)}>"
+        return f"<{class_name}: {self.name}, qubits={qubits}>"
 
     @mixedproperty
     def name(cls, self) -> str:
         """Qubit operation name."""
         if self and hasattr(self, "parameters"):
-            params = f"({self.parameters})"
+            params = f"({', '.join(map(str, self.parameters))})"
             return cls.__name__ + params  # type: ignore
         return cls.__name__  # type: ignore
 
@@ -732,9 +734,13 @@ class Barrier(Operation):
     """Class representing a barrier operation.
 
     Args:
-        qubits: Qubits on which the barrier operation should be applied.
-            Only required when applying a barrier operation within a circuit
-            context.
+        qubits: Qubits on which the barrier operation should be applied. If ``None``
+            and applied within a circuit context, all circuit qubits are used
     """
 
     _num_qubits: Optional[int] = None
+
+    def __init__(self, qubits: Optional[Qubits] = None) -> None:
+        if CircuitContext.active_context and qubits is None:
+            return super().__init__(qubits=CircuitContext.active_context.circuit.qubits)
+        return super().__init__(qubits=qubits)
