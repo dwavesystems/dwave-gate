@@ -1,0 +1,5 @@
+---
+features:
+  - Add support and build wheels for Python 3.12.
+  - Build C++ extensions with Cython 3.
+

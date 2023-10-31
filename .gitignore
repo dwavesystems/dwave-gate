@@ -27,6 +27,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+worktrees/
 
 # Installer logs
 pip-log.txt
