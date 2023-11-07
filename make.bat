@@ -41,6 +41,7 @@ GOTO :EOF
 
 :clean-docs
 	CALL .\docs\make.bat clean
+	IF EXIST "docs/demos/out/" RMDIR /S /Q "docs/demos/out/"
 	GOTO :EOF
 
 :format

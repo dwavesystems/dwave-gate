@@ -17,6 +17,7 @@ dwave-gate
     :maxdepth: 1
 
     reference/index
+    demos/index
     release_notes
 
 .. toctree::

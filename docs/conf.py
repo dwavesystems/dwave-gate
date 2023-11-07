@@ -21,6 +21,7 @@ extensions = [
     'sphinx_autodoc_typehints',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
+    'sphinx_design',
 ]
 
 templates_path = ['_templates']

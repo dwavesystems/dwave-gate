@@ -57,11 +57,13 @@ coverage:
 
 .PHONY: docs
 docs:
+	make -C docs/ demos
 	make -C docs/ html
 
 .PHONY: clean-docs
 clean-docs:
 	make -C docs/ clean
+	rm -rf docs/demos/out/
 
 .PHONY: format
 format:
