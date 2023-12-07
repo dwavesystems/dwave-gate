@@ -118,7 +118,7 @@ class TestLoader:
 
             declare void @__quantum__rt__result_record_output(%Result*, i8*)
 
-            attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="3" "required_num_results"="3" }
+            attributes #0 = { "entry_point" "num_required_qubits"="3" "num_required_results"="3" "output_labeling_schema" "qir_profiles"="custom" }
             attributes #1 = { "irreversible" }
 
             !llvm.module.flags = !{!0, !1, !2, !3}

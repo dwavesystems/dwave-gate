@@ -421,7 +421,7 @@ class TestCircuitToQIR:
 
             declare void @__quantum__qis__y__body(%Qubit*)
 
-            attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="2" "required_num_results"="0" }
+            attributes #0 = { "entry_point" "num_required_qubits"="2" "num_required_results"="0" "output_labeling_schema" "qir_profiles"="custom" }
 
             !llvm.module.flags = !{!0, !1, !2, !3}
 
@@ -487,7 +487,7 @@ class TestCircuitToQIR:
 
             declare void @__quantum__rt__result_record_output(%Result*, i8*)
 
-            attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="3" "required_num_results"="3" }
+            attributes #0 = { "entry_point" "num_required_qubits"="3" "num_required_results"="3" "output_labeling_schema" "qir_profiles"="custom" }
             attributes #1 = { "irreversible" }
 
             !llvm.module.flags = !{!0, !1, !2, !3}
@@ -542,7 +542,7 @@ class TestCircuitToQIR:
 
             declare void @__quantum__qis__x__body(%Qubit*)
 
-            attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="3" "required_num_results"="2" }
+            attributes #0 = { "entry_point" "num_required_qubits"="3" "num_required_results"="2" "output_labeling_schema" "qir_profiles"="custom" }
 
             !llvm.module.flags = !{!0, !1, !2, !3}
 
