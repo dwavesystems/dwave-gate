@@ -24,14 +24,14 @@ try:
 except ImportError:  # pragma: no cover
     pyqir_installed = False
 else:
-    # pyqir>=0.9.0 required
+    # pyqir==0.9.0 required
     from importlib.metadata import version
+    from packaging.version import parse
 
-    def parse(version: str) -> Tuple[str, str, str]:
-        "Parse a MAJOR.MINOR.PATCH version string into a tuple."
-        return tuple(map(int, version.split(".")))[:3]
+    pyqir_installed = True
 
-    pyqir_installed = parse(version("pyqir")) == parse("0.9.0")
+    if parse(version("pyqir")) != parse("0.9.0"):  # pragma: no cover
+        raise ImportError(f"PyQIR v0.9.0 required, found {version('pyqir')}")
 
 if not pyqir_installed:  # pragma: no cover
     raise ImportError("PyQIR not installed.")
