@@ -1,4 +1,4 @@
 numpy==1.22.4
-cython==3.0.4
+cython==3.0.6
 cgen==2020.1
-pyqir==0.8.2
+pyqir==0.10.0
