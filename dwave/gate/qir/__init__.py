@@ -29,7 +29,7 @@ else:
 
     def parse(version: str) -> Tuple[str, str, str]:
         "Parse a MAJOR.MINOR.PATCH version string into a tuple."
-        return tuple(version.split("."))[:3]
+        return tuple(map(int, version.split(".")))[:3]
 
     pyqir_installed = parse(version("pyqir")) >= parse("0.8.0")
 
