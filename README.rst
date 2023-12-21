@@ -101,6 +101,15 @@ Tests and coverage can be run using Pytest.
 
     python -m pytest tests/ --cov=dwave.gate
 
+.. note::
+
+    For the QIR compiler and loader to work the optional dependency PyQIR (v0.9.0) is required. It can be
+    installed manually with ``pip install pyqir==0.9.0`` or from PyPI as an extra:
+
+    .. code-block:: bash
+
+        pip install dwave-gate[qir]
+
 .. installation-end-marker
 
 License
