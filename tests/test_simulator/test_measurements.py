@@ -210,6 +210,9 @@ class TestConditionalOps:
         assert np.allclose(circuit.state, expected)
         assert x.is_blocked
 
+        # assert that the returned op is the circuit op
+        assert x is circuit.circuit[-1]
+
     def test_conditional_op_multiple_qubits_true(self):
         """Test simulating a circuit with a multiple conditional ops (true)."""
         circuit = Circuit(2, 2)
@@ -226,6 +229,46 @@ class TestConditionalOps:
 
         assert np.allclose(circuit.state, expected)
         assert not x.is_blocked
+
+        # assert that the returned op is the circuit op
+        assert x is circuit.circuit[-1]
+
+    def test_conditional_op_parametric_false(self):
+        """Test simulating a circuit with a conditional parametric op (false)."""
+        circuit = Circuit(2, 1)
+
+        with circuit.context as (q, c):
+            ops.Measurement(q[0]) | c[0]  # state is |00>
+            rx = ops.RX(np.pi, q[1]).conditional(c[0])
+
+        simulate(circuit)
+        # should NOT apply X on qubit 1 leaving state in |00>
+        expected = np.array([1, 0, 0, 0])
+
+        assert np.allclose(circuit.state, expected)
+        assert rx.is_blocked
+
+        # assert that the returned op is the circuit op
+        assert rx is circuit.circuit[-1]
+
+    def test_conditional_op_parametric_true(self):
+        """Test simulating a circuit with a conditional parametric op (true)."""
+        circuit = Circuit(2, 1)
+
+        with circuit.context as (q, c):
+            ops.X(q[0])
+            ops.Measurement(q[0]) | c[0]  # state is |10>
+            rx = ops.RX(np.pi, q[1]).conditional(c[0])
+
+        simulate(circuit)
+        # should apply RX(pi) on qubit 1 changing state to |11> (with extra global phase)
+        expected = np.array([0, 0, 0, -1j])
+
+        assert np.allclose(circuit.state, expected)
+        assert not rx.is_blocked
+
+        # assert that the returned op is the circuit op
+        assert rx is circuit.circuit[-1]
 
     def test_bell_state_measurement(self):
         """Test that measurement gives one of two correct states and sets the resulting
