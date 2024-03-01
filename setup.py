@@ -51,6 +51,9 @@ setup(
     install_requires=[
         "numpy",
     ],
+    extras_requires={
+        "qir": ["pyqir==0.9.0"]
+    },
     ext_modules=cythonize(
         ["dwave/gate/simulator/simulator.pyx",
          "dwave/gate/registers/cyregister.pyx"
