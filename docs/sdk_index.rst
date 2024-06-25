@@ -12,12 +12,12 @@ dwave-gate
     :start-after: example-start-marker
     :end-before: example-end-marker
 
-.. toctree::
-    :caption: Documentation
-    :maxdepth: 1
+Documentation
+-------------
 
-    reference/index
-    release_notes
+.. include:: index.rst
+    :start-after: sdk-start-marker
+    :end-before: sdk-end-marker
 
 .. toctree::
     :caption: Code
