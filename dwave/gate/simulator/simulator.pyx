@@ -26,8 +26,9 @@ import warnings
 from typing import List, Optional
 
 import numpy as np
-
 cimport numpy as np
+
+np.import_array()
 
 import dwave.gate.operations as ops
 from dwave.gate.circuit import Circuit, CircuitError
