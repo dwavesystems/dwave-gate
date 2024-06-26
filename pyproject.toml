@@ -3,7 +3,8 @@ requires = [
     "setuptools>=46.4.0",       # PEP-420 support, PEP-517/518 support, setup.cfg attr: support
     "wheel>=0.30.0",            # limited python api support
     "cython~=3.0",
-    'oldest-supported-numpy',
+    "numpy==1.24.4; python_version=='3.8'",
+    "numpy>=2.0.0rc1; python_version>='3.9'",
 ]
 build-backend = "setuptools.build_meta"
 

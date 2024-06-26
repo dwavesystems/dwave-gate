@@ -49,7 +49,7 @@ class build_ext_compiler_check(build_ext):
 setup(
     name="dwave-gate",
     install_requires=[
-        "numpy",
+        "numpy>=1.24.4",
     ],
     ext_modules=cythonize(
         ["dwave/gate/simulator/simulator.pyx",
