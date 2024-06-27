@@ -8,6 +8,40 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "dwave-gate"
+version = "3.1.0"
+authors = [
+    {name = "D-Wave Systems Inc.", email = "tools@dwavesys.com"},
+]
+description = "Gate model library."
+classifiers = [
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+]
+requires-python = ">= 3.8"
+dependencies = [
+    "numpy>=1.24.4",
+]
+
+[project.readme]
+file = "README.rst"
+content-type = "text/x-rst"
+
+[project.urls]
+Homepage = "https://github.com/dwavesystems/dwave-gate"
+Download = "https://github.com/dwavesystems/dwave-gate/releases"
+
 [tool.cibuildwheel]
 build-verbosity = "1"
 skip = "pp* *musllinux*"
@@ -35,3 +69,13 @@ before-test = "pip install -r {project}/requirements_dev.txt"
 
 [tool.pyright]
 reportUnusedExpression = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[tool.setuptools.packages]
+find = {}  # Scanning implicit namespaces is active by default

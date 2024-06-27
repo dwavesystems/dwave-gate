@@ -1,4 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
+# Copyright 2022-2024 D-Wave Systems Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 import os
-from setuptools import setup, Extension, find_packages
+from setuptools import setup
 from setuptools.command.build_ext import build_ext
 
 import numpy
@@ -47,10 +47,6 @@ class build_ext_compiler_check(build_ext):
 
 
 setup(
-    name="dwave-gate",
-    install_requires=[
-        "numpy>=1.24.4",
-    ],
     ext_modules=cythonize(
         ["dwave/gate/simulator/simulator.pyx",
          "dwave/gate/registers/cyregister.pyx"
