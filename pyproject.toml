@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dwave-gate"
-version = "3.1.0"
+dynamic = ["version"]
 authors = [
     {name = "D-Wave Systems Inc.", email = "tools@dwavesys.com"},
 ]
@@ -79,3 +79,6 @@ testpaths = [
 
 [tool.setuptools.packages]
 find = {}  # Scanning implicit namespaces is active by default
+
+[tool.setuptools.dynamic]
+version = {attr = "dwave.gate.__version__"}

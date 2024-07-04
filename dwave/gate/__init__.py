@@ -12,11 +12,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from importlib.metadata import version
-
 from dwave.gate.circuit import *
 from dwave.gate.mixedproperty import *
 from dwave.gate.primitives import *
 
-
-__version__ = version(__package__ )
+__version__ = "0.3.1"
