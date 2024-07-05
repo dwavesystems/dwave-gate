@@ -193,7 +193,7 @@ jobs:
           command: |
             python -m venv env
             . env/bin/activate
-            pip install dist/dwave-gate*.tar.gz
+            pip install dist/dwave_gate*.tar.gz
       - run:
           name: run tests
           command: |
