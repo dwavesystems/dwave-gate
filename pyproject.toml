@@ -15,6 +15,7 @@ authors = [
     {name = "D-Wave Inc.", email = "tools@dwavesys.com"},
 ]
 description = "Gate model library."
+license = {file = "LICENSE"}
 classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
