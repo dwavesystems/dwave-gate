@@ -12,7 +12,7 @@ build-backend = "setuptools.build_meta"
 name = "dwave-gate"
 dynamic = ["version"]
 authors = [
-    {name = "D-Wave Systems Inc.", email = "tools@dwavesys.com"},
+    {name = "D-Wave Inc.", email = "tools@dwavesys.com"},
 ]
 description = "Gate model library."
 classifiers = [
