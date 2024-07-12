@@ -17,24 +17,11 @@
 Contains the QIR compiler, loader and related files and functions.
 """
 
-from typing import Tuple
-
 try:
     import pyqir  # noqa: F401
-except ImportError:  # pragma: no cover
-    pyqir_installed = False
-else:
-    # pyqir==0.9.0 required
-    from importlib.metadata import version
-    from packaging.version import parse
+except ImportError as e:  # pragma: no cover
+    raise ImportError("PyQIR required for using the QIR compiler") from e
 
-    pyqir_installed = True
-
-    if parse(version("pyqir")) != parse("0.9.0"):  # pragma: no cover
-        raise ImportError(f"PyQIR v0.9.0 required, found {version('pyqir')}")
-
-if not pyqir_installed:  # pragma: no cover
-    raise ImportError("PyQIR not installed.")
 
 from dwave.gate.qir.compiler import *
 from dwave.gate.qir.loader import *

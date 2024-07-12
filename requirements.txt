@@ -1,4 +1,5 @@
-numpy==1.22.4
+# working environment for Python>=3.8,<=3.11
+numpy==1.24.4
 cython==3.0.6
 cgen==2020.1
 pyqir==0.9.0
