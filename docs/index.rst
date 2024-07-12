@@ -14,11 +14,15 @@ dwave-gate
 Documentation
 -------------
 
+.. sdk-start-marker
+
 .. toctree::
     :maxdepth: 1
 
     reference/index
     release_notes
+
+.. sdk-end-marker
 
 .. toctree::
     :caption: Code

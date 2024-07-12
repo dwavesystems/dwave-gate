@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Updates the circuit so that conditional parametric gates are evaluated in place when appended to
+    the active circuit, fixing an issue where changes to these gates post application are not
+    propagated to the circuit.

@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 import os
-from setuptools import setup, Extension, find_packages
+from setuptools import setup
 from setuptools.command.build_ext import build_ext
 
 import numpy
@@ -47,13 +47,6 @@ class build_ext_compiler_check(build_ext):
 
 
 setup(
-    name="dwave-gate",
-    install_requires=[
-        "numpy",
-    ],
-    extras_requires={
-        "qir": ["pyqir==0.9.0"]
-    },
     ext_modules=cythonize(
         ["dwave/gate/simulator/simulator.pyx",
          "dwave/gate/registers/cyregister.pyx"

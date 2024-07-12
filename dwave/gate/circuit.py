@@ -208,7 +208,7 @@ class Circuit:
             # if a parametric operation is called within a non-parameteric circuit, all variables
             # should be replaced by their corresponding parameter values; eval does that
             eval = getattr(operation, "eval", None)
-            operation = eval() if eval else operation
+            operation = eval(inplace=True) if eval else operation
 
         for q in operation.qubits or []:
             if q not in self.qubits:

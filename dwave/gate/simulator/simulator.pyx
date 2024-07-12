@@ -26,7 +26,6 @@ import warnings
 from typing import List, Optional
 
 import numpy as np
-
 cimport numpy as np
 
 import dwave.gate.operations as ops

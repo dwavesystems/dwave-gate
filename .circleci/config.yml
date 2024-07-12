@@ -1,7 +1,8 @@
 version: 2.1
 
 orbs:
-  win: circleci/windows@5.0.0
+  win: circleci/windows@5.0
+  macos: circleci/macos@2.4
 
 commands:
   run-cibuildwheel:
@@ -32,7 +33,7 @@ environment: &global-environment
   PIP_PROGRESS_BAR: 'off'
 
 jobs:
-  build-and-test-linux:
+  build-linux:
     parameters:
       python-version:
         type: string
@@ -50,7 +51,7 @@ jobs:
       - setup_remote_docker
       - run-cibuildwheel
 
-  build-and-test-linux-aarch64:
+  build-linux-aarch64:
     parameters:
       python-version:
         type: string
@@ -69,23 +70,26 @@ jobs:
       - checkout
       - run-cibuildwheel
 
-  build-and-test-osx:
+  build-osx:
     parameters:
       python-version:
         type: string
-      cibw-arch:
+      xcode:
         type: string
+        default: "14.3.0"
+
+    resource_class: macos.m1.medium.gen1
 
     macos:
-      xcode: 12.5.1
+      xcode: << parameters.xcode >>
 
     environment:
       <<: *global-environment
       CIBW_PROJECT_REQUIRES_PYTHON: ~=<< parameters.python-version>>
-      CIBW_ARCHS_MACOS: << parameters.cibw-arch >>
 
     steps:
       - checkout
+      - macos/install-rosetta
       - run-cibuildwheel
 
   build-sdist:
@@ -100,12 +104,13 @@ jobs:
             python -m venv env
             . env/bin/activate
             pip install -r requirements.txt
+            pip install setuptools --upgrade
             python dwave/gate/simulator/operation_generation.py
             python setup.py sdist -d ./dist
       - store_artifacts: *store-artifacts
       - persist_to_workspace: *persist-to-workspace
 
-  build-and-test-windows:
+  build-windows:
     parameters:
       python-version:
         type: string
@@ -141,6 +146,7 @@ jobs:
             python -m pip install twine
             twine upload -u "$PYPI_USERNAME" -p "$PYPI_PASSWORD" --skip-existing ./dist/*
 
+  # we could do this as part of the various test jobs but getting the pathing
   # and configuration to work correctly is a pain. And since there is not
   # significant different between the linux/osx/windows code I think it
   # suffices to just do it once
@@ -188,7 +194,7 @@ jobs:
           command: |
             python -m venv env
             . env/bin/activate
-            pip install dist/dwave-gate*.tar.gz
+            pip install dist/dwave_gate*.tar.gz
       - run:
           name: run tests
           command: |
@@ -196,62 +202,81 @@ jobs:
             pip install -r requirements_dev.txt
             pytest tests/
 
+  test-dependencies:
+    parameters:
+      python-version:
+        type: string
+      dependency-versions:
+        type: string
+
+    docker:
+      - image: python:<< parameters.python-version >>-slim
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: dist
+      - run:
+          name: install
+          command: |
+            python -m venv env
+            . env/bin/activate
+            pip install "<< parameters.dependency-versions >>" --upgrade --only-binary=numpy
+            pip install dwave-gate --no-index -f dist/ --no-deps --force-reinstall
+      - run: &unix-run-tests
+          name: run tests
+          command: |
+            . env/bin/activate
+            pip install -r requirements_dev.txt
+            pytest tests/
 workflows:
   tests:
     jobs:
-      - build-and-test-linux: &build
+      - build-linux: &build
           matrix:
             parameters:
-              python-version: &python-versions [3.8.9, 3.9.4, 3.10.0, 3.11.0, 3.12.0]
-      - build-and-test-linux-aarch64:
-          matrix:
-            parameters:
-              python-version: *python-versions
+              python-version: &python-versions [3.8.19, 3.9.19, 3.10.14, 3.11.9, 3.12.4]
+      - build-linux-aarch64: *build
       - build-sdist
-      - build-and-test-osx: &build-and-test-osx
+      - build-osx: *build
+      - build-windows: *build
+      - test-codecov
+      - test-dependencies:
+          name: test-dependencies - << matrix.dependency-versions >> - py << matrix.python-version >>
+          requires:
+            - build-linux
           matrix:
             parameters:
+              # test the lowest and highest for each dependency
+              dependency-versions: [
+                numpy==1.24.4,
+                numpy
+              ]
               python-version: *python-versions
-              cibw-arch: [x86_64, arm64]
-      - build-and-test-windows: *build
-      - test-codecov
+            exclude:
+              - dependency-versions: numpy==1.24.4
+                python-version: 3.12.4
       - test-sdist:
           requires:
             - build-sdist
   deploy:
     jobs:
-      - build-and-test-linux: &deploy-build
+      - build-linux: &deploy-build
           <<: *build
           filters:
             tags:
               only: /^[0-9]+(\.[0-9]+)*((\.dev|rc)([0-9]+)?)?$/
             branches:
               ignore: /.*/
-      - build-and-test-linux-aarch64:
-          matrix:
-            parameters:
-              python-version: *python-versions
-            exclude:
-              - python-version: 3.7.9
-          filters:
-            tags:
-              only: /^[0-9]+(\.[0-9]+)*((\.dev|rc)([0-9]+)?)?$/
-            branches:
-              ignore: /.*/
-      - build-and-test-osx:
-          <<: *build-and-test-osx
-          filters:
-            tags:
-              only: /^[0-9]+(\.[0-9]+)*((\.dev|rc)([0-9]+)?)?$/
-            branches:
-              ignore: /.*/
+      - build-linux-aarch64: *deploy-build
+      - build-osx: *deploy-build
       - build-sdist:
           filters:
             tags:
               only: /^[0-9]+(\.[0-9]+)*((\.dev|rc)([0-9]+)?)?$/
             branches:
               ignore: /.*/
-      - build-and-test-windows: *deploy-build
+      - build-windows: *deploy-build
       - deploy-all:
           filters:
             tags:
@@ -259,8 +284,8 @@ workflows:
             branches:
               ignore: /.*/
           requires:
-            - build-and-test-linux
-            - build-and-test-linux-aarch64
-            - build-and-test-osx
+            - build-linux
+            - build-linux-aarch64
+            - build-osx
             - build-sdist
-            - build-and-test-windows
+            - build-windows
