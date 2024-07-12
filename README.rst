@@ -7,7 +7,7 @@
 .. image:: https://circleci.com/gh/dwavesystems/dwave-gate.svg?style=svg
     :target: https://circleci.com/gh/dwavesystems/dwave-gate
 
-.. image:: https://codecov.io/gh/dwavesystems/dwave-gate/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/dwavesystems/dwave-gate/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/dwavesystems/dwave-gate
 
 dwave-gate
@@ -100,6 +100,15 @@ Tests and coverage can be run using Pytest.
 .. code-block:: bash
 
     python -m pytest tests/ --cov=dwave.gate
+
+.. note::
+
+    For the QIR compiler and loader to work the PyQIR (v0.9.0) is required. It can be
+    installed manually with ``pip install pyqir==0.9.0`` or as an optional dependency:
+
+    .. code-block:: bash
+
+        pip install dwave-gate[qir]
 
 .. installation-end-marker
 

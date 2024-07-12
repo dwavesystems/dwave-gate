@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Remove PyQIR version check as it's been added as an optional dependency. A supported
+    version can now be installed directly with ``pip install dwave-gate[qir]``.

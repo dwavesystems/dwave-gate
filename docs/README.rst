@@ -7,7 +7,7 @@
 .. image:: https://circleci.com/gh/dwavesystems/dwave-gate.svg?style=svg
     :target: https://circleci.com/gh/dwavesystems/dwave-gate
 
-.. image:: https://codecov.io/gh/dwavesystems/dwave-gate/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/dwavesystems/dwave-gate/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/dwavesystems/dwave-gate
 
 dwave-gate
@@ -81,7 +81,7 @@ It can also be installed from source by cloning this GitHub repository and runni
     make install
 
 The makefile will also simplify running tests (``make test``), coverage (``make coverage``),
-documentation (``make docs```), as well as formatting (``make format``) the code using the `Black
+documentation (``make docs``), as well as formatting (``make format``) the code using the `Black
 <https://black.readthedocs.io/>`_ formatter (set to a line-length of 100) and `isort
 <https://pycqa.github.io/isort/>`_. It's available on both Unix as well as Windows systems, via the
 `make.bat` batch file.
@@ -99,7 +99,16 @@ Tests and coverage can be run using Pytest.
 
 .. code-block:: bash
 
-    pytest tests/ --cov=dwave.gate
+    python -m pytest tests/ --cov=dwave.gate
+
+.. note::
+
+    For the QIR compiler and loader to work the optional dependency PyQIR (v0.9.0) is required. It can be
+    installed manually with ``pip install pyqir==0.9.0`` or from PyPI as an extra:
+
+    .. code-block:: bash
+
+        pip install dwave-gate[qir]
 
 .. installation-end-marker
 

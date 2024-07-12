@@ -13,3 +13,4 @@ Reference Documentation
     registers
     simulator
     tools
+    qir

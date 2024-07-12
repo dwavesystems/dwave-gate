@@ -57,15 +57,15 @@ class IDCounter:
             except StopIteration:
                 cls.length += 1
                 if cls.length > len(cls._alphanum):
+                    if not cls.id_set:
+                        raise ValueError(
+                            "ID length cannot be longer than number of unique characters available."
+                        )
                     warnings.warn(
                         f"Insufficient characters to generate unique ID of length {cls.length} or "
                         f"longer. Generated batch of {len(cls.id_set)} instead of requested "
                         f"batch size of {cls.batch} IDs"
                     )
-                    if not cls.id_set:
-                        raise ValueError(
-                            "ID length cannot be longer than number of unique characters available."
-                        )
                     break
 
                 cls._id_gen = itertools.combinations(cls._alphanum, r=cls.length)
