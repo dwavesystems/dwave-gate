@@ -35,9 +35,9 @@ dependencies = [
     "numpy>=1.24.4",
 ]
 [project.optional-dependencies]
-    qir = [
-        "pyqir>=0.8.0,<0.10",
-    ]
+qir = [
+    "pyqir>=0.8.0,<0.10",
+]
 
 [project.readme]
 file = "README.rst"
