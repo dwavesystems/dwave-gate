@@ -7,7 +7,7 @@
 .. image:: https://circleci.com/gh/dwavesystems/dwave-gate.svg?style=svg
     :target: https://circleci.com/gh/dwavesystems/dwave-gate
 
-.. image:: https://codecov.io/gh/dwavesystems/dwave-gate/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/dwavesystems/dwave-gate/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/dwavesystems/dwave-gate
 
 dwave-gate
