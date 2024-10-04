@@ -21,15 +21,6 @@ operations and instructions for running the circuits on simulators or hardware. 
 
 from __future__ import annotations
 
-import itertools
-import warnings
-from typing import TYPE_CHECKING
-
-import numpy as np
-
-if TYPE_CHECKING:
-    from numpy.typing import NDArray
-
 __all__ = [
     "CircuitError",
     "Circuit",
@@ -39,23 +30,14 @@ __all__ = [
 ]
 
 import copy
+import itertools
+import warnings
+from collections.abc import Hashable, Mapping, Sequence
 from functools import cached_property
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    ContextManager,
-    Dict,
-    Hashable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Callable, ContextManager, NamedTuple, Optional, Type, Union
+
+import numpy as np
 
 from dwave.gate.mixedproperty import mixedproperty
 from dwave.gate.primitives import Bit, Qubit
@@ -66,6 +48,8 @@ from dwave.gate.registers.registers import (
 )
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from dwave.gate.operations.base import Operation
 
 Qubits = Union[Qubit, Sequence[Qubit]]
@@ -89,12 +73,12 @@ class Circuit:
         num_qubits: Optional[int] = None,
         num_bits: Optional[int] = None,
     ) -> None:
-        self._circuit: List[Operation] = []
+        self._circuit: list[Operation] = []
         self._circuit_context: Optional[CircuitContext] = None
 
         # registers for quantum and classical bits
-        self._qregisters: Dict[Hashable, QuantumRegister] = dict()
-        self._cregisters: Dict[Hashable, ClassicalRegister] = dict()
+        self._qregisters: dict[Hashable, QuantumRegister] = dict()
+        self._cregisters: dict[Hashable, ClassicalRegister] = dict()
 
         if num_qubits is not None:
             self.add_qregister(num_qubits=num_qubits)
@@ -189,7 +173,7 @@ class Circuit:
         return self._cregisters
 
     @property
-    def circuit(self) -> List[Operation]:
+    def circuit(self) -> list[Operation]:
         """Circuit containing the applied operations."""
         return self._circuit
 
@@ -518,7 +502,7 @@ class Circuit:
 
         raise ValueError(f"Qubit '{label}' not found.")
 
-    def find_qubit(self, qubit: Qubit, qreg_label: bool = False) -> Tuple[Hashable, int]:
+    def find_qubit(self, qubit: Qubit, qreg_label: bool = False) -> tuple[Hashable, int]:
         """Returns the register where a qubit contained and its index in the register.
 
         Args:
@@ -574,7 +558,7 @@ class Circuit:
 
         raise ValueError(f"Bit '{label}' not found.")
 
-    def find_bit(self, bit: Bit, creg_label: bool = False) -> Tuple[Hashable, int]:
+    def find_bit(self, bit: Bit, creg_label: bool = False) -> tuple[Hashable, int]:
         """Returns the register where a bit contained and its index in the register.
 
         Args:
@@ -710,7 +694,7 @@ class ParametricCircuit(Circuit):
         super().__init__(num_qubits, num_bits)
 
     def __call__(
-        self, parameters: List[complex], qubits: Qubits, bits: Optional[Bits] = None
+        self, parameters: list[complex], qubits: Qubits, bits: Optional[Bits] = None
     ) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
@@ -810,7 +794,7 @@ class CircuitContext:
 
     _active_context: Optional[CircuitContext] = None
     """Current active context; can only be one at a time during runtime."""
-    on_exit_functions: List[Callable] = []
+    on_exit_functions: list[Callable] = []
     """List of functions that should be called on context exit. Cleared on context exit."""
 
     def __init__(self, circuit: Circuit) -> None:

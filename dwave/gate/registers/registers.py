@@ -22,16 +22,8 @@ __all__ = [
     "SelfIncrementingRegister",
 ]
 
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Hashable,
-    Iterator,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-)
+from collections.abc import Hashable, Iterator, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional, TypeVar, Union
 
 from dwave.gate.primitives import Bit, Qubit, Variable
 from dwave.gate.registers.cyregister import cyRegister

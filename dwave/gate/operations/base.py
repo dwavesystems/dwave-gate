@@ -32,20 +32,9 @@ __all__ = [
 import copy
 import warnings
 from abc import ABCMeta
+from collections.abc import Hashable, Mapping, Sequence
 from itertools import chain
-from typing import (
-    TYPE_CHECKING,
-    Hashable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Optional, Type, TypeVar, Union, overload
 
 import numpy as np
 
@@ -211,7 +200,7 @@ class Operation(metaclass=ABCLockedAttr):
             active_context.circuit.append(self)
 
     @classmethod
-    def _check_qubits(cls, qubits: Qubits) -> Tuple[Qubit, ...]:
+    def _check_qubits(cls, qubits: Qubits) -> tuple[Qubit, ...]:
         """Asserts size and type of the qubit(s) and returns the correct type.
 
         Args:
@@ -232,7 +221,7 @@ class Operation(metaclass=ABCLockedAttr):
         return tuple(qubits)
 
     def _map_qubits(
-        self, mapping: Optional[Mapping[Hashable, Tuple[str, int]]] = None
+        self, mapping: Optional[Mapping[Hashable, tuple[str, int]]] = None
     ) -> Sequence[str]:
         """Returns an OpenQASM 2.0 string representation of the operations qubits.
 
@@ -285,7 +274,7 @@ class Operation(metaclass=ABCLockedAttr):
         return cls.__name__  # type: ignore
 
     @mixedproperty
-    def decomposition(cls) -> List[str]:
+    def decomposition(cls) -> list[str]:
         """Decomposition of operation as list of operation labels."""
         decomposition = getattr(cls, "_decomposition", None)
         if not decomposition:
@@ -306,7 +295,7 @@ class Operation(metaclass=ABCLockedAttr):
         raise AttributeError(f"Operation {cls.name} supports an arbitrary number of qubits.")
 
     @property
-    def qubits(self) -> Optional[Tuple[Qubit, ...]]:
+    def qubits(self) -> Optional[tuple[Qubit, ...]]:
         """Qubits that the operation is applied to."""
         return self._qubits
 
@@ -428,7 +417,7 @@ class ParametricOperation(Operation):
         raise AttributeError(f"Operations {cls.name} missing class attribute '_num_params'.")
 
     @classmethod
-    def _check_parameters(cls, params: Parameters) -> List[Union[Variable, complex]]:
+    def _check_parameters(cls, params: Parameters) -> list[Union[Variable, complex]]:
         """Asserts the size and type of the parameter(s) and returns the
         correct type.
 
@@ -579,12 +568,12 @@ class ControlledOperation(Operation):
         return matrix
 
     @property
-    def control(self) -> Optional[Tuple[Qubit]]:
+    def control(self) -> Optional[tuple[Qubit]]:
         """Control qubit(s)."""
         return self._control
 
     @property
-    def target(self) -> Optional[Tuple[Qubit]]:
+    def target(self) -> Optional[tuple[Qubit]]:
         """Target qubit(s)."""
         return self._target
 
@@ -676,7 +665,7 @@ class Measurement(Operation):
         self._measured_state = None
 
         self._measured_qubit_indices = []
-        """List[int]: The indices of the measured qubit in the circuit."""
+        """list[int]: The indices of the measured qubit in the circuit."""
 
         super().__init__(qubits)
 
@@ -714,7 +703,7 @@ class Measurement(Operation):
         qubits: Optional[Sequence[int]] = None,
         num_samples: int = 1,
         as_bitstring: bool = False,
-    ) -> List[Union[int, str]]:
+    ) -> list[Union[int, str]]:
         """Sample the measured state.
 
         Args:
@@ -724,7 +713,7 @@ class Measurement(Operation):
                 lists of integers (default).
 
         Returns:
-            List[Union[int, str]]: The measurement samples for each qubit.
+            list[Union[int, str]]: The measurement samples for each qubit.
         """
         # NOTE: avoid circular imports; operations used in simulator
         from dwave.gate.simulator.simulator import sample_qubit
@@ -757,7 +746,7 @@ class Measurement(Operation):
             return ["".join(map(str, s)) for s in samples]
         return samples
 
-    def expval(self, qubits: Optional[int] = None, num_samples: int = 1000) -> List[float]:
+    def expval(self, qubits: Optional[int] = None, num_samples: int = 1000) -> list[float]:
         """Calculate the expectation value of a measurement.
 
         Args:

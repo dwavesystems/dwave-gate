@@ -17,26 +17,25 @@
 Contains the QIR-to-dwave-gate circuit object loaders.
 """
 
-from __future__ import annotations
-
 __all__ = [
     "load_qir_bitcode",
     "load_qir_string",
 ]
 
 import re
-from typing import Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Optional
 
 import pyqir
 from pyqir import Context, Module, Opcode
 
 import dwave.gate.operations as ops
 from dwave.gate import Circuit
-from dwave.gate.qir.instructions import InstrType, Operations
+from dwave.gate.qir.instructions import Operations
 
 
 def load_qir_bitcode(
-    qir_bitcode: bytes, circuit: Optional[Circuit] = None, context: Context = None
+    qir_bitcode: bytes, circuit: Optional[Circuit] = None, context: Optional[Context] = None
 ) -> Circuit:
     """Loads QIR bitcode into a ``Circuit`` object.
 
@@ -155,7 +154,7 @@ def _add_measurements(circuit: Circuit, qubits: Sequence[int], bits: Sequence[in
 
 def _deconstruct_call_instruction(
     instr: pyqir.Instruction,
-) -> Tuple[Sequence[float], Sequence[int]]:
+) -> tuple[Sequence[float], Sequence[int]]:
     """Extracts parameters and qubits from a call instruction.
 
     Args:
