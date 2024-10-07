@@ -9,7 +9,7 @@ commands:
     parameters:
       cibw-version:
         type: string
-        default: 2.16.2
+        default: 2.21.2
     steps:
       - run:
           name: run cibuildwheel
@@ -39,7 +39,7 @@ jobs:
         type: string
 
     docker:
-      - image: cimg/python:3.9
+      - image: cimg/python:3.12
 
     environment:
       <<: *global-environment
@@ -57,7 +57,7 @@ jobs:
         type: string
 
     machine:
-      image: ubuntu-2004:202101-01
+      image: default
 
     resource_class: arm.medium
 
@@ -94,7 +94,7 @@ jobs:
 
   build-sdist:
     docker:
-      - image: cimg/python:3.9
+      - image: cimg/python:3.12
 
     steps:
       - checkout
@@ -129,7 +129,7 @@ jobs:
 
   deploy-all:
     docker:
-      - image: cimg/python:3.9
+      - image: cimg/python:3.12
 
     steps:
       - attach_workspace:
@@ -152,7 +152,7 @@ jobs:
   # suffices to just do it once
   test-codecov:
     docker:
-      - image: cimg/python:3.9
+      - image: cimg/python:3.12
 
     steps:
       - checkout
@@ -183,7 +183,7 @@ jobs:
 
   test-sdist:
     docker:
-      - image: cimg/python:3.9
+      - image: cimg/python:3.12
 
     steps:
       - checkout
@@ -235,7 +235,7 @@ workflows:
       - build-linux: &build
           matrix:
             parameters:
-              python-version: &python-versions [3.8.19, 3.9.19, 3.10.14, 3.11.9, 3.12.4]
+              python-version: &python-versions [3.9.19, 3.10.14, 3.11.9, 3.12.4, 3.13.0rc3]
       - build-linux-aarch64: *build
       - build-sdist
       - build-osx: *build
@@ -256,6 +256,8 @@ workflows:
             exclude:
               - dependency-versions: numpy==1.24.4
                 python-version: 3.12.4
+              - dependency-versions: numpy==1.24.4
+                python-version: 3.13.0rc3
       - test-sdist:
           requires:
             - build-sdist

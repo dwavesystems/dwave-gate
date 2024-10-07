@@ -542,7 +542,7 @@ def generate_op_set(
     """Generate C code and cython wrapper for a fast implementation of the given
     set of operators. These should follow the rule (where {E_k} is the set of operators)
 
-        \sum_k E_k^{\dagger} E_k = I.
+        sum_k E_k^dagger E_k = I.
 
     The operators are applied one by one, and the norm of the resulting state is
     computed. Then, one of the operators is chosen probabilistically according to the

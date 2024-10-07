@@ -19,8 +19,6 @@ different names; e.g., :class:`Fredkin` is an alias for :class:`CSWAP`, and :cla
 :class:`CCNOT` are aliases for :class:`CCX`.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # "Unitary",
     # single-qubit gates
@@ -58,7 +56,8 @@ __all__ = [
 
 import cmath
 import math
-from typing import Mapping, Optional, Type
+from collections.abc import Mapping
+from typing import Optional, Type
 
 import numpy as np
 from numpy.typing import NDArray

@@ -20,8 +20,9 @@ __all__ = [
 ]
 
 import itertools
+from collections.abc import Sequence
 from functools import lru_cache
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 

@@ -24,8 +24,9 @@ __all__ = [
     "qir_module",
 ]
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Optional, Sequence
+from typing import TYPE_CHECKING, Optional
 
 import pyqir
 from pyqir import BasicBlock, Context, Linkage
@@ -96,7 +97,7 @@ class BaseModule:
             "output": [],
         }
 
-        self._external_functions: Dict[str, BaseModule.Types] = {}
+        self._external_functions: dict[str, BaseModule.Types] = {}
 
         @dataclass
         class Types:
