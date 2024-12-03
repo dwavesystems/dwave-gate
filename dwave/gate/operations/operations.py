@@ -27,6 +27,7 @@ __all__ = [
     "Y",
     "Z",
     "Hadamard",
+    "HY",
     "Phase",
     "S",  # alias
     "P",  # alias
@@ -229,6 +230,26 @@ class Hadamard(Operation):
         """The matrix representation of the Hadamard operator."""
         matrix = math.sqrt(2) / 2 * np.array([[1.0, 1.0], [1.0, -1.0]], dtype=np.complex128)
         return matrix
+
+class HY(Operation):
+    """Self-inverse operation for Y-Z basis swap.
+
+    Has the property $\sigma_y = H_y \sigma_z H_y.
+
+    Args:
+        qubits: Qubits on which the operation should be applied. Only
+            required when applying an operation within a circuit context.
+    """
+
+    _num_qubits: int = 1
+
+    # see: https://quantumcomputing.stackexchange.com/questions/11390/problem-with-commutation-of-e-ih-1t-and-e-ih-2t-where-h-1-commutes/11391#11391
+    # not the only way of doing this, but the most simple
+
+    @mixedproperty
+    def matrix(cls) -> NDArray[np.complex128]:
+        """The matrix representation of the $H_y$ operator."""
+        return math.sqrt(2) / 2 * np.array([[1, -1j], [1j, -1]], dtype=np.complex128)
 
 
 class S(Operation):
