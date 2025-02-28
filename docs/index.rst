@@ -5,7 +5,7 @@ dwave-gate
 ==========
 
 .. toctree::
-    :caption: Reference documentation for dwave-hybrid:
+    :caption: Reference documentation for dwave-gate:
     :maxdepth: 1
 
     reference/api_ref
@@ -16,3 +16,11 @@ About dwave-gate
 .. include:: README.rst
     :start-after: start_gate_about
     :end-before: end_gate_about
+
+Usage Information
+=================
+
+.. todo:: add the intersphinx prefix to enable these links for self builds
+
+*   :ref:`index_concepts` for terminology
+*   :ref:`qpu_gate_model_intro`
