@@ -1,10 +1,8 @@
 # Configuration file for the Sphinx documentation builder.
 #
-# For the full list of built-in configuration values, see the documentation:
+# This file only contains a selection of the most common options. For a full
+# list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'dwave-gate'
 copyright = '2022, D-Wave Systems Inc.'
@@ -12,7 +10,6 @@ author = 'D-Wave Systems Inc.'
 release = '2022'
 
 # -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     'reno.sphinxext',
@@ -32,9 +29,11 @@ napoleon_use_rtype = False
 typehints_defaults = 'comma'
 
 # -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-import sphinx_rtd_theme
-
-html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# -- Options for HTML output ----------------------------------------------
+html_theme = "pydata_sphinx_theme"
+html_theme_options = {
+    "collapse_navigation": True,
+    "show_prev_next": False,
+}
+html_sidebars = {"**": ["search-field", "sidebar-nav-bs"]}  # remove ads
