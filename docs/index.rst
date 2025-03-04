@@ -8,7 +8,7 @@ dwave-gate
     :caption: Reference documentation for dwave-gate:
     :maxdepth: 1
 
-    reference/api_ref
+    api_ref
 
 About dwave-gate
 ================
