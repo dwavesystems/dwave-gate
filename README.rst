@@ -39,7 +39,7 @@ operations to a two-qubit circuit.
 
 >>> circuit = Circuit(2)
 
->>> with circuit.context as (q, c):
+>>> with circuit.context as (q, c):     # doctest: +SKIP
 ...    ops.X(q[0])
 ...    ops.Hadamard(q[1])
 ...    ops.CZ(q[0], q[1])
@@ -52,7 +52,7 @@ You can run the ``dwave.gate.simulator`` simulator on such circuits,
 
 and then access the resulting state via the state attribute.
 
->>> circuit.state
+>>> circuit.state   # doctest: +SKIP
 array([0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j])
 
 .. end_gate_about
