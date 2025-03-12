@@ -34,18 +34,16 @@ enables you to:
 This example uses the ``dwave.gate.Circuit`` object's  context manager to append
 operations to a two-qubit circuit.
 
-.. code-block:: python
+>>> import dwave.gate.operations as ops
+>>> from dwave.gate import Circuit
 
-    import dwave.gate.operations as ops
-    from dwave.gate import Circuit
+>>> circuit = Circuit(2)
 
-    circuit = Circuit(2)
-
-    with circuit.context as (q, c):
-        ops.X(q[0])
-        ops.Hadamard(q[1])
-        ops.CZ(q[0], q[1])
-        ops.Hadamard(q[1])
+>>> with circuit.context as (q, c):
+...    ops.X(q[0])
+...    ops.Hadamard(q[1])
+...    ops.CZ(q[0], q[1])
+...    ops.Hadamard(q[1])
 
 You can run the ``dwave.gate.simulator`` simulator on such circuits,
 
@@ -58,7 +56,6 @@ and then access the resulting state via the state attribute.
 array([0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j])
 
 .. end_gate_about
-
 
 Installation
 ============
