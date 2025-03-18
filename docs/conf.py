@@ -23,7 +23,7 @@ extensions = [
 ]
 
 templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'README.rst']
 
 autodoc_member_order = 'bysource'
 typehints_use_rtype = False  # avoids duplicate return types
@@ -40,7 +40,6 @@ html_theme_options = {
 }
 html_sidebars = {"**": ["search-field", "sidebar-nav-bs"]}  # remove ads
 
-# TODO: verify the link to dwave docs
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'numpy': ('https://numpy.org/doc/stable/', None),
                        'networkx': ('https://networkx.org/documentation/stable/', None),
