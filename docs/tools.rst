@@ -1,3 +1,5 @@
+.. _gate_tools:
+
 Tools
 =====
 

@@ -1,9 +1,8 @@
-.. _reference_gate:
+.. _gate_api_ref:
 
-Reference Documentation
-***********************
-
-    :Date: |today|
+=============
+API Reference
+=============
 
 .. toctree::
     :maxdepth: 2

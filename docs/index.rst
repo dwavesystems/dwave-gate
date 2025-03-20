@@ -1,49 +1,26 @@
 .. _index_gate:
 
+==========
 dwave-gate
 ==========
 
+.. toctree::
+    :caption: Reference documentation for dwave-gate:
+    :maxdepth: 1
+
+    api_ref
+
+About dwave-gate
+================
+
 .. include:: README.rst
-    :start-after: index-start-marker
-    :end-before: index-end-marker
+    :start-after: start_gate_about
+    :end-before: end_gate_about
 
-.. include:: README.rst
-    :start-after: example-start-marker
-    :end-before: example-end-marker
+Usage Information
+=================
 
-Documentation
--------------
+.. todo:: add the intersphinx prefix to enable these links for self builds
 
-.. sdk-start-marker
-
-.. toctree::
-    :maxdepth: 1
-
-    reference/index
-    release_notes
-
-.. sdk-end-marker
-
-.. toctree::
-    :caption: Code
-    :maxdepth: 1
-
-    Source <https://github.com/dwavesystems/dwave-gate>
-    installation
-    license
-
-.. toctree::
-    :caption: D-Wave's Ocean Software
-    :maxdepth: 1
-
-    Ocean Home <https://ocean.dwavesys.com/>
-    Ocean Documentation <https://docs.ocean.dwavesys.com>
-    Ocean Glossary <https://docs.ocean.dwavesys.com/en/stable/concepts/index.html>
-
-.. toctree::
-    :caption: D-Wave
-    :maxdepth: 1
-
-    D-Wave <https://www.dwavesys.com>
-    Leap <https://cloud.dwavesys.com/leap/>
-    D-Wave System Documentation <https://docs.dwavesys.com/docs/latest/index.html>
+*   :ref:`index_concepts` for terminology
+*   :ref:`qpu_gate_model_intro`
