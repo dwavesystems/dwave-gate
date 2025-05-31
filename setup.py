@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 import os
-from setuptools import setup
+from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 
 import numpy
@@ -48,8 +48,10 @@ class build_ext_compiler_check(build_ext):
 
 setup(
     ext_modules=cythonize(
-        ["dwave/gate/simulator/simulator.pyx",
-         "dwave/gate/registers/cyregister.pyx"
+        [Extension("dwave.gate.simulator.simulator",
+                   ["dwave/gate/simulator/simulator.pyx"]),
+         Extension("dwave.gate.registers.cyregister",
+                   ["dwave/gate/registers/cyregister.pyx"]),
          ],
         annotate=bool(os.getenv("CYTHON_ANNOTATE", False))
     ),
