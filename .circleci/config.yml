@@ -235,7 +235,7 @@ workflows:
       - build-linux: &build
           matrix:
             parameters:
-              python-version: &python-versions [3.9.19, 3.10.14, 3.11.9, 3.12.4, 3.13.0]
+              python-version: &python-versions [3.9.19, 3.10.14, 3.11.9, 3.12.4, 3.13.0, 3.14.0]
       - build-linux-aarch64: *build
       - build-sdist
       - build-osx: *build
