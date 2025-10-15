@@ -26,7 +26,7 @@ __all__ = [
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import pyqir
 from pyqir import BasicBlock, Context, Linkage
@@ -67,7 +67,7 @@ class BaseModule:
         name: str,
         num_qubits: int,
         num_bits: int,
-        context: Optional[pyqir.Context] = None,
+        context: pyqir.Context | None = None,
         **kwargs,
     ) -> None:
         self._is_compiled = False
@@ -217,7 +217,7 @@ class BaseModule:
             args: The arguments for applying the function.
 
         Returns:
-            Optional[pyqir.Function]: Returns the stored external function
+            pyqir.Function: Returns the stored external function
             or ``None`` if not found.
         """
         external = self._external_functions.get(name, None)
@@ -279,7 +279,7 @@ class BaseModule:
             type_, Linkage.EXTERNAL, qis_name, self._module
         )
 
-    def set_return(self, ret_cmd: Optional[pyqir.Type.Value] = None, force: bool = False) -> None:
+    def set_return(self, ret_cmd: pyqir.Type.Value | None = None, force: bool = False) -> None:
         """Set the return instruction.
 
         Will place the return instruction at the end of the final block.

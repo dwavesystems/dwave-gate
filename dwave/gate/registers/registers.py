@@ -23,7 +23,7 @@ __all__ = [
 ]
 
 from collections.abc import Hashable, Iterator, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, AbstractSet, TypeVar
 
 from dwave.gate.primitives import Bit, Qubit, Variable
 from dwave.gate.registers.cyregister import cyRegister
@@ -45,7 +45,7 @@ class Register(cyRegister, AbstractSet[Data], Sequence[Data]):
         data: Sequence of hashable data items (defaults to empty).
     """
 
-    def __init__(self, data: Optional[Sequence[Data]] = None) -> None:
+    def __init__(self, data: Sequence[Data] | None = None) -> None:
         self._frozen = False
         super().__init__(data or [])
 
@@ -92,7 +92,7 @@ class Register(cyRegister, AbstractSet[Data], Sequence[Data]):
         copy._extend(qreg)
         return copy
 
-    def add(self, data: Union[Hashable, Sequence[Hashable], Register]) -> None:
+    def add(self, data: Hashable | Sequence[Hashable] | Register) -> None:
         """Add one or more data items to the register.
 
         Args:
@@ -116,10 +116,10 @@ class QuantumRegister(Register[Qubit]):
         data: Sequence of qubits (defaults to empty).
     """
 
-    def __init__(self, data: Optional[Sequence[Qubit]] = None) -> None:
+    def __init__(self, data: Sequence[Qubit] | None = None) -> None:
         super().__init__(data)
 
-    def to_qasm(self, label: Hashable = None, idx: Optional[int] = None) -> str:
+    def to_qasm(self, label: Hashable = None, idx: int | None = None) -> str:
         """Converts the quantum register into an OpenQASM string.
 
         Args:
@@ -147,10 +147,10 @@ class ClassicalRegister(Register[Bit]):
         data: Sequence of bits (defaults to empty).
     """
 
-    def __init__(self, data: Optional[Sequence[Bit]] = None) -> None:
+    def __init__(self, data: Sequence[Bit] | None = None) -> None:
         super().__init__(data)
 
-    def to_qasm(self, label: Hashable = None, idx: Optional[int] = None) -> str:
+    def to_qasm(self, label: Hashable = None, idx: int | None = None) -> str:
         """Converts the classical register into an OpenQASM string.
 
         Args:
@@ -185,7 +185,7 @@ class SelfIncrementingRegister(Register):
         data: Sequence of parameters or variables (defaults to empty).
     """
 
-    def __init__(self, data: Optional[Sequence[Variable]] = None) -> None:
+    def __init__(self, data: Sequence[Variable] | None = None) -> None:
         super().__init__(data)
 
     def freeze(self) -> None:

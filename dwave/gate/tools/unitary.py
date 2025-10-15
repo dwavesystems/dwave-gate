@@ -22,7 +22,7 @@ __all__ = [
 import itertools
 from collections.abc import Sequence
 from functools import lru_cache
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -114,10 +114,10 @@ def _apply_controlled_gate(state: NDArray, op: ControlledOperation, qubits) -> N
 
 
 def build_controlled_unitary(
-    control: Union[int, Sequence[int]],
-    target: Union[int, Sequence[int]],
+    control: int | Sequence[int],
+    target: int | Sequence[int],
     unitary: NDArray,
-    num_qubits: Optional[int] = None,
+    num_qubits: int | None = None,
     dtype: DTypeLike = complex,
 ) -> NDArray:
     """Build the unitary matrix for a controlled operation.

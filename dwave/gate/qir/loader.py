@@ -24,7 +24,6 @@ __all__ = [
 
 import re
 from collections.abc import Sequence
-from typing import Optional
 
 import pyqir
 from pyqir import Context, Module, Opcode
@@ -35,7 +34,7 @@ from dwave.gate.qir.instructions import Operations
 
 
 def load_qir_bitcode(
-    qir_bitcode: bytes, circuit: Optional[Circuit] = None, context: Optional[Context] = None
+    qir_bitcode: bytes, circuit: Circuit | None = None, context: Context | None = None
 ) -> Circuit:
     """Loads QIR bitcode into a ``Circuit`` object.
 
@@ -53,7 +52,7 @@ def load_qir_bitcode(
 
 
 def load_qir_string(
-    qir_str: str, circuit: Optional[Circuit] = None, context: Context = None
+    qir_str: str, circuit: Circuit | None = None, context: Context = None
 ) -> Circuit:
     """Loads a QIR string into a ``Circuit`` object.
 
@@ -70,7 +69,7 @@ def load_qir_string(
     return _module_to_circuit(module, circuit)
 
 
-def _module_to_circuit(module: Module, circuit: Optional[Circuit] = None) -> Circuit:
+def _module_to_circuit(module: Module, circuit: Circuit | None = None) -> Circuit:
     """Parses a PyQIR module into a ``Circuit`` object.
 
     Args:

@@ -23,7 +23,6 @@ __all__ = [
 
 import random
 import warnings
-from typing import List, Optional
 
 import numpy as np
 cimport numpy as np
@@ -134,7 +133,7 @@ def simulate(
     circuit: Circuit,
     mixed_state: bool = False,
     little_endian: bool = False,
-    rng_seed: Optional[int] = None,
+    rng_seed: int | None = None,
 ) -> None:
     """Simulate the given circuit with either a state vector or density matrix simulation.
 

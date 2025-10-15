@@ -35,7 +35,7 @@ import warnings
 from collections.abc import Hashable, Mapping, Sequence
 from functools import cached_property
 from types import TracebackType
-from typing import TYPE_CHECKING, Callable, ContextManager, NamedTuple, Optional, Type, Union
+from typing import TYPE_CHECKING, Callable, ContextManager, NamedTuple, Type
 
 import numpy as np
 
@@ -52,8 +52,8 @@ if TYPE_CHECKING:
 
     from dwave.gate.operations.base import Operation
 
-Qubits = Union[Qubit, Sequence[Qubit]]
-Bits = Union[Bit, Sequence[Bit]]
+Qubits = Qubit | Sequence[Qubit]
+Bits = Bit | Sequence[Bit]
 
 
 class CircuitError(Exception):
@@ -70,11 +70,11 @@ class Circuit:
 
     def __init__(
         self,
-        num_qubits: Optional[int] = None,
-        num_bits: Optional[int] = None,
+        num_qubits: int | None = None,
+        num_bits: int | None = None,
     ) -> None:
         self._circuit: list[Operation] = []
-        self._circuit_context: Optional[CircuitContext] = None
+        self._circuit_context: CircuitContext | None = None
 
         # registers for quantum and classical bits
         self._qregisters: dict[Hashable, QuantumRegister] = dict()
@@ -91,7 +91,7 @@ class Circuit:
 
         self._locked: bool = False
 
-    def __call__(self, qubits: Qubits, bits: Optional[Bits] = None) -> None:
+    def __call__(self, qubits: Qubits, bits: Bits | None = None) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
         Args:
@@ -241,14 +241,14 @@ class Circuit:
         return bit_reg
 
     @property
-    def state(self) -> Optional[NDArray]:
+    def state(self) -> NDArray | None:
         """The resulting state after simulating the circuit."""
         if self._state is None and self._density_matrix is not None:
             raise CircuitError("State is mixed. Use 'Circuit.density_matrix' to access.")
         return self._state
 
     @property
-    def density_matrix(self) -> Optional[NDArray]:
+    def density_matrix(self) -> NDArray | None:
         """The density matrix representation of the state."""
         if self._state is not None and self._density_matrix is None:
             self._density_matrix = self._state.reshape(-1, 1) @ self._state.reshape(1, -1)
@@ -360,7 +360,7 @@ class Circuit:
         self.unlock()
 
     def add_qubit(
-        self, qubit: Optional[Qubit] = None, qreg_label: Optional[Hashable] = None
+        self, qubit: Qubit | None = None, qreg_label: Hashable | None = None
     ) -> None:
         """Add a single qubit to a quantum register in the circuit.
 
@@ -391,7 +391,7 @@ class Circuit:
         if "qubits" in self.__dict__:  # pragma: no cover
             del self.qubits
 
-    def add_bit(self, bit: Optional[Bit] = None, creg_label: Optional[Hashable] = None) -> None:
+    def add_bit(self, bit: Bit | None = None, creg_label: Hashable | None = None) -> None:
         """Add a single bit to a classical register.
 
         Args:
@@ -471,7 +471,7 @@ class Circuit:
         return f"<{self.__class__.__name__}: qubits={qb}, bits={cb}, ops={len(self.circuit)}>"
 
     def get_qubit(
-        self, label: str, qreg_label: Optional[str] = None, return_all: bool = False
+        self, label: str, qreg_label: str | None = None, return_all: bool = False
     ) -> Qubits:
         """Returns the Qubit(s) with a specific label.
 
@@ -527,7 +527,7 @@ class Circuit:
         raise ValueError(f"Qubit {qubit} not found in any register.")
 
     def get_bit(
-        self, label: str, creg_label: Optional[str] = None, return_all: bool = False
+        self, label: str, creg_label: str | None = None, return_all: bool = False
     ) -> Bits:
         """Returns the Bit(s) with a specific label.
 
@@ -640,7 +640,7 @@ class Circuit:
 
         return header_str.strip() + "\n\n" + qasm_str.strip()
 
-    def to_qir(self, add_external: bool = False, bitcode: bool = False) -> Union[str, bytes]:
+    def to_qir(self, add_external: bool = False, bitcode: bool = False) -> str | bytes:
         """Compile a circuit into QIR.
 
         Args:
@@ -649,7 +649,7 @@ class Circuit:
             bitcode: Whether to return QIR as a legible string or as bitcode.
 
         Returns:
-            Union[str, bytes]: The QIR representation of the circuit.
+            str | bytes: The QIR representation of the circuit.
         """
         # import outside toplevel to avoid circular imports
         from dwave.gate.qir.compiler import qir_module
@@ -662,7 +662,7 @@ class Circuit:
         return module.qir
 
     @classmethod
-    def from_qir(cls, qir: Union[str, bytes], bitcode: bool = False) -> Circuit:
+    def from_qir(cls, qir: str | bytes, bitcode: bool = False) -> Circuit:
         """Load a circuit from a QIR string or bitcode.
 
         Args:
@@ -688,13 +688,13 @@ class ParametricCircuit(Circuit):
         num_bits: Number of classical bits in the circuit.
     """
 
-    def __init__(self, num_qubits: Optional[int] = None, num_bits: Optional[int] = None) -> None:
+    def __init__(self, num_qubits: int | None = None, num_bits: int | None = None) -> None:
         self._parameter_register = SelfIncrementingRegister()
 
         super().__init__(num_qubits, num_bits)
 
     def __call__(
-        self, parameters: list[complex], qubits: Qubits, bits: Optional[Bits] = None
+        self, parameters: list[complex], qubits: Qubits, bits: Bits | None = None
     ) -> None:
         """Apply all the operations in the circuit within a circuit context.
 
@@ -724,7 +724,7 @@ class ParametricCircuit(Circuit):
         return super().unlock()
 
     def eval(
-        self, parameters: Optional[Sequence[Sequence[complex]]] = None, inplace: bool = False
+        self, parameters: Sequence[Sequence[complex]] | None = None, inplace: bool = False
     ) -> ParametricCircuit:
         """Evaluate circuit operations with explicit parameters.
 
@@ -792,7 +792,7 @@ class CircuitContext:
         circuit: Circuit to which the context is attached
     """
 
-    _active_context: Optional[CircuitContext] = None
+    _active_context: CircuitContext | None = None
     """Current active context; can only be one at a time during runtime."""
     on_exit_functions: list[Callable] = []
     """List of functions that should be called on context exit. Cleared on context exit."""
@@ -874,9 +874,9 @@ class CircuitContext:
 
     def __exit__(
         self,
-        type: Optional[Type[BaseException]],
-        value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        type: Type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         """Exits the context and locks the circuit."""
         # IDEA: add setting to automatically decompose qubits on exit
@@ -890,7 +890,7 @@ class CircuitContext:
         self.circuit.lock()
 
     @mixedproperty
-    def active_context(cls) -> Optional[CircuitContext]:
+    def active_context(cls) -> CircuitContext | None:
         """Current active context (usually ``self``)."""
         return cls._active_context
 
@@ -928,9 +928,9 @@ class ParametricCircuitContext(CircuitContext):
 
     def __exit__(
         self,
-        type: Optional[Type[BaseException]],
-        value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        type: Type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         """Exits the context and locks the circuit."""
         # should always be a 'ParametricCircuit'; check in '__init__'

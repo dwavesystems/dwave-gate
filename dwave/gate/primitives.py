@@ -23,7 +23,7 @@ __all__ = [
     "Variable",
 ]
 
-from typing import Hashable, Optional
+from typing import Hashable
 
 from dwave.gate.tools.counters import IDCounter
 
@@ -79,7 +79,7 @@ class Bit:
     def __init__(self, label: Hashable) -> None:
         self._label = label
         self._id: str = IDCounter.next()
-        self._value: Optional[int] = None
+        self._value: int | None = None
 
     @property
     def label(self) -> Hashable:
@@ -97,7 +97,7 @@ class Bit:
         return self._id
 
     @property
-    def value(self) -> Optional[int]:
+    def value(self) -> int | None:
         """The bit value, if set."""
         return self._value
 
@@ -159,7 +159,7 @@ class Variable:
     def __init__(self, name: str) -> None:
         self._name = str(name)
 
-        self._value: Optional[complex] = None
+        self._value: complex | None = None
 
     @property
     def name(self) -> str:
@@ -167,7 +167,7 @@ class Variable:
         return self._name
 
     @property
-    def value(self) -> Optional[complex]:
+    def value(self) -> complex | None:
         """The variable value, if set."""
         return self._value
 

@@ -25,7 +25,7 @@ __all__ = [
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, NamedTuple, Optional, Sequence, Union
+from typing import Any, NamedTuple, Sequence
 
 import pyqir
 
@@ -116,8 +116,8 @@ class Instruction:
         self,
         type_: InstrType,
         name: str,
-        args: Sequence[Union[int, float, pyqir.Constant]],
-        external: Optional[pyqir.Function] = None,
+        args: Sequence[int | float | pyqir.Constant],
+        external: pyqir.Function | None = None,
     ) -> None:
         self._type = type_
         self._name = name

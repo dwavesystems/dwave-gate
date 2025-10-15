@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 import inspect
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 
 class mixedproperty:
@@ -100,7 +100,7 @@ class mixedproperty:
         self._callable = callable_
         return self
 
-    def __get__(self, instance: Optional[object], cls: type) -> Any:
+    def __get__(self, instance: object | None, cls: type) -> Any:
         """Return the internal function call.
 
         Depending on whether the internal function signature contains 2
@@ -126,5 +126,5 @@ class mixedproperty:
 
         return self._callable(cls, instance)
 
-    def __set__(self, instance: Optional[object], value: Any) -> None:
+    def __set__(self, instance: object | None, value: Any) -> None:
         raise AttributeError("can't set attribute")
