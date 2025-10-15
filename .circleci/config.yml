@@ -2,26 +2,21 @@ version: 2.1
 
 orbs:
   win: circleci/windows@5.0
-  macos: circleci/macos@2.4
+  macos: circleci/macos@2.5
 
 commands:
   run-cibuildwheel:
     parameters:
       cibw-version:
         type: string
-        default: 2.21.2
+        default: 3.2.1
     steps:
       - run:
           name: run cibuildwheel
           shell: bash -eo pipefail
           command: |
-            if [[ $OS == Windows_NT ]]; then
-              python -m pip install --user cibuildwheel==<< parameters.cibw-version >>
-              python -m cibuildwheel --output-dir dist
-            else
-              python3 -m pip install --user cibuildwheel==<< parameters.cibw-version >>
-              python3 -m cibuildwheel --output-dir dist
-            fi
+            python -m pip install --user cibuildwheel==<< parameters.cibw-version >>
+            python -m cibuildwheel --output-dir dist
 
       - store_artifacts: &store-artifacts
           path: ./dist
@@ -76,7 +71,7 @@ jobs:
         type: string
       xcode:
         type: string
-        default: "14.3.0"
+        default: "16.4.0"
 
     resource_class: macos.m1.medium.gen1
 
