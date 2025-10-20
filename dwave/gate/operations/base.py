@@ -34,7 +34,7 @@ import warnings
 from abc import ABCMeta
 from collections.abc import Hashable, Mapping, Sequence
 from itertools import chain
-from typing import TYPE_CHECKING, Optional, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Type, TypeVar, overload
 
 import numpy as np
 
@@ -48,9 +48,9 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-Qubits = Union[Qubit, Sequence[Qubit]]
-Bits = Union[Bit, Sequence[Bit]]
-Parameters = Union[Variable, complex, Sequence[Union[Variable, complex]]]
+Qubits = Qubit | Sequence[Qubit]
+Bits = Bit | Sequence[Bit]
+Parameters = Variable | complex | Sequence[Variable | complex]
 
 CustomOperation = TypeVar("CustomOperation", bound="Operation")
 CustomParametricOperation = TypeVar("CustomParametricOperation", bound="ParametricOperation")
@@ -67,16 +67,16 @@ class OperationError(Exception):
 
 
 @overload
-def create_operation(circuit: ParametricCircuit, name: Optional[str] = None) -> Type[CustomParametricOperation]:  # type: ignore
+def create_operation(circuit: ParametricCircuit, name: str | None = None) -> Type[CustomParametricOperation]:  # type: ignore
     ...
 
 
 @overload
-def create_operation(circuit: Circuit, name: Optional[str] = None) -> Type[CustomOperation]:  # type: ignore
+def create_operation(circuit: Circuit, name: str | None = None) -> Type[CustomOperation]:  # type: ignore
     ...
 
 
-def create_operation(circuit, name: Optional[str] = None) -> Type[CustomOperation]:  # type: ignore
+def create_operation(circuit, name: str | None = None) -> Type[CustomOperation]:  # type: ignore
     """Create an operation from a circuit object.
 
     Takes the circuit operations and creates a new custom operation class inheriting either directly
@@ -104,7 +104,7 @@ def create_operation(circuit, name: Optional[str] = None) -> Type[CustomOperatio
             self._matrix = None
             super().__init__(*args, **kwargs)
 
-        def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+        def to_qasm(self, mapping: Mapping | None = None) -> str:
             """Converts the custom operation into an OpenQASM string.
 
             Note, the custom operation must be defined by the user before being used,
@@ -178,9 +178,9 @@ class Operation(metaclass=ABCLockedAttr):
             required when applying an operation within a circuit context.
     """
 
-    _num_qubits: Optional[int] = None
+    _num_qubits: int | None = None
 
-    def __init__(self, qubits: Optional[Qubits] = None) -> None:
+    def __init__(self, qubits: Qubits | None = None) -> None:
         active_context = CircuitContext.active_context
 
         if qubits is not None:
@@ -194,7 +194,7 @@ class Operation(metaclass=ABCLockedAttr):
 
         # must be set before appending operation to circuit
         self._qubits = qubits
-        self._cond: Optional[Sequence[Bit]] = None
+        self._cond: Sequence[Bit] | None = None
 
         if active_context is not None and active_context.frozen is False:
             active_context.circuit.append(self)
@@ -221,7 +221,7 @@ class Operation(metaclass=ABCLockedAttr):
         return tuple(qubits)
 
     def _map_qubits(
-        self, mapping: Optional[Mapping[Hashable, tuple[str, int]]] = None
+        self, mapping: Mapping[Hashable, tuple[str, int]] | None = None
     ) -> Sequence[str]:
         """Returns an OpenQASM 2.0 string representation of the operations qubits.
 
@@ -237,7 +237,7 @@ class Operation(metaclass=ABCLockedAttr):
             return [f"{mapping[qb][0]}[{mapping[qb][1]}]" for qb in self.qubits]
         return [f"q[{i}]" for i in range(self.num_qubits)]
 
-    def __call__(self, qubits: Optional[Sequence[Qubit]] = None) -> TOperation:
+    def __call__(self, qubits: Sequence[Qubit] | None = None) -> TOperation:
         """Apply (or reapply) the operation within a context.
 
         Args:
@@ -295,7 +295,7 @@ class Operation(metaclass=ABCLockedAttr):
         raise AttributeError(f"Operation {cls.name} supports an arbitrary number of qubits.")
 
     @property
-    def qubits(self) -> Optional[tuple[Qubit, ...]]:
+    def qubits(self) -> tuple[Qubit, ...] | None:
         """Qubits that the operation is applied to."""
         return self._qubits
 
@@ -359,12 +359,12 @@ class ParametricOperation(Operation):
             matrix representation of the operation.
     """
 
-    _num_params: Optional[int] = None
+    _num_params: int | None = None
 
     def __init__(
         self,
         parameters: Parameters,
-        qubits: Optional[Qubits] = None,
+        qubits: Qubits | None = None,
     ):
         self._parameters = self._check_parameters(parameters)
         super().__init__(qubits=qubits)
@@ -380,7 +380,7 @@ class ParametricOperation(Operation):
         return self._parameters
 
     def eval(
-        self, parameters: Optional[Sequence[complex]] = None, inplace: bool = False
+        self, parameters: Sequence[complex] | None = None, inplace: bool = False
     ) -> ParametricOperation:
         """Evaluate operation with explicit parameters.
 
@@ -417,7 +417,7 @@ class ParametricOperation(Operation):
         raise AttributeError(f"Operations {cls.name} missing class attribute '_num_params'.")
 
     @classmethod
-    def _check_parameters(cls, params: Parameters) -> list[Union[Variable, complex]]:
+    def _check_parameters(cls, params: Parameters) -> list[Variable | complex]:
         """Asserts the size and type of the parameter(s) and returns the
         correct type.
 
@@ -439,7 +439,7 @@ class ParametricOperation(Operation):
         # cast to list for convention
         return list(params)
 
-    def __call__(self, qubits: Optional[Sequence[Qubit]] = None) -> TPOperation:
+    def __call__(self, qubits: Sequence[Qubit] | None = None) -> TPOperation:
         """Apply (or reapply) the operation within a context.
 
         Args:
@@ -466,14 +466,14 @@ class ControlledOperation(Operation):
             the operations ``_num_control`` and ``_num_target`` class attributes.
     """
 
-    _num_control: Optional[int] = None
-    _num_target: Optional[int] = None
-    _target_operation: Optional[Type[Operation]] = None
+    _num_control: int | None = None
+    _num_target: int | None = None
+    _target_operation: Type[Operation] | None = None
 
     def __init__(
         self,
-        control: Optional[Qubits] = None,
-        target: Optional[Qubits] = None,
+        control: Qubits | None = None,
+        target: Qubits | None = None,
         **kwargs,
     ) -> None:
         qubits = kwargs.pop("qubits") if "qubits" in kwargs else False
@@ -504,8 +504,8 @@ class ControlledOperation(Operation):
 
     def __call__(
         self,
-        control: Optional[Sequence[Qubit]] = None,
-        target: Optional[Sequence[Qubit]] = None,
+        control: Sequence[Qubit] | None = None,
+        target: Sequence[Qubit] | None = None,
     ) -> TCOperation:
         """Apply (or reapply) the operation within a context.
 
@@ -568,27 +568,27 @@ class ControlledOperation(Operation):
         return matrix
 
     @property
-    def control(self) -> Optional[tuple[Qubit]]:
+    def control(self) -> tuple[Qubit] | None:
         """Control qubit(s)."""
         return self._control
 
     @property
-    def target(self) -> Optional[tuple[Qubit]]:
+    def target(self) -> tuple[Qubit] | None:
         """Target qubit(s)."""
         return self._target
 
     @mixedproperty
-    def num_control(cls) -> Optional[int]:
+    def num_control(cls) -> int | None:
         """Number of control qubit(s)."""
         return cls._num_control
 
     @mixedproperty
-    def num_target(cls) -> Optional[int]:
+    def num_target(cls) -> int | None:
         """Number of target qubit(s)."""
         return cls._num_target
 
     @mixedproperty
-    def target_operation(cls) -> Optional[Type[Operation]]:
+    def target_operation(cls) -> Type[Operation] | None:
         """Target operation"""
         if cls._target_operation:
             return cls._target_operation
@@ -614,8 +614,8 @@ class ParametricControlledOperation(ControlledOperation, ParametricOperation):
     def __init__(
         self,
         parameters: Parameters,
-        control: Optional[Qubits] = None,
-        target: Optional[Qubits] = None,
+        control: Qubits | None = None,
+        target: Qubits | None = None,
         **kwargs,
     ):
         # ControlledOperation.__init__(self, control, target, **kwargs)
@@ -623,7 +623,7 @@ class ParametricControlledOperation(ControlledOperation, ParametricOperation):
         self._parameters = self._check_parameters(parameters)
 
     def __call__(
-        self, control: Optional[Sequence[Qubit]] = None, target: Optional[Sequence[Qubit]] = None
+        self, control: Sequence[Qubit] | None = None, target: Sequence[Qubit] | None = None
     ) -> TPCOperation:
         """Apply (or reapply) the operation within a context.
 
@@ -658,9 +658,9 @@ class Measurement(Operation):
             an measurement within a circuit context.
     """
 
-    _num_qubits: Optional[int] = None
+    _num_qubits: int | None = None
 
-    def __init__(self, qubits: Optional[Qubits] = None) -> None:
+    def __init__(self, qubits: Qubits | None = None) -> None:
         self._bits = None
         self._measured_state = None
 
@@ -672,7 +672,7 @@ class Measurement(Operation):
     def __repr__(self) -> str:
         return f"<Measurement, qubits={self.qubits}, measured={self.bits}>"
 
-    def __or__(self, bits: Union[Bits, ClassicalRegister]) -> Measurement:
+    def __or__(self, bits: Bits | ClassicalRegister) -> Measurement:
         if not isinstance(bits, ClassicalRegister):
             if isinstance(bits, Bit):
                 bits = (bits,)
@@ -689,21 +689,21 @@ class Measurement(Operation):
         return self
 
     @property
-    def bits(self) -> Optional[Sequence[Bit]]:
+    def bits(self) -> Sequence[Bit] | None:
         """The bits in which the measurement samples are stored."""
         return self._bits
 
     @property
-    def state(self) -> Optional[NDArray]:
+    def state(self) -> NDArray | None:
         """The circuit state when measured."""
         return self._measured_state
 
     def sample(
         self,
-        qubits: Optional[Sequence[int]] = None,
+        qubits: Sequence[int] | None = None,
         num_samples: int = 1,
         as_bitstring: bool = False,
-    ) -> list[Union[int, str]]:
+    ) -> list[int | str]:
         """Sample the measured state.
 
         Args:
@@ -713,7 +713,7 @@ class Measurement(Operation):
                 lists of integers (default).
 
         Returns:
-            list[Union[int, str]]: The measurement samples for each qubit.
+            list[int | str]: The measurement samples for each qubit.
         """
         # NOTE: avoid circular imports; operations used in simulator
         from dwave.gate.simulator.simulator import sample_qubit
@@ -746,7 +746,7 @@ class Measurement(Operation):
             return ["".join(map(str, s)) for s in samples]
         return samples
 
-    def expval(self, qubits: Optional[int] = None, num_samples: int = 1000) -> list[float]:
+    def expval(self, qubits: int | None = None, num_samples: int = 1000) -> list[float]:
         """Calculate the expectation value of a measurement.
 
         Args:
@@ -769,4 +769,4 @@ class Barrier(Operation):
             context.
     """
 
-    _num_qubits: Optional[int] = None
+    _num_qubits: int | None = None

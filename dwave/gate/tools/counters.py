@@ -18,7 +18,6 @@ __all__ = [
 
 import itertools
 import warnings
-from typing import Optional
 
 
 class IDCounter:
@@ -74,7 +73,7 @@ class IDCounter:
                 continue
 
     @classmethod
-    def reset(cls, length: Optional[int] = None, batch: Optional[int] = None) -> None:
+    def reset(cls, length: int | None = None, batch: int | None = None) -> None:
         """Resets the ID counter to use a certain length and/or batch size.
 
         Args:

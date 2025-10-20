@@ -15,7 +15,7 @@
 import inspect
 import math
 from random import random
-from typing import Generator, Optional, Type
+from typing import Generator, Type
 
 import numpy as np
 import pytest
@@ -34,7 +34,7 @@ from dwave.gate.primitives import Variable
 from dwave.gate.tools.unitary import build_unitary
 
 
-def get_operations(op_type: Optional[str] = None) -> Generator:
+def get_operations(op_type: str | None = None) -> Generator:
     """Returns a generator for the operations.
 
     The returned generetor yields the corresponding operations declared in ``__all__`` in the

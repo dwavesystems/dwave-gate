@@ -57,7 +57,7 @@ __all__ = [
 import cmath
 import math
 from collections.abc import Mapping
-from typing import Optional, Type
+from typing import Type
 
 import numpy as np
 from numpy.typing import NDArray
@@ -85,7 +85,7 @@ class Identity(Operation):
 
     _num_qubits: int = 1
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the identity operator into an OpenQASM string.
 
         Args:
@@ -116,7 +116,7 @@ class X(Operation):
 
     _num_qubits: int = 1
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Pauli X operator into an OpenQASM string.
 
         Args:
@@ -147,7 +147,7 @@ class Y(Operation):
 
     _num_qubits: int = 1
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Pauli Y operator into an OpenQASM string.
 
         Args:
@@ -179,7 +179,7 @@ class Z(Operation):
     _num_qubits: int = 1
     _decomposition = ["Hadamard", "X", "Hadamard"]
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Pauli Z operator into an OpenQASM string.
 
         Args:
@@ -210,7 +210,7 @@ class Hadamard(Operation):
 
     _num_qubits: int = 1
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Hadamard operation into an OpenQASM string.
 
         Args:
@@ -241,7 +241,7 @@ class S(Operation):
 
     _num_qubits: int = 1
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the S operation into an OpenQASM string.
 
         Args:
@@ -276,7 +276,7 @@ class T(Operation):
 
     _num_qubits: int = 1
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the T operation into an OpenQASM string.
 
         Args:
@@ -315,7 +315,7 @@ class RX(ParametricOperation):
     _num_qubits: int = 1
     _num_params: int = 1
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Rotation-X operation into an OpenQASM string.
 
         Args:
@@ -354,7 +354,7 @@ class RY(ParametricOperation):
     _num_qubits: int = 1
     _num_params: int = 1
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Rotation-Y operation into an OpenQASM string.
 
         Args:
@@ -393,7 +393,7 @@ class RZ(ParametricOperation):
     _num_qubits: int = 1
     _num_params: int = 1
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Rotation-Z operation into an OpenQASM string.
 
         Args:
@@ -436,7 +436,7 @@ class Rotation(ParametricOperation):
         "gate rot(beta, gamma, delta) { rz(beta) q[0]; ry(gamma) q[0]; rz(delta) q[0]; }"
     )
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Rotation operation into an OpenQASM string.
 
         Note, the Rotation operation must be defined by decomposing into existing gates, e.g.,
@@ -492,7 +492,7 @@ class CX(ControlledOperation):
     _num_target: int = 1
     _target_operation: Type[Operation] = X
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the CX operation into an OpenQASM string.
 
         Args:
@@ -523,7 +523,7 @@ class CY(ControlledOperation):
     _num_target: int = 1
     _target_operation: Type[Operation] = Y
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Controlled-Y operation into an OpenQASM string.
 
         Args:
@@ -550,7 +550,7 @@ class CZ(ControlledOperation):
     _num_target: int = 1
     _target_operation: Type[Operation] = Z
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Controlled-Z operation into an OpenQASM string.
 
         Args:
@@ -577,7 +577,7 @@ class CHadamard(ControlledOperation):
     _num_target: int = 1
     _target_operation: Type[Operation] = Hadamard
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Controlled-Hadamard operation into an OpenQASM string.
 
         Args:
@@ -606,7 +606,7 @@ class CRX(ParametricControlledOperation):
 
     _target_operation: Type[Operation] = RX
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Controlled-RX operation into an OpenQASM string.
 
         Args:
@@ -637,7 +637,7 @@ class CRY(ParametricControlledOperation):
 
     _target_operation: Type[Operation] = RY
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Controlled-RY operation into an OpenQASM string.
 
         Args:
@@ -668,7 +668,7 @@ class CRZ(ParametricControlledOperation):
 
     _target_operation: Type[Operation] = RZ
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Controlled-RZ operation into an OpenQASM string.
 
         Args:
@@ -701,7 +701,7 @@ class CRotation(ParametricControlledOperation):
 
     _qasm_decl: str = "// gate definition not implemented"
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the Controlled-Rotation operation into an OpenQASM string.
 
         Args:
@@ -729,7 +729,7 @@ class SWAP(Operation):
     _num_qubits: int = 2
     _qasm_decl: str = "gate swap a, b { cx b, a; cx a, b; cx b, a; }"
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the SWAP operation into an OpenQASM string.
 
         Note, the SWAP operation must be defined by decomposing into existing gates, e.g., using
@@ -777,7 +777,7 @@ class CSWAP(Operation):
     _num_qubits: int = 3
     _qasm_decl: str = "gate cswap c, a, b { cx b, a; ccx c, a, b; cx b, a; }"
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the CSWAP operation into an OpenQASM string.
 
         Note, the CSWAP operation must be defined by decomposing into existing gates, e.g., using
@@ -832,7 +832,7 @@ class CCX(Operation):
 
     _num_qubits: int = 3
 
-    def to_qasm(self, mapping: Optional[Mapping] = None) -> str:
+    def to_qasm(self, mapping: Mapping | None = None) -> str:
         """Converts the CCX operation into an OpenQASM string.
 
         Args:

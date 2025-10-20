@@ -12,25 +12,25 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import NamedTuple
 
 import cgen as c
 import numpy as np
 
 # entry of a gate matrix
-EntryType = Union[float, c.Value]
+EntryType = float | c.Value
 
 
-def binary(i: int, n: int) -> Tuple[int, ...]:
+def binary(i: int, n: int) -> tuple[int, ...]:
     """Return the bitstring of i (with n total bits) as a tuple."""
     return tuple((i >> j) & 1 for j in range(n))
 
 
 def compile_gate(
-    gate_matrix: Union[np.ndarray, List[List[EntryType]]],
+    gate_matrix: np.ndarray | list[list[EntryType]],
     skip_identity: bool = True,
     skip_zeros: bool = False,
-) -> Tuple[Set[int], Dict[int, List[Tuple[int, EntryType]]]]:
+) -> tuple[set[int], dict[int, list[tuple[int, EntryType]]]]:
     """Compile a given gate into a minimal set of instructions.
 
     Args:
@@ -59,7 +59,7 @@ def compile_gate(
 
     # keys are substates, and values are lists of instructions to compute the new
     # sub state amplitude
-    instructions: Dict[int, List[Tuple[int, EntryType]]] = {}
+    instructions: dict[int, list[tuple[int, EntryType]]] = {}
 
     for state_i in range(gate_matrix_size):
         nz = np.nonzero(gate_matrix[state_i])[0]
@@ -98,8 +98,8 @@ def generate_op_c_code(
     op_name: str,
     num_targets: int,
     num_controls: int,
-    sparse_gate_mask: Optional[np.ndarray] = None,
-    precompile_gate: Optional[np.ndarray] = None,
+    sparse_gate_mask: np.ndarray | None = None,
+    precompile_gate: np.ndarray | None = None,
     little_endian: bool = True,
     collect_norm: bool = False,
     provide_amplitude_scale_factor: bool = False,
@@ -440,8 +440,8 @@ def generate_op(
     op_name: str,
     num_targets: int,
     num_controls: int,
-    sparse_gate_mask: Optional[np.ndarray] = None,
-    precompile_gate: Optional[np.ndarray] = None,
+    sparse_gate_mask: np.ndarray | None = None,
+    precompile_gate: np.ndarray | None = None,
     collect_norm: bool = False,
 ) -> OpInfo:
     """Generate C code with cython wrapper for a fast implementation of the given gate
@@ -537,7 +537,7 @@ def generate_op_set(
     op_name: str,
     num_targets: int,
     num_controls: int,
-    operators: List[np.ndarray],
+    operators: list[np.ndarray],
 ) -> OpInfo:
     """Generate C code and cython wrapper for a fast implementation of the given
     set of operators. These should follow the rule (where {E_k} is the set of operators)
@@ -757,7 +757,7 @@ cdef extern from "./ops.h" nogil:
     measurement_0 = np.array([[1, 0], [0, 0]])
     measurement_1 = np.array([[0, 0], [0, 1]])
 
-    gate_defintions: List[Tuple[str, int, int, Dict]] = [
+    gate_defintions: list[tuple[str, int, int, dict]] = [
         ("single_qubit", 1, 0, {}),
         ("apply_gate_control", 1, 1, {}),
         ("apply_gate_two_control", 1, 2, {}),
