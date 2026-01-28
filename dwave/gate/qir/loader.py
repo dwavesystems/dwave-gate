@@ -173,7 +173,7 @@ def _deconstruct_call_instruction(
             if arg.is_null:
                 qubits.append(0)
             else:
-                pattern = "\%Qubit\* inttoptr \(i64 (\d+) to \%Qubit\*\)"
+                pattern = r"\%Qubit\* inttoptr \(i64 (\d+) to \%Qubit\*\)"
                 qubit = re.search(pattern, str(arg)).groups()[0]
                 qubits.append(int(qubit) if qubit.isdigit() else None)
         else:
@@ -181,7 +181,7 @@ def _deconstruct_call_instruction(
             if arg.is_null:
                 bits.append(0)
             else:
-                pattern = "\%Result\* inttoptr \(i64 (\d+) to \%Result\*\)"
+                pattern = r"\%Result\* inttoptr \(i64 (\d+) to \%Result\*\)"
                 bit = re.search(pattern, arg.__str__()).groups()[0]
                 bits.append(int(bit) if bit.isdigit() else None)
 
