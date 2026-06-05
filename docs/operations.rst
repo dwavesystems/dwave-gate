@@ -3,6 +3,8 @@
 Operations
 ==========
 
+.. deprecated:: 0.3.6
+
 .. automodule:: dwave.gate.operations
     :members:
     :undoc-members:

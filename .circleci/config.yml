@@ -73,8 +73,6 @@ jobs:
         type: string
         default: "16.4.0"
 
-    resource_class: macos.m1.medium.gen1
-
     macos:
       xcode: << parameters.xcode >>
 

@@ -1,0 +1,4 @@
+---
+deprecations:
+  - |
+    The ``dwave-gate`` repository and package is deprecated

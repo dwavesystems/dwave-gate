@@ -3,6 +3,8 @@
 Registers
 =========
 
+.. deprecated:: 0.3.6
+
 .. automodule:: dwave.gate.registers
     :members:
     :undoc-members:

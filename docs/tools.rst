@@ -3,6 +3,8 @@
 Tools
 =====
 
+.. deprecated:: 0.3.6
+
 .. automodule:: dwave.gate.tools
     :members:
     :undoc-members:

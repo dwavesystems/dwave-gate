@@ -3,6 +3,8 @@
 Simulators
 ==========
 
+.. deprecated:: 0.3.6
+
 .. automodule:: dwave.gate.simulator
     :members:
     :undoc-members:

@@ -3,6 +3,8 @@
 QIR
 ===
 
+.. deprecated:: 0.3.6
+
 .. automodule:: dwave.gate.qir
     :members:
     :undoc-members:

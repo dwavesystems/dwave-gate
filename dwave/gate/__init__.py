@@ -12,8 +12,14 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+from warnings import warn as _warn
+
 from dwave.gate.circuit import *
 from dwave.gate.mixedproperty import *
 from dwave.gate.primitives import *
 
 __version__ = "0.3.5"
+
+_warn("dwave-gate is deprecated",
+      category=DeprecationWarning,
+      stacklevel=2)

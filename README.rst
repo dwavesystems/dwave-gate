@@ -1,3 +1,5 @@
+:warning: This version of *dwave-gate* is deprecated and no longer maintained
+
 .. image:: https://img.shields.io/pypi/v/dwave-gate.svg
     :target: https://pypi.org/project/dwave-gate
 

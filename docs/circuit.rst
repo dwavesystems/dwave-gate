@@ -3,6 +3,8 @@
 Circuits
 ========
 
+.. deprecated:: 0.3.6
+
 Circuit Module
 --------------
 

@@ -4,6 +4,8 @@
 dwave-gate
 ==========
 
+.. deprecated:: 0.3.6
+
 .. toctree::
     :caption: Reference documentation for dwave-gate:
     :maxdepth: 1

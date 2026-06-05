@@ -4,6 +4,8 @@
 API Reference
 =============
 
+.. deprecated:: 0.3.6
+
 .. toctree::
     :maxdepth: 2
 
