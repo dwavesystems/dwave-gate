@@ -1,0 +1,62 @@
+[build-system]
+requires = [
+    "setuptools>=77.0.3",   # PEP 639
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dwave-gate"
+
+# TODO: expand description
+description = "dwave-gate"
+authors = [
+    {name = "D-Wave", email = "tools@dwavesys.com"},
+]
+readme = {file = "README.rst", content-type = "text/x-rst"}
+license = "Apache-2.0"
+license-files = ["LICEN[CS]E*"]
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dynamic = ["version"]
+dependencies = [
+    "addict",
+    "numpy>=2,<3",
+    "pydantic>=2,<3",
+]
+requires-python = ">=3.11"
+
+[project.urls]
+Changelog = "https://github.com/dwavesystems/dwave-gate/releases"
+Documentation = "https://docs.dwavequantum.com"
+Issues = "https://github.com/dwavesystems/dwave-gate/issues"
+Repository = "https://github.com/dwavesystems/dwave-gate.git"
+
+[dependency-groups]
+dev = [
+    "numpy==2.4.6",  # latest that support Python 3.11 as of July 2026
+    "pydantic==2.13.4",  # latest as of July 2026
+    "addict==2.4.0",
+    "reno==4.1.0",
+]
+docs = [
+    # matches dwave-ocean-sdk as of July 2026
+    "pydata-sphinx-theme==0.16.1",
+    "sphinx==8.2.3",
+    "sphinx-design==0.6.1",
+]
+test = [
+    "pytest",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "dwave.gate.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["dwave.*"]
