@@ -53,6 +53,9 @@ docs = [
 ]
 test = [
     "pytest",
+    "pytest-mock",
+    "coverage",
+    "asteval",
 ]
 
 [tool.setuptools.dynamic]
@@ -60,3 +63,6 @@ version = {attr = "dwave.gate.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["dwave.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
