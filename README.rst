@@ -13,7 +13,44 @@ dwave-gate
 
 .. start_gate_about
 
-TODO: add description
+``dwave-gate`` provides the functionality for generating quantum circuit
+description language (QCDL) programs. QCDL is an embedded domain-specific
+language (DSL) that uses Python as its host language, allowing you to interleave
+classical Python preprocessing with quantum gate operations. Programs are
+defined with the ``@qcdl`` decorator, which converts an ordinary Python function
+into a QCDL program generator that accepts qubit arguments and returns a
+dictionary suitable for submission to compiler or simulator services.
+
+The following example creates a Bell state circuit, producing a dictionary
+that can be passed to a compiler or simulator:
+
+.. code-block:: python
+
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import cx, h, measure
+
+    @qcdl(num_qubits=2)
+    def main(q0, q1):
+        h(q0)        # Hadamard gate on q0
+        cx(q0, q1)   # CNOT with q0 as control, q1 as target
+        measure(q0)
+        measure(q1)
+
+    qcdl_dict = main()
+
+To run the program on a solver, use the Ocean SDK's cloud client to locate a solver
+that supports QCDL and submit the dictionary via ``sample_qcdl``:
+
+.. code-block:: python
+
+    import orjson
+    from dwave.cloud import Client
+
+    client = Client.from_config()
+    solver = client.get_solver(supported_problem_types__contains="qcdl")
+
+    response = solver.sample_qcdl(qcdl_dict, shots=3)
+    answer = orjson.loads(response.answer_data.read())
 
 .. end_gate_about
 
