@@ -4,7 +4,7 @@
 QCDL
 ====
 
-The :ref:`gm_simulator_intro` section provides an introduction to using QCDL to
+The :ref:`gate_workflow` section provides an introduction to using QCDL to
 program quantum circuits.
 
 Classes
