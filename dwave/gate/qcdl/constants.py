@@ -33,7 +33,24 @@ NUM_RECS = 4
 
 
 class LogicalOutcomeToInteger(enum.IntEnum):
-    """Maps the numerical encoding to an erasure bitstring representation."""
+    """Maps the numerical encoding to an erasure bitstring representation.
+    Examples:
+
+        .. testcode::
+
+            from dwave.gate.qcdl import LogicalOutcomeToInteger
+
+            for val in [LogicalOutcomeToInteger.ONE, LogicalOutcomeToInteger.SPLAT]:
+                print(val, val.as_bit)
+
+        The code above outputs the following values.
+
+            .. testoutput::
+                :options: +NORMALIZE_WHITESPACE
+
+                1 1
+                -1 *
+    """
 
     ZERO = 0
     ONE = 1
@@ -44,10 +61,13 @@ class LogicalOutcomeToInteger(enum.IntEnum):
         """Instantiate a :class:`.LogicalOutcomeToInteger` from various inputs.
 
         Args:
-            val (str | int | float): Input value.
+            val: Input value.
 
         Returns:
             :class:`.LogicalOutcomeToInteger`: Erasure bitstring representation.
+
+        Examples:
+            See examples for the :class:`.LogicalOutcomeToInteger` class.
         """
         if val in ["0", 0]:
             return LogicalOutcomeToInteger.ZERO
@@ -65,6 +85,9 @@ class LogicalOutcomeToInteger(enum.IntEnum):
 
         Returns:
             str: A "0", "1", or "*".
+
+        Examples:
+            See examples for the :class:`.LogicalOutcomeToInteger` class.
         """
         if self == LogicalOutcomeToInteger.SPLAT:
             return "*"

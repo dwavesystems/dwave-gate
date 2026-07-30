@@ -30,6 +30,9 @@ Utilities
     :members:
     :show-inheritance:
 
+Mirroring Utilities
+~~~~~~~~~~~~~~~~~~~
+
 .. automodule:: dwave.gate.qcdl.implementations
    :members:
 

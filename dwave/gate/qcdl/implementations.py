@@ -44,23 +44,43 @@ def mirror_bool_register(
     register: Register,
     receivers: list[QcdlModule] | None = None,
 ) -> None:
-    """Broadcast a bool register from one qubit to others.
+    """Broadcast a Boolean register associated with one qubit to others.
 
-    This may be useful for, for example, a register used with an mced.
+    May be useful for a register used for the outcome of an
+    :func:`~dwave.gate.qcdl.operations.mced` operation. See the
+    :ref:`qcdl_advanced_registers_mirroring` section to learn about mirroring.
 
-    This function assumes that:
+    This function requires the following:
 
-    * The register was already allocated on all the qubits.
-    * That the register on the sender has only a 0 or a 1. This
-      assumption is not verified at runtime.
+    *   Allocate the register to all the qubits.
+    *   A value of either :math:`0` or :math:`1` in the originating register.
 
     Args:
-        sender (QcdlModule): The DR qubit which has already assigned
-           the measurement outcome to the register.
-        register (Register): The register to mirror.
-        receivers (list[QcdlModule] | None, optional): The DR qubits which need to have
-           their copy of the register updated. If not provided, it will
-           chose the other modules in the Register.
+        sender: Qubit associated to the register you are assigning the
+            measurement outcome to.
+        register: Register to mirror.
+        receivers: Qubits which need their associated registers updated. If not
+            specified, defaults to the other qubits associated with the register
+            selected by the ``Register`` parameter.
+
+    Examples:
+
+        .. testcode::
+
+            from dwave.gate.qcdl import qcdl, Scope
+            from dwave.gate.qcdl.implementations import mirror_bool_register
+            from dwave.gate.qcdl.operations import h, mced, x
+
+            @qcdl(3)
+            def mirror_bool_example(q0, q1, q2):
+                sc = Scope(q0, q1, q2)
+                h(q0)
+                r0 = Register(sc.qcdl_modules, name="r0")
+                receivers = [qubit for qubit in sc.qcdl_modules if qubit != q0]
+                mced(q0, register=r0)
+                mirror_bool_register(sender=q0, register=r0, receivers=receivers)
+
+            qcdl_dict: dict = mirror_bool_example()
     """
     receivers = _get_receivers(sender=sender, register=register, receivers=receivers)
     if not receivers:
