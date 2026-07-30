@@ -54,13 +54,14 @@ This example creates a `Bell state <https://en.wikipedia.org/wiki/Bell_state>`_.
         measure(q0)
         measure(q1)
 
-    qcdl_dict = main()
+    qcdl_program = main()
 
 In the code above, the ``@qcdl`` decorator specifies that the entry point
 accepts two qubits, the arguments ``q0`` and ``q1`` of ``main()``. The decorated
-function ``main()`` returns a Python :class:`dict` that you can submit to a
-compiler or simulator in the Leap service, as described in the
-:ref:`qcdl_submitting_programs` section.
+function ``main()`` returns a
+`Pydantic model <https://pydantic.dev/docs/validation/dev/concepts/models/>`_
+that you can submit to a compiler or simulator in the Leap service, as described
+in the :ref:`qcdl_submitting_programs` section.
 
 .. todo:: replace "Leap" with "\|cloud\|_" above and in additional places
 
@@ -72,7 +73,7 @@ as a display object.
 
     from dwave.gate.qcdl import print_qcdl
 
-    print_qcdl(qcdl_dict)
+    print_qcdl(qcdl_program)
 
 The code above displays the following QCDL program.
 
@@ -88,7 +89,7 @@ The code above displays the following QCDL program.
     end quantum
 
 If :func:`~dwave.gate.qcdl.print_qcdl` displays poorly, you can instead output a
-string by ``print_qcdl(qcdl_dict, to_Display=False)``.
+string by ``print_qcdl(qcdl_program, to_Display=False)``.
 
 .. [#]
     Python decorators are described in the
