@@ -44,8 +44,8 @@ This example creates a `Bell state <https://en.wikipedia.org/wiki/Bell_state>`_.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import cx, h, measure
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import cx, h, measure
 
     @qcdl(2)
     def main(q0, q1):
@@ -64,13 +64,13 @@ compiler or simulator in the Leap service, as described in the
 
 .. todo:: replace "Leap" with "\|cloud\|_" above and in additional places
 
-The :func:`~aqumen.qcdl.print_qcdl` function can visualize this dict structure
+The :func:`~dwave.gate.qcdl.print_qcdl` function can visualize this dict structure
 as readable text, and if run in a `Jupyter <https://jupyter.org/>`_ notebook,
 as a display object.
 
 .. testcode::
 
-    from aqumen.qcdl import print_qcdl
+    from dwave.gate.qcdl import print_qcdl
 
     print_qcdl(qcdl_dict)
 
@@ -86,7 +86,7 @@ The code above displays the following QCDL program.
         measure([q1], q1, log=True)
     end quantum
 
-If :func:`~aqumen.qcdl.print_qcdl` displays poorly, you can instead output a
+If :func:`~dwave.gate.qcdl.print_qcdl` displays poorly, you can instead output a
 string by ``print_qcdl(qcdl_dict, to_Display=False)``.
 
 .. [#]
@@ -103,14 +103,14 @@ Gates
 -----
 
 The gates ``dwave-gate`` supports match the method names in a Qiskit
-QuantumCircuit_ (e.g., :func:`~aqumen.qcdl.operations.h`,
-:func:`~aqumen.qcdl.operations.sx`, :func:`~aqumen.qcdl.operations.rz`,
-:func:`~aqumen.qcdl.operations.cz`, etc).
+QuantumCircuit_ (e.g., :func:`~dwave.gate.qcdl.operations.h`,
+:func:`~dwave.gate.qcdl.operations.sx`, :func:`~dwave.gate.qcdl.operations.rz`,
+:func:`~dwave.gate.qcdl.operations.cz`, etc).
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import h, cz
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import h, cz
 
     @qcdl(2)
     def simple_gate_example(q0, q1):
@@ -131,7 +131,7 @@ Qiskit the method call ``cz(q0, q1)``.
 
 .. note::
     For parameterizable gates, angles are in units of radians when passed as
-    literals. When a :class:`~aqumen.qcdl.FixedPointRegister` is passed as the
+    literals. When a :class:`~dwave.gate.qcdl.FixedPointRegister` is passed as the
     angle for a gate, its value must be in units of π (see the
     :ref:`qcdl_basic_registers_arithmetic` section for more information).
 
@@ -143,10 +143,10 @@ to use the QPU's supported basis gates and topology, as described in the
 :ref:`qcdl_basic_transpilation` section. For most algorithms, any implementation
 is acceptable but if you are studying fidelity or yield characterization, you
 can prevent the transpiler from combining certain gates. The
-:func:`~aqumen.qcdl.operations.barrier` instruction signals to the transpiler to
+:func:`~dwave.gate.qcdl.operations.barrier` instruction signals to the transpiler to
 not combine gates across your barrier.\ [#]_
 
-For example, if you do not set :func:`~aqumen.qcdl.operations.barrier`
+For example, if you do not set :func:`~dwave.gate.qcdl.operations.barrier`
 instructions on a
 `randomized benchmarking <https://en.wikipedia.org/wiki/Randomized_benchmarking>`_
 circuit, where the net mathematical effect is an identity operation,
@@ -154,8 +154,8 @@ transpilation collapses your QCDL.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import barrier, x
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import barrier, x
 
     @qcdl(1)
     def barrier_example(q0):
@@ -164,12 +164,12 @@ transpilation collapses your QCDL.
         x(q0)
 
 .. note::
-    A :func:`~aqumen.qcdl.operations.barrier` instruction does not necessarily
-    imply a :meth:`~aqumen.qcdl.components.QcdlModuleContainer.sync` (see the
+    A :func:`~dwave.gate.qcdl.operations.barrier` instruction does not necessarily
+    imply a :meth:`~dwave.gate.qcdl.components.QcdlModuleContainer.sync` (see the
     :ref:`qcdl_advanced_synchronization` section).
 
 .. [#]
-    When the transpiler is not used, the :func:`~aqumen.qcdl.operations.barrier`
+    When the transpiler is not used, the :func:`~dwave.gate.qcdl.operations.barrier`
     instruction might affect some circuit modifications.
 
 
@@ -179,7 +179,7 @@ Classical Registers & Arithmetic
 --------------------------------
 
 QCDL supports integer and fixed-point registers with the
-:class:`~aqumen.qcdl.Register` and :class:`~aqumen.qcdl.FixedPointRegister`
+:class:`~dwave.gate.qcdl.Register` and :class:`~dwave.gate.qcdl.FixedPointRegister`
 classes. You can use these registers for simple classical expressions: negation,
 addition, subtraction, multiplication, AND, OR, XOR, right-shift, and all six
 comparisons.
@@ -188,7 +188,7 @@ You can use the outputs of these calculations for
 :ref:`conditional statements <qcdl_advanced_conditionals>` within complex
 real-time classical-quantum logic.
 
-When you store a :class:`~aqumen.qcdl.operations.measure` result to a register,
+When you store a :class:`~dwave.gate.qcdl.operations.measure` result to a register,
 numerical values :math:`0` and :math:`1` are used to represent the logical
 projective measurements and :math:`-1` for a ``*`` state (a measurement that was
 out of the code space and declared "erased"). For more information, see the
@@ -213,40 +213,40 @@ Supported Operations
         -   Notes
     *   -   Register assignment
         -   :math:`<<=`
-        -   :class:`~aqumen.qcdl.Register`,
-            :class:`~aqumen.qcdl.FixedPointRegister`
+        -   :class:`~dwave.gate.qcdl.Register`,
+            :class:`~dwave.gate.qcdl.FixedPointRegister`
         -   QCDL uses :math:`<<=` for register assignment, a syntax similar to
             the R language, because Python does not allow the assignment
             operator :math:`=` to be overridden.
     *   -   Standard arithmetic
         -   :math:`+, -, *`
-        -   :class:`~aqumen.qcdl.Register`,
-            :class:`~aqumen.qcdl.FixedPointRegister`, literal
-        -   Operations between :class:`~aqumen.qcdl.Register` and
-            :class:`~aqumen.qcdl.FixedPointRegister` classes are not supported
+        -   :class:`~dwave.gate.qcdl.Register`,
+            :class:`~dwave.gate.qcdl.FixedPointRegister`, literal
+        -   Operations between :class:`~dwave.gate.qcdl.Register` and
+            :class:`~dwave.gate.qcdl.FixedPointRegister` classes are not supported
     *   -   Bitwise operations
         -   :math:`\&, |`, ^
-        -   :class:`~aqumen.qcdl.Register`, literal
+        -   :class:`~dwave.gate.qcdl.Register`, literal
         -
     *   -   Right-shift by :math:`1`
         -
-        -   :class:`~aqumen.qcdl.Register`
+        -   :class:`~dwave.gate.qcdl.Register`
         -
     *   -   Comparison
         -   :math:`==, !=, <, >, <=, >=`
-        -   :class:`~aqumen.qcdl.Register`,
-            :class:`~aqumen.qcdl.FixedPointRegister`, literal
-        -   Operations between :class:`~aqumen.qcdl.Register` and
-            :class:`~aqumen.qcdl.FixedPointRegister` classes are not supported
+        -   :class:`~dwave.gate.qcdl.Register`,
+            :class:`~dwave.gate.qcdl.FixedPointRegister`, literal
+        -   Operations between :class:`~dwave.gate.qcdl.Register` and
+            :class:`~dwave.gate.qcdl.FixedPointRegister` classes are not supported
     *   -   Arbitrary functions
         -   Interpolation table
-        -   :class:`~aqumen.qcdl.Register`,
-            :class:`~aqumen.qcdl.FixedPointRegister`
-        -   Generated by the :func:`~aqumen.qcdl.arbitrary_function` function
+        -   :class:`~dwave.gate.qcdl.Register`,
+            :class:`~dwave.gate.qcdl.FixedPointRegister`
+        -   Generated by the :func:`~dwave.gate.qcdl.arbitrary_function` function
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl, Scope
+    from dwave.gate.qcdl import qcdl, Scope
 
     @qcdl(2)
     def register_example(q0, q1):
@@ -268,7 +268,7 @@ Supported Operations
         register is visible to other qubits. The
         :ref:`qcdl_advanced_registers_mirroring` section provides more
         information.
-    *   If you pass a :class:`~aqumen.qcdl.FixedPointRegister` object to a gate
+    *   If you pass a :class:`~dwave.gate.qcdl.FixedPointRegister` object to a gate
         as an angle, use units of π instead of radians. For example, a value of
         :math:`1` is equivalent to π.
 
@@ -277,7 +277,7 @@ Supported Operations
 Measurements
 ------------
 
-A logical :func:`~aqumen.qcdl.operations.measure` operation on a dual-rail
+A logical :func:`~dwave.gate.qcdl.operations.measure` operation on a dual-rail
 system produces one of three outcomes:
 
 *   :math:`0, 1` represent logical projective measurements.
@@ -290,7 +290,7 @@ program. You can measure qubits multiple times in a given shot (usually
 resetting the qubit(s) in between).
 
 .. tip::
-    Using the :attr:`~aqumen.AqumenResult.tags` property is the recommended way
+    Using the :attr:`~dwave.gate.AqumenResult.tags` property is the recommended way
     to organize measurement data.
 
 Measurement outcomes are handled in three different ways:
@@ -315,7 +315,7 @@ Measurement outcomes are handled in three different ways:
 
 .. testcode::
 
-    from aqumen.qcdl.operations import measure
+    from dwave.gate.qcdl.operations import measure
 
     @qcdl(1)
     def measurement_example1(q0):
@@ -323,8 +323,8 @@ Measurement outcomes are handled in three different ways:
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import measure
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import measure
 
     @qcdl(1)
     def measurement_example2(q0):
@@ -337,7 +337,7 @@ Measurement outcomes are handled in three different ways:
     number of measurements per shot, you cannot relate measurement outcomes with
     the generating instruction.
 
-By default, the :meth:`~aqumen.AqumenResult.get_counts` method returns all data,
+By default, the :meth:`~dwave.gate.AqumenResult.get_counts` method returns all data,
 including erasures. To return only results without the ``*``, thereby
 post-selecting on the detected errors, use the ``post_select=True`` flag.
 
@@ -347,13 +347,13 @@ Mid-Circuit Erasure Detection
 -----------------------------
 
 You can non-destructively inspect a dual-rail qubit to detect if it is out of
-the code space ("leaked") with the :func:`~aqumen.qcdl.operations.mced`
+the code space ("leaked") with the :func:`~dwave.gate.qcdl.operations.mced`
 operation. If the test is positive, the qubit is declared erased.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import mced
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import mced
 
     @qcdl(1)
     def mced_example(q0):
@@ -367,12 +367,12 @@ Result Records
 --------------
 
 Results are a Python dictionary where keys are set by the
-:meth:`~aqumen.qcdl.QcdlModuleContainer.append_table_row` method and values are
+:meth:`~dwave.gate.qcdl.QcdlModuleContainer.append_table_row` method and values are
 tables formatted as a
 `Polars <https://docs.pola.rs/api/python/stable/reference/index.html>`_
 `DataFrame <https://docs.pola.rs/api/python/stable/reference/dataframe/index.html>`_.
 
-The :meth:`~aqumen.qcdl.QcdlModuleContainer.append_table_row` method retrieves
+The :meth:`~dwave.gate.qcdl.QcdlModuleContainer.append_table_row` method retrieves
 the values of registers in runtime. When you invoke the method, register data
 is written to a set of tables that your application can retrieve. In addition to
 using this functionality in algorithms, you can use it for troubleshooting, as
@@ -380,14 +380,14 @@ though it were a cross between a print statement and a breakpoint.
 
 .. todo:: update for Ocean
 
-If your QCDL uses the :meth:`~aqumen.qcdl.QcdlModuleContainer.append_table_row`
-method, the :class:`~aqumen.AqumenResult` output contains records that you may
+If your QCDL uses the :meth:`~dwave.gate.qcdl.QcdlModuleContainer.append_table_row`
+method, the :class:`~dwave.gate.AqumenResult` output contains records that you may
 retrieve with :meth:`~AqumenResult.get_records` method.
 
 .. testcode::
 
     import pandas as pd
-    from aqumen.qcdl import qcdl
+    from dwave.gate.qcdl import qcdl
     from aqumen import Aqumen       # Replace with Leap
 
     @qcdl(1)
@@ -438,13 +438,13 @@ with 10 rows, each of which have a value of :math:`13`.
 Yield Handling
 ~~~~~~~~~~~~~~
 
-The :class:`~aqumen.YieldHandling` class provides a general way of handling
+The :class:`~dwave.gate.YieldHandling` class provides a general way of handling
 result distributions. It supports options for renormalizing distributions,
 ignoring erasures, and others.
 
 .. testcode::
 
-    from aqumen.results import YieldHandling
+    from dwave.gate.results import YieldHandling
     half_splats = {"00": 100, "0*": 100}
     assert YieldHandling.only_post_selected_counts.apply(half_splats) == ({"00": 100}, 0.5)
 
@@ -459,7 +459,7 @@ to be returned than the number of shots you requested.\ [#]_
 
 .. testcode::
 
-    from aqumen.results import YieldHandling
+    from dwave.gate.results import YieldHandling
 
     provider = AqumenProvider(yield_handling=YieldHandling.renormalize_distribution)
     simulator_noisy_backend = provider.simulator_noisy
@@ -478,7 +478,7 @@ Alternatively, a ``YieldHandling`` option may be passed to ``get_counts``.
 .. [#]
     If an application you use, for example, in computing statistical errors,
     is not robust to results containing few shots than requested, you can use
-    the :class:`~aqumen.YieldHandling` class as a workaround *temporarily and
+    the :class:`~dwave.gate.YieldHandling` class as a workaround *temporarily and
     with caution*.
 
 .. _qcdl_basic_initialize_reset:
@@ -491,8 +491,8 @@ your circuit. You can also explicitly use this operation in your QCDL.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import initialize
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import initialize
 
     @qcdl(4)
     def initialize_example(q0, q1, q2, q3):
@@ -505,8 +505,8 @@ You can also reset qubits individually.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import initialize
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import initialize
 
     @qcdl(1)
     def reset_example(q0):
@@ -538,16 +538,16 @@ simulation to not transpile (see the :ref:`qcdl_submitting_programs` section).
         -   Description
         -   Availability
         -   Notes
-    *   -   :func:`~aqumen.qcdl.operations.sx`,
-            :func:`~aqumen.qcdl.operations.x`
+    *   -   :func:`~dwave.gate.qcdl.operations.sx`,
+            :func:`~dwave.gate.qcdl.operations.x`
         -   Single qubit rotation around the X-axis by π/2 and π respectively.
         -   All operational qubits.
         -
-    *   -   :func:`~aqumen.qcdl.operations.rz`
+    *   -   :func:`~dwave.gate.qcdl.operations.rz`
         -   Single qubit, parameterizable rotation around the Z-axis.
         -   All operational qubits.
         -
-    *   -   :func:`~aqumen.qcdl.operations.cz`
+    *   -   :func:`~dwave.gate.qcdl.operations.cz`
         -   Two qubit rotation by π/2 around the ZZ-axis.
         -   Connected, operational qubits.
         -
@@ -562,7 +562,7 @@ Transpiler Constraints and Considerations
     the executed program that were not in your QCDL. You might be able to
     prevent this through careful placement of input gates.
 *   Returned logged measurements are organized according to the name of the
-    qubit used in the :func:`~aqumen.qcdl.operations.measure` instruction.
+    qubit used in the :func:`~dwave.gate.qcdl.operations.measure` instruction.
 
 
 .. _qcdl_advanced:
@@ -589,8 +589,8 @@ A procedure is marked with the ``@procedure`` decorator.
 
 .. testcode::
 
-    from aqumen.qcdl import procedure, qcdl
-    from aqumen.qcdl.operations import rx, ry
+    from dwave.gate.qcdl import procedure, qcdl
+    from dwave.gate.qcdl.operations import rx, ry
 
     @procedure
     def my_procedure(qa, qb, increment):
@@ -613,7 +613,7 @@ program inlines all the gates into the main procedure.
 Scope
 -----
 
-The :class:`~aqumen.qcdl.Scope` class enables you to define a set of
+The :class:`~dwave.gate.qcdl.Scope` class enables you to define a set of
 operations you can *consistently* reuse on multiple qubits, which is especially
 beneficial for for classical and control-flow instructions.
 
@@ -629,8 +629,8 @@ qubits.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl, Scope
-    from aqumen.qcdl.operations import h, measure
+    from dwave.gate.qcdl import qcdl, Scope
+    from dwave.gate.qcdl.operations import h, measure
 
     @qcdl(3)
     def main(q0, q1, q2):
@@ -657,15 +657,15 @@ complete a measurement on one qubit before another qubit uses that measurement
 as a condition.
 
 You can explicitly control such scheduling with the
-:meth:`~aqumen.qcdl.QcdlModuleContainer.sync` instruction. You may apply this
+:meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` instruction. You may apply this
 instruction to any number of qubits to indicate that all operations before the
-:meth:`~aqumen.qcdl.QcdlModuleContainer.sync` instruction must be completed
+:meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` instruction must be completed
 before any operations after the instruction are started.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import x
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import x
 
     @qcdl(2)
     def sync_example(q0, q1):
@@ -673,20 +673,20 @@ before any operations after the instruction are started.
         q0.sync(q1)
         x(q1)
 
-The example above ensures that the :func:`~aqumen.qcdl.operations.x` on ``q1``
-is scheduled to start after the :func:`~aqumen.qcdl.operations.x` on ``q0`` has
+The example above ensures that the :func:`~dwave.gate.qcdl.operations.x` on ``q1``
+is scheduled to start after the :func:`~dwave.gate.qcdl.operations.x` on ``q0`` has
 completed.
 
 Synchronization Considerations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*   Compilation inserts implicit :meth:`~aqumen.qcdl.QcdlModuleContainer.sync`
+*   Compilation inserts implicit :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync`
     instructions before and after all multi-qubit operations such as gates,
     procedures, and control-flow operations (including shots).
-*   The :meth:`~aqumen.qcdl.QcdlModuleContainer.sync` instruction is not
+*   The :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` instruction is not
     sensitive to the ordering of the qubits.
-*   An explicit :meth:`~aqumen.qcdl.QcdlModuleContainer.sync` instruction in the
-    program is treated as a :func:`~aqumen.qcdl.operations.barrier` instruction
+*   An explicit :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` instruction in the
+    program is treated as a :func:`~dwave.gate.qcdl.operations.barrier` instruction
     by the transpiler.
 *   Scheduling is performed at compile-time and there is no support for
     "runtime" re-synchronization. If qubits are ever desynchronized, the output
@@ -699,13 +699,13 @@ Synchronization Considerations
 .. attention::
     The simulator does not model runtime concurrency; it simply executes
     instructions sequentially regardless of which qubit the instruction uses.
-    Therefore the :meth:`~aqumen.qcdl.QcdlModuleContainer.sync` instruction does
+    Therefore the :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` instruction does
     not affect execution order of operations.
 
     Consider carefully the positioning of any
-    :meth:`~aqumen.qcdl.QcdlModuleContainer.sync` and cautiously validate when
+    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` and cautiously validate when
     executing on a QPU (for example, by using a
-    :meth:`~aqumen.qcdl.QcdlModuleContainer.append_table_row` instruction).
+    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.append_table_row` instruction).
 
 .. _qcdl_advanced_conditionals:
 
@@ -726,8 +726,8 @@ instruction.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import measure, x
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import measure, x
 
     @qcdl(2)
     def branch_example1(q0, q1):
@@ -735,19 +735,19 @@ instruction.
         with q0.If(condition=q1):
             x(q0)
 
-In the preceding example, the :func:`~aqumen.qcdl.operations.x` gate is executed
+In the preceding example, the :func:`~dwave.gate.qcdl.operations.x` gate is executed
 if the most recent measurement of ``q1`` was a :math:`1`. Here, the unspecified
 false branch---executed if the most recent measurement of ``q1`` was a :math:`0`
 or a ``*``---is an idle of equal duration to the true branch.
 
-The next example specifies a false branch. A :func:`~aqumen.qcdl.operations.y`
+The next example specifies a false branch. A :func:`~dwave.gate.qcdl.operations.y`
 gate is executed in the case of a :math:`0` or a ``*`` instead of the default
 idle.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import measure, x, y
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import measure, x, y
 
     @qcdl(2)
     def branch_example2(q0, q1):
@@ -779,7 +779,7 @@ Supported Condition Values
     *   -   ``None``
         -   You can separate the steps of evaluating the branch condition and
             branching by assigning the branch condition before the
-            :meth:`~aqumen.qcdl.QcdlModuleContainer.If` statement, with that
+            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.If` statement, with that
             branch condition persisting if ``None`` is specified.
         -   See the :ref:`qcdl_advanced_signals` section.
     *   -   ``True`` or ``False``
@@ -790,9 +790,9 @@ Guidelines for Using Conditionals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -   You can nest conditional statements arbitrarily deep.
--   Place the :meth:`~aqumen.qcdl.QcdlModuleContainer.If` statement and its true
+-   Place the :meth:`~dwave.gate.qcdl.QcdlModuleContainer.If` statement and its true
     and false branches in the same procedure.
--   Use the :class:`~aqumen.qcdl.Scope` class to include an arbitrary number of
+-   Use the :class:`~dwave.gate.qcdl.Scope` class to include an arbitrary number of
     qubits in a condition. If your condition value is an expression, take care
     that it evaluates to the same outcome for all qubits.
 -   Compilation does not guarantee that a qubit has been measured before it is
@@ -811,8 +811,8 @@ This example detects and resets a qubit if it has been erased.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import mced
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import mced
 
     @qcdl(1)
     def detect_erasure_example(q):
@@ -826,8 +826,8 @@ This example conditions on a classical register.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl, Scope
-    from aqumen.qcdl.operations import mced, x
+    from dwave.gate.qcdl import qcdl, Scope
+    from dwave.gate.qcdl.operations import mced, x
 
     @qcdl(2)
     def classical_condition_example(q0, q1):
@@ -842,8 +842,8 @@ This example updates all registers with the outcome of a particular measurement.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl, Scope
-    from aqumen.qcdl.operations import mced, x
+    from dwave.gate.qcdl import qcdl, Scope
+    from dwave.gate.qcdl.operations import mced, x
 
     @qcdl(2)
     def classical_condition_example(q0, q1):
@@ -871,21 +871,21 @@ that condition operations on other qubits.
 Basic Signal
 ~~~~~~~~~~~~
 
-For any qubit, you can set the :attr:`~aqumen.qcdl.QcdlModule.signal` property
+For any qubit, you can set the :attr:`~dwave.gate.qcdl.QcdlModule.signal` property
 (the *signal*) to a Boolean value for use, in realtime, as a
 :ref:`branch condition <qcdl_advanced_conditionals>` by other qubits.
 
 The following example results in the bitstring being either :math:`11` or
 :math:`00` (assuming no noise). The
-:meth:`~aqumen.qcdl.QcdlModuleContainer.sync` operation prevents the
+:meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` operation prevents the
 ``receiver`` qubit conditioning off of the signal value before the ``sender``
 qubit sets it after its measurement. The :ref:`qcdl_advanced_conditionals`
 section describes the condition value used in the ``If`` statement.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import h, measure, x
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import h, measure, x
 
     @qcdl(2)
     def signal_example(q0, q1):
@@ -902,12 +902,12 @@ section describes the condition value used in the ``If`` statement.
 
 .. note::
     If more than one qubit is branching off a signal, it is likely more
-    efficient to use the :meth:`~aqumen.qcdl.QcdlModule.one_to_all` method.
+    efficient to use the :meth:`~dwave.gate.qcdl.QcdlModule.one_to_all` method.
 
 ``one_to_all`` Signal
 ~~~~~~~~~~~~~~~~~~~~~
 
-The :meth:`~aqumen.qcdl.QcdlModule.one_to_all` method signals a Boolean value
+The :meth:`~dwave.gate.qcdl.QcdlModule.one_to_all` method signals a Boolean value
 from one qubit to a set of other qubits that can use it as a
 :ref:`branch condition <qcdl_advanced_conditionals>` to conditionally execute a
 branch of operations.
@@ -922,8 +922,8 @@ value used in the ``If`` statement.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import h, measure, x
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import h, measure, x
 
     @qcdl(3)
     def one_to_all_example(q0, q1, q2):
@@ -941,7 +941,7 @@ value used in the ``If`` statement.
 ``all_to_all`` Signal
 ~~~~~~~~~~~~~~~~~~~~~
 
-The more-general :meth:`~aqumen.qcdl.QcdlModule.all_to_all` method signals a
+The more-general :meth:`~dwave.gate.qcdl.QcdlModule.all_to_all` method signals a
 Boolean value from all qubits to a set of participating qubits to use as a
 :ref:`branch condition <qcdl_advanced_conditionals>`.
 
@@ -956,8 +956,8 @@ condition value used in the ``If`` statement here and in subsequent examples.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl
-    from aqumen.qcdl.operations import h, measure, x
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import h, measure, x
 
     @qcdl(3)
     def all_to_all_example(q0, q1, q2):
@@ -985,7 +985,7 @@ registers to be :math:`1`, otherwise, set them to :math:`0`.
 
 .. testcode::
 
-    from aqumen.qcdl import qcdl, Scope
+    from dwave.gate.qcdl import qcdl, Scope
 
     @qcdl(3)
     def all_to_all_example2(q0, q1, q2):
@@ -1003,8 +1003,8 @@ The next example loops until a qubit has been erased. The
 
 .. testcode::
 
-   from aqumen.qcdl import qcdl, Scope
-    from aqumen.qcdl.operations import mced
+   from dwave.gate.qcdl import qcdl, Scope
+    from dwave.gate.qcdl.operations import mced
 
     @qcdl(2)
     def all_to_all_example3(q0, q1):
@@ -1020,8 +1020,8 @@ The next example demonstrates an active reset, looping until all qubits are in a
 
 .. testcode::
 
-   from aqumen.qcdl import qcdl, Scope
-    from aqumen.qcdl.operations import mced, measure, x
+   from dwave.gate.qcdl import qcdl, Scope
+    from dwave.gate.qcdl.operations import mced, measure, x
 
     @qcdl(2)
     def all_to_all_example4(q0, q1):
@@ -1051,34 +1051,34 @@ QCDL programs support several control-flow mechanisms.\ [#]_
 
     *   -   Method
         -   Purpose
-    *   -   :meth:`~aqumen.qcdl.QcdlModuleContainer.Repeat`
+    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Repeat`
         -   Repeats the body of the context manager for a specified number of
             iterations.
-    *   -   :meth:`~aqumen.qcdl.QcdlModuleContainer.While`
+    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.While`
         -   Repeats the body of the context manager as long as the condition is
             true.
-    *   -   :meth:`~aqumen.qcdl.QcdlModuleContainer.DoWhile`
+    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.DoWhile`
         -   Unconditionally executes a first iteration of the context manager
             and then, similar to the
-            :meth:`~aqumen.qcdl.QcdlModuleContainer.While` method, repeats the
+            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.While` method, repeats the
             body of the context manager as long as the condition is true. Useful
             if the condition is evaluated only within the loop.
-    *   -   :meth:`~aqumen.qcdl.QcdlModuleContainer.For`
+    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.For`
         -   Repeats the body of the context manager as long as the condition is
-            true, similar to the :meth:`~aqumen.qcdl.QcdlModuleContainer.While`
+            true, similar to the :meth:`~dwave.gate.qcdl.QcdlModuleContainer.While`
             method, but, similarly to a C-style loop, also provides some
             convenience mechanisms for initializing and updating a register.
-    *   -   :meth:`~aqumen.qcdl.QcdlModuleContainer.Break`
+    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Break`
         -   Breaks out of a loop structure. Useful for preventing infinite
             loops.
-    *   -   :meth:`~aqumen.qcdl.QcdlModuleContainer.Continue`
+    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Continue`
         -   Skips the remainder of the body of the context manager and jumps to
             the conditional.
-    *   -   :meth:`~aqumen.qcdl.QcdlModuleContainer.Label`/:meth:`~aqumen.qcdl.QcdlModuleContainer.Goto`
-        -   A :meth:`~aqumen.qcdl.QcdlModuleContainer.Goto` instruction
+    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Label`/:meth:`~dwave.gate.qcdl.QcdlModuleContainer.Goto`
+        -   A :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Goto` instruction
             unconditionally jumps to the location marked by the corresponding
-            :meth:`~aqumen.qcdl.QcdlModuleContainer.Label` instruction.
-    *   -   :meth:`~aqumen.qcdl.QcdlModuleContainer.Return`
+            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Label` instruction.
+    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Return`
         -   Exits a procedure early.
 
 .. [#]
@@ -1091,12 +1091,12 @@ QCDL programs support several control-flow mechanisms.\ [#]_
         powerful control-flow expressions risk desychronizing operations on
         qubits, as noted in the :ref:`qcdl_advanced_synchronization` section.
         These control-flow operations are recommended only in a
-        :meth:`~aqumen.qcdl.Scope` that includes all of the qubits.
+        :meth:`~dwave.gate.qcdl.Scope` that includes all of the qubits.
 
 .. testcode::
 
-    from aqumen.qcdl import procedure, qcdl, Scope
-    from aqumen.qcdl.operations import rx, ry
+    from dwave.gate.qcdl import procedure, qcdl, Scope
+    from dwave.gate.qcdl.operations import rx, ry
 
     @procedure
     def rotate(q0, q1, increment):
@@ -1111,12 +1111,12 @@ QCDL programs support several control-flow mechanisms.\ [#]_
             rotate(q0, q0, 0.1)
 
 The following is also an example for how a
-:meth:`~aqumen.qcdl.QcdlModuleContainer.Repeat` instruction could be
+:meth:`~dwave.gate.qcdl.QcdlModuleContainer.Repeat` instruction could be
 implemented.
 
 .. testcode::
 
-    from aqumen.qcdl import procedure, qcdl, Scope
+    from dwave.gate.qcdl import procedure, qcdl, Scope
 
     @qcdl(2)
     def dowhile_example(q0, q1):
@@ -1135,7 +1135,7 @@ Mirroring
 ---------
 
 A register is associated with a qubit. Your QCDL must ensure the information in
-any qubit's register is visible to all qubits in the :class:`~aqumen.qcdl.Scope`
+any qubit's register is visible to all qubits in the :class:`~dwave.gate.qcdl.Scope`
 or :class:`~dwave.gate.qcdl.Register` object (*mirror* the information). This is
 needed, for example, to select the same branch to execute for a
 :ref:`conditional statement <qcdl_advanced_conditionals>`.
@@ -1148,7 +1148,7 @@ implement mirroring.
     or, for each qubit, give its register the same name and execute the same
     operations.
 2.  Communicate non indentical information (see the :ref:`qcdl_advanced_signals`
-    section). With the :class:`~aqumen.qcdl.Scope` class, the only information
+    section). With the :class:`~dwave.gate.qcdl.Scope` class, the only information
     you must update across registers at runtime are (non-deterministic)
     measurement/MCED results.
 
@@ -1161,7 +1161,7 @@ Guidance on Mirroring
     measurements among registers.
 *   Always use the same scope for conditional statements and register
     instantiation. A good practice is to instantiate one
-    :class:`~aqumen.qcdl.Scope` object at the start of your QCDL that contains
+    :class:`~dwave.gate.qcdl.Scope` object at the start of your QCDL that contains
     all qubits and use that scope for registers and loops, making other scopes
     only for small tasks.
 *   It is technically possible to compose a conditional expression using
