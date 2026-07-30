@@ -49,10 +49,10 @@ def get_default_register(qubits: Iterable[str]) -> RegisterType:
     Sorts qubits to have the highest index first, e.g., ``[q2, q1, q0]``
 
     Args:
-        qubits (Iterable[str]): list of qubits in system
+        qubits: list of qubits in system
 
     Returns:
-        RegisterType: qubits sorted highest index to lowest.
+        Qubits sorted highest index to lowest.
     """
     return cast(
         RegisterType, sorted(qubits, key=lambda qubit: int(qubit[1:]), reverse=True)
@@ -106,24 +106,21 @@ def format_memory(
     type str, it will update the input measurements data structure in-place.
 
     Args:
-        measurements (list[Any] | dict[str, list[int | str] | np.ndarray]):
-            the measurements 2D array or dict of arrays from either the
-            simulator or qpu. If a 2D array is passed the qubit name is
+        measurements: The measurements 2D array or dict of arrays from either
+            the simulator or qpu. If a 2D array is passed the qubit name is
             inferred from the index in the array.
-        num_shots (int): The number of shots to produce this data.
-        register (RegisterType | None, optional): list of qubit names (or None) to go
-            into the register. A None in the list will fill in the
-            unmeasured_value. If a register is not provided,
-            get_default_register will be used to create one.
-        unmeasured_value (int | str, optional): What to put in the register if a
-            requested qubit wasn't measured. Defaults to "_".
+        num_shots: The number of shots to produce this data.
+        register: List of qubit names (or None) to go into the register. A None in 
+            the list will fill in the unmeasured_value. If a register is not
+            provided, get_default_register will be used to create one.
+        unmeasured_value: What to put in the register if a requested qubit wasn't measured.
+            Defaults to "_".
 
     Raises:
         ValueError: register mismatch with results
 
     Returns:
-        np.ndarray: A 3D array of str with shape (measurements per shot, shots,
-            qubits)
+        A 3D array of str with shape (measurements per shot, shots, qubits)
     """
     if isinstance(measurements, dict):
         qubit_name_to_loc: dict[str, Any] = {qn: qn for qn in measurements}
@@ -238,15 +235,15 @@ def count_measurements(
         {4: 10}
 
     Args:
-        memory (list | np.ndarray): a shots x qubits 2D array, sorted least significant
+        memory: a shots x qubits 2D array, sorted least significant
             bit is last / on the right.
-        key_format (str | None, optional): how to format the ints which will be used
+        key_format: how to format the ints which will be used
             as keys. This is ignored if the memory consists of strings.
-        post_select (bool): If True, any bitstrings that have ``"*"`` in them
+        post_select: If True, any bitstrings that have ``"*"`` in them
             will be excluded.
 
     Returns:
-        dict[int | str, int]: A dict counting occurrences of each formatted shots value
+        A dict counting occurrences of each formatted shots value
 
     """
     if isinstance(memory, list):
@@ -317,9 +314,9 @@ class Result:
     """A container and API for a result.
 
     Args:
-        result (dict): This is the dict response from the simulator or jcs
+        result: This is the dict response from the simulator or jcs
             server.
-        job_dir (Path | None, optional): If the job used a local directory
+        job_dir: If the job used a local directory
             to store data, it it is indicated here. Defaults to None.
     """
 
@@ -332,7 +329,7 @@ class Result:
 
     @property
     def result(self) -> dict:
-        """dict: the unprocessed result object"""
+        """The unprocessed result object."""
         return self._result
 
     @functools.cached_property
@@ -340,7 +337,7 @@ class Result:
         """The time the simulation or QPU run started.
 
         Returns:
-            (datetime.datetime | None): start time if available.
+            Start time if available.
         """
         if start_time := self._result.get("start_time"):
             return datetime.datetime.fromisoformat(start_time).replace(
@@ -354,7 +351,7 @@ class Result:
         """The time the simulation or QPU run ended.
 
         Returns:
-            (datetime.datetime | None): end time if available.
+            End time if available.
         """
         if end_time := self._result.get("end_time"):
             return datetime.datetime.fromisoformat(end_time).replace(
@@ -368,7 +365,7 @@ class Result:
         """The time the simulation or QPU ran.
 
         Returns:
-            (float | None): run time in seconds, if available.
+            Run time in seconds, if available.
         """
         if self.start_time and self.end_time:
             return (self.end_time - self.start_time).total_seconds()
@@ -377,7 +374,7 @@ class Result:
 
     @property
     def num_shots(self) -> int:
-        """int: number of shots in this result"""
+        """Number of shots in this result."""
         return self.result["num_shots"]
 
     @property
@@ -387,7 +384,7 @@ class Result:
         NOTE: tags is not currently supported with real-time-measurements.
 
         Returns:
-            (tuple[str, ...]): The tags.
+            The tags.
         """
         measurements = self.get_measurements()
         if not measurements:
@@ -410,7 +407,7 @@ class Result:
         ValueError.
 
         Returns:
-            str: The default tag.
+            The default tag.
         """
         if len(self.tags) == 1:
             return self.tags[0]
@@ -432,14 +429,12 @@ class Result:
         its index in the measurements array.
 
         Args:
-            tag (str | None, optional): which data set to load. By default, it
-                will (attempt to) use
+            tag: Which data set to load. Defaults to
                 :attr:`aqumen.results.AqumenResult.default_tag`.
-            descending (bool, optional): Should the qubits be ascending or
-                descending. Defaults to True.
+            descending: Whether qubits are in descending order. Defaults to True.
 
         Returns:
-            list[str]: a list of qubit names
+            A list of qubit names.
         """
         if tag is None:
             tag = self.default_tag
@@ -465,19 +460,16 @@ class Result:
         These are the raw bits returned from a statement like ``q0.measure()``.
 
         Args:
-            tag (str | None, optional): which data set to load. By default, it
-                will (attempt to) use
+            tag: Which data set to load. Defaults to
                 :attr:`aqumen.results.AqumenResult.default_tag`.
-            register (RegisterType | None, optional): list of qubit names to
-                go into the register. This determines the inner dimension of
-                the returned value.
-            unmeasured_value (int | str, optional): What to put in the
-                register if a requested qubit wasn't measured.
-            num_shots (int | None, optional): You can override the num_shots
-                in the results object.
+            register: List of qubit names to include in the register; determines
+                the inner dimension of the returned value.
+            unmeasured_value: What to put in the register if a requested qubit
+                wasn't measured.
+            num_shots: Overrides the num_shots in the result object.
 
         Returns:
-            np.ndarray: memory
+            Memory array.
         """
         if tag is None:
             tag = self.default_tag
@@ -495,7 +487,7 @@ class Result:
         self,
         tag: str | None = None,
         register: RegisterType | None = None,
-        post_select=False,
+        post_select: bool = False,
         unmeasured_value: int | str = "_",
         num_shots: int | None = None,
     ) -> list[dict[int | str, int]]:
@@ -504,20 +496,16 @@ class Result:
         This returns a list of dicts, one for each "measurement per shot".
 
         Args:
-            tag (str | None, optional): which data set to load. By default, it
-                will (attempt to) use
+            tag: Which data set to load. Defaults to
                 :attr:`aqumen.results.AqumenResult.default_tag`.
-            register (RegisterType | None, optional): Forwarded to
-                get_memory. Defaults to None.
-            post_select (bool, optional): If the counts dict should include
-                splats or not. Defaults to False.
-            unmeasured_value (int | str, optional): What to put in the
-                register if a requested qubit wasn't measured.
-            num_shots (int | None, optional): You can override the num_shots
-                in the results object.
+            register: Forwarded to get_memory.
+            post_select: If the counts dict should include splats or not.
+            unmeasured_value: What to put in the register if a requested qubit
+                wasn't measured.
+            num_shots: Overrides the num_shots in the result object.
 
         Returns:
-            list[dict[int | str, int]]: A summation of the memory.
+            A summation of the memory.
         """
         if tag is None:
             tag = self.default_tag
