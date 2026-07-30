@@ -391,8 +391,8 @@ class Result:
             return tuple()
         elif isinstance(measurements, dict):
             return tuple(measurements.keys())
-        else:
-            return (DEFAULT_TAG,)
+
+        return (DEFAULT_TAG,)
 
     @property
     def default_tag(self) -> str:
@@ -430,7 +430,7 @@ class Result:
 
         Args:
             tag: Which data set to load. Defaults to
-                :attr:`aqumen.results.AqumenResult.default_tag`.
+                :attr:`dwave.gate.results.Result.default_tag`.
             descending: Whether qubits are in descending order. Defaults to True.
 
         Returns:
@@ -461,7 +461,7 @@ class Result:
 
         Args:
             tag: Which data set to load. Defaults to
-                :attr:`aqumen.results.AqumenResult.default_tag`.
+                :attr:`dwave.gate.results.Result.default_tag`.
             register: List of qubit names to include in the register; determines
                 the inner dimension of the returned value.
             unmeasured_value: What to put in the register if a requested qubit
@@ -497,7 +497,7 @@ class Result:
 
         Args:
             tag: Which data set to load. Defaults to
-                :attr:`aqumen.results.AqumenResult.default_tag`.
+                :attr:`dwave.gate.results.Result.default_tag`.
             register: Forwarded to get_memory.
             post_select: If the counts dict should include splats or not.
             unmeasured_value: What to put in the register if a requested qubit

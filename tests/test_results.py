@@ -402,7 +402,6 @@ def make_and_test_mock_results(mps_array, shots=10, register=None):
                     for qubit_name in register
                 ]
             )
-            # print(f"mps={mps} shot={shot}", returned_register, expected_register)
             assert expected_register.tolist() == returned_register.tolist()
 
     return memory
