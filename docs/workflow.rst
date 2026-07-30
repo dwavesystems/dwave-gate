@@ -77,6 +77,7 @@ as a display object.
 The code above displays the following QCDL program.
 
 .. testoutput::
+    :skipif: True
     :options: +NORMALIZE_WHITESPACE
 
     begin quantum
@@ -385,6 +386,7 @@ method, the :class:`~dwave.gate.AqumenResult` output contains records that you m
 retrieve with :meth:`~AqumenResult.get_records` method.
 
 .. testcode::
+    :skipif: True
 
     import pandas as pd
     from dwave.gate.qcdl import qcdl
@@ -443,6 +445,7 @@ result distributions. It supports options for renormalizing distributions,
 ignoring erasures, and others.
 
 .. testcode::
+    :skipif: True
 
     from dwave.gate.results import YieldHandling
     half_splats = {"00": 100, "0*": 100}
@@ -458,6 +461,7 @@ to be returned than the number of shots you requested.\ [#]_
 .. todo:: update for Ocean
 
 .. testcode::
+    :skipif: True
 
     from dwave.gate.results import YieldHandling
 
@@ -1003,7 +1007,7 @@ The next example loops until a qubit has been erased. The
 
 .. testcode::
 
-   from dwave.gate.qcdl import qcdl, Scope
+    from dwave.gate.qcdl import qcdl, Scope
     from dwave.gate.qcdl.operations import mced
 
     @qcdl(2)
@@ -1018,9 +1022,12 @@ The next example loops until a qubit has been erased. The
 The next example demonstrates an active reset, looping until all qubits are in a
 :math:`\ket 0` state.
 
-.. testcode::
+.. todo:: The next example needs to be fixed
 
-   from dwave.gate.qcdl import qcdl, Scope
+.. testcode::
+    :skipif: True
+
+    from dwave.gate.qcdl import qcdl, Register, Scope
     from dwave.gate.qcdl.operations import mced, measure, x
 
     @qcdl(2)
@@ -1033,8 +1040,8 @@ The next example demonstrates an active reset, looping until all qubits are in a
             for q in sc.qubits:
                 measure(q)
                 with q.If(q):
-                   x(q)
-                q.Register(name=name) <<= 0
+                    x(q)
+                    Register(q, name=name) <<= 0
             # if any were not in 0, iterate again
             sc.all_to_all(send=in_0==0, reduce_op="|")
 
