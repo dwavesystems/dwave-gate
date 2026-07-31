@@ -395,7 +395,7 @@ retrieve with :meth:`~AqumenResult.get_records` method.
 
     import pandas as pd
     from dwave.gate.qcdl import qcdl
-    from aqumen import Aqumen       # Replace with |cloud|_
+    from aqumen import Aqumen       # Replace with Leap service's class
 
     @qcdl(1)
     def main(q0):
