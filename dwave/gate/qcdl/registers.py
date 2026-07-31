@@ -1203,6 +1203,7 @@ def arbitrary_function(
 
             import numpy as np
             from dwave.gate.qcdl import arbitrary_function, qcdl, Scope
+            from dwave.gate.qcdl.operations import h
 
             @qcdl(2)
             def an_arbitrary_func(q0, q1):
@@ -1224,7 +1225,7 @@ def arbitrary_function(
                 r2 = sc.FixedPointRegister(name="r2")
                 r2 <<= sin_half_x(r1)   # set r2 to sin(pi * r1 / 2) = sin(pi/4)
 
-                q0.h()
+                h(q0)
                 measure(q0, register=r0)
 
             qcdl_dict: dict = an_arbitrary_func()

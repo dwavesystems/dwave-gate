@@ -600,32 +600,33 @@ def qcdl(
     validate_non_deterministic_qubits_mid: bool = True,
     validate_non_deterministic_qubits_end: bool = True,
 ) -> Callable[[QcdlSource], Callable[..., Qcdl | QcdlV2]]:
-    """Decorator to construct a QCDL dict.
+    """Decorator to construct a :ref:`QCDL <qcdl_programming_basic>` program.
+
+    The decorated function returns a
+    `Pydantic model <https://pydantic.dev/docs/validation/dev/concepts/models/>`_
+    that you can submit to a solver in the Leap service, as described in the
+    :ref:`qcdl_submitting_programs` section.
 
     Args:
-        num_qubits (int, optional): Number of qubits to generate.
-            Defaults to None. If you do not specify a number of qubits, infers
-            qubits from any ``q<N>`` arguments, where ``<N>`` is an int, in the
-            signature of the decorated function. Generated qubits are passed in
-            to the decorate function through keyword arguments.
-        environment (Environment, optional): Environment. The number of qubits
-            supplied is the full set supported by the environment. Defaults
-            to None.
-        machine (Machine | None, optional): If a machine is provided, system
-            instances from the machine are supplied instead of QCDL module.
-            Defaults to None.
-        next_indices (dict[str, int] | None, optional): Start the circuit's indices from
-            these values. This facilitates uniqueness across "visitors".
-            Defaults to None.
-        to_qcdlv2 (bool, optional): If True, returns v2 format.
-            Version v2 can hold less information than v3, so this is mostly
-            useful for visualization.
-        validate_non_deterministic_qubits_mid (bool, optional): If True,
-            validate non-deterministic qubits in mid-circuit statements.
-        validate_non_deterministic_qubits_end (bool, optional): If True,
-            validate non-deterministic qubits at the end of the circuit.
-
-    .. JP: Need more info on ``environment`` and ``machine`` parameters
+        num_qubits: Number of qubits to generate. If you do not specify a number
+            of qubits, infers qubits from the signature of the decorated
+            function: any ``q<N>`` arguments, where ``<N>`` is an integer, are
+            considered qubits. Generated qubits are passed in to the decorated
+            function through keyword arguments.
+        environment: Environment. The number of qubits supplied is the full set
+            supported by the environment. This parameter is intended for use by
+            developers of QCDL.
+        machine: If a machine is provided, the machine supplies system instances
+            instead of the :class:`~dwave.gate.qcdl.QcdlModule` instance. This
+            parameter is intended for use by developers of QCDL.
+        next_indices: Values from which to start the circuit's indices. This
+            facilitates uniqueness across compiler "visitors".
+        to_qcdlv2: If True, returns v2 format. Version v2 can hold less
+            information than v3, so this is mostly useful for visualization.
+        validate_non_deterministic_qubits_mid: If True, validate
+            non-deterministic qubits in mid-circuit statements.
+        validate_non_deterministic_qubits_end: If True, validate
+            non-deterministic qubits at the end of the circuit.
 
     Examples:
         The first example specifies the number of qubits (three) in the
@@ -634,16 +635,17 @@ def qcdl(
         .. testcode::
 
             from dwave.gate.qcdl import qcdl
+            from dwave.gate.qcdl.operations import cx, measure, rx
 
             @qcdl(3)
             def specify_num_qubits(q0, q1, q2, my_angle=0):
                 r0 = q0.FixedPointRegister(name="r0", initial_value=my_angle)
-                q0.rx(r0)
-                q0.cx(q1)
-                q1.cx(q2)
-                q0.measure()
-                q1.measure()
-                q2.measure()
+                rx(q0, r0)
+                cx(q0, q1)
+                cx(q1, q2)
+                measure(q0)
+                measure(q1)
+                measure(q2)
 
             qcdl_model = specify_num_qubits(my_angle=0.5)
 
@@ -653,13 +655,14 @@ def qcdl(
         .. testcode::
 
             from dwave.gate.qcdl import qcdl
+            from dwave.gate.qcdl.operations import cx, h, measure
 
             @qcdl()
             def my_bell_circuit(q0, q1):
-                q0.h()
-                q0.cx(q1)
-                q0.measure()
-                q1.measure()
+                h(q0)
+                cx(q0, q1)
+                measure(q0)
+                measure(q1)
 
             qcdl_model = my_bell_circuit()
 
