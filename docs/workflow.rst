@@ -1146,11 +1146,25 @@ implemented.
 Mirroring
 ---------
 
-A register is associated with a qubit. Your QCDL must ensure the information in
+A register is associated with a qubit. When you create a
+:class:`~dwave.gate.qcdl.registers.Register` object for the qubits of a
+:class:`~dwave.gate.qcdl.Scope` class, it is implemented as a collection of
+registers for the qubits in the scope. And when you assign that
+:class:`~dwave.gate.qcdl.registers.Register` to a
+:func:`dwave.gate.qcdl.operations.measure` or
+:func:`dwave.gate.qcdl.operations.mced` operation, only the register
+associated with the measured qubit is updated (the measurement outcome is
+immediately written to that register).
+
+Your QCDL must ensure the information in
 any qubit's register is visible to all qubits in the :class:`~dwave.gate.qcdl.Scope`
 or :class:`~dwave.gate.qcdl.registers.Register` object (*mirror* the
 information). This is needed, for example, to select the same branch to execute
 for a :ref:`conditional statement <qcdl_advanced_conditionals>`.
+
+Mirroring requires an extra communication step to ensure that registers
+associated with all other qubits of the
+:class:`~dwave.gate.qcdl.registers.Register` object are also updated.
 
 For simplicity, you can use the following two cooperative techniques to
 implement mirroring.
@@ -1180,6 +1194,11 @@ Guidance on Mirroring
     registers such that some qubits go to a true branch and others to a false
     branch. This is not recommended and the simulator raises an exception.
 
+.. seealso::
+
+    :func:`~dwave.gate.qcdl.implementations.mirror_bool_register` and
+    :func:`~dwave.gate.qcdl.implementations.mirror_measurement_register`
+    functions
 
 .. _qcdl_submitting_programs:
 

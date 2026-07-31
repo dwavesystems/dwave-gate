@@ -269,16 +269,16 @@ def print_qcdl(
     """Print a QCDl program.
 
     Args:
-         qcdl: A QCDL model or mapping. Typically created by instantiating a
-+            Python function containing QCDL instructions and annotated with the
-+            :func:`~dwave.gate.qcdl.qcdl` decorator.
-+        to_Display: If True, outputs the string to an
-+            `IPython <https://ipython.org/>`_ terminal. Outside of a
-+            `Jupyter <https://jupyter.org/>`_ notebook, equivalent to a print
-+            statement. Set to False to return the string.
-+        blacken: Apply the `Black <https://pypi.org/project/black/>`_ Python
-+            formatter to the input QCDL.
-+        filename: File name to write the string to.
+        qcdl: A QCDL model or mapping. Typically created by instantiating a
+            Python function containing QCDL instructions and annotated with the
+            :func:`~dwave.gate.qcdl.qcdl` decorator.
+        to_Display: If True, outputs the string to an
+            `IPython <https://ipython.org/>`_ terminal. Outside of a
+            `Jupyter <https://jupyter.org/>`_ notebook, equivalent to a print
+            statement. Set to False to return the string.
+        blacken: Apply the `Black <https://pypi.org/project/black/>`_ Python
+            formatter to the input QCDL.
+        filename: File name to write the string to.
 
     Returns:
         If displaying, the return is None; otherwise, the "qcdlv2" string.
