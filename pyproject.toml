@@ -45,6 +45,7 @@ dev = [
     "pydantic==2.13.4",  # latest as of July 2026
     "addict==2.4.0",
     "reno==4.1.0",
+    "polars==1.43.1",
 ]
 docs = [
     # matches dwave-ocean-sdk as of July 2026
