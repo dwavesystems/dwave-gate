@@ -687,7 +687,7 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
                 r2 <<= 1                            # set r2 to 1
                 r2 <<= 2 * r1                       # set r2 to 2*r1
 
-            qcdl_dict: dict = register_ops()
+            qcdl_dict = register_ops()
 
         This example demonstrates
         `type punning <https://en.wikipedia.org/wiki/Type_punning>`_.
@@ -703,7 +703,7 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
                 ir = sc.Register(name="fr", alias=True)
                 ir += ir & 4
 
-            qcdl_dict: dict = punning()
+            qcdl_dict = punning()
 
         This example instantiates a register directly for qubit ``q0`` and sets
         its ``scope_id`` to a :class:`~dwave.gate.qcdl.Scope` that includes that
@@ -718,7 +718,7 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
                 sc = Scope(q0, q1)
                 r1 = Register(q0, initial_value=2, name="r1", scope_id=sc.scope_id)
 
-            qcdl_dict: dict = direct()
+            qcdl_dict = direct()
 
     See Also:
         :class:`.FixedPointRegister`,
@@ -810,7 +810,7 @@ class FixedPointRegister(
                 q0.h()
                 measure(q0, register=r0)
 
-            qcdl_dict: dict = create_fixed_reg()
+            qcdl_dict = create_fixed_reg()
 
         See additional examples in the :class:`.Register` class.
 
@@ -1014,7 +1014,7 @@ class Array(RegisterInitializerMixin):
                 # Set the value of the array at index r1 to 0
                 arr[r1] = 0     # Note the assignment operator is not <<=
 
-            qcdl_dict: dict = array_example()
+            qcdl_dict = array_example()
 
     """
 
@@ -1119,7 +1119,7 @@ class ExpressionAggregator:
                     r0 <<= 1
                     r1 <<= r0
 
-            qcdl_dict: dict = aggregate_example()
+            qcdl_dict = aggregate_example()
 
     """
 
@@ -1227,7 +1227,7 @@ def arbitrary_function(
                 q0.h()
                 measure(q0, register=r0)
 
-            qcdl_dict: dict = an_arbitrary_func()
+            qcdl_dict = an_arbitrary_func()
 
     """
     if in_dtype not in (int, float):
