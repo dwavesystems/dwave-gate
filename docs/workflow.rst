@@ -60,10 +60,8 @@ In the code above, the ``@qcdl`` decorator specifies that the entry point
 accepts two qubits, the arguments ``q0`` and ``q1`` of ``main()``. The decorated
 function ``main()`` returns a
 `Pydantic model <https://pydantic.dev/docs/validation/dev/concepts/models/>`_
-that you can submit to a compiler or simulator in the Leap service, as described
+that you can submit to a compiler or simulator in the |cloud|_ service, as described
 in the :ref:`qcdl_submitting_programs` section.
-
-.. todo:: replace "Leap" with "\|cloud\|_" above and in additional places
 
 The :func:`~dwave.gate.qcdl.print_qcdl` function can visualize this dict structure
 as readable text, and if run in a `Jupyter <https://jupyter.org/>`_ notebook,
@@ -95,9 +93,11 @@ string by ``print_qcdl(qcdl_program, to_Display=False)``.
     Python decorators are described in the
     `Decorators <https://en.wikipedia.org/wiki/Python_syntax_and_semantics#Decorators>`_
     section of the Wikipedia article on
-    `Python syntax <https://en.wikipedia.org/wiki/Python_syntax_and_semantics>`
+    `Python syntax <https://en.wikipedia.org/wiki/Python_syntax_and_semantics>`_
     and multiple internet tutorials.
 
+.. seealso::
+        :func:`~dwave.gate.qcdl.qcdl` decorator
 
 .. _qcdl_basic_gates:
 
@@ -140,8 +140,8 @@ Qiskit the method call ``cz(q0, q1)``.
 Barrier
 ~~~~~~~
 
-When you submit your QCDL to the Leap service, a transpiler rewrites the circuit
-to use the QPU's supported basis gates and topology, as described in the
+When you submit your QCDL to the |cloud|_ service, a transpiler rewrites the
+circuit to use the QPU's supported basis gates and topology, as described in the
 :ref:`qcdl_basic_transpilation` section. For most algorithms, any implementation
 is acceptable but if you are studying fidelity or yield characterization, you
 can prevent the transpiler from combining certain gates. The
@@ -395,7 +395,7 @@ retrieve with :meth:`~AqumenResult.get_records` method.
 
     import pandas as pd
     from dwave.gate.qcdl import qcdl
-    from aqumen import Aqumen       # Replace with Leap
+    from aqumen import Aqumen       # Replace with |cloud|_
 
     @qcdl(1)
     def main(q0):
@@ -1250,7 +1250,7 @@ number of shots; however, its operation is
     reduced-precision registers; start with ideal quantum operations before
     introducing erasures.
 
-The Leap simulator supports two modes of simulations:
+The simulator in the |cloud|_ service supports two modes of simulations:
 
 *   Statevector Simulation
 

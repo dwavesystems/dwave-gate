@@ -604,7 +604,7 @@ def qcdl(
 
     The decorated function returns a
     `Pydantic model <https://pydantic.dev/docs/validation/dev/concepts/models/>`_
-    that you can submit to a solver in the Leap service, as described in the
+    that you can submit to a solver in the |cloud|_ service, as described in the
     :ref:`qcdl_submitting_programs` section.
 
     Args:

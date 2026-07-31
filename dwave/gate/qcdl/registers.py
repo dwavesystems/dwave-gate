@@ -632,8 +632,7 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
     Supports a range of values between -131,072 and 131,071
     (:math:`[-2^{17}, 2^{17-1}]`)).
 
-    .. note:: The dual-rail simulator in the
-        `Leap <https://cloud.dwavesys.com/leap/>`_ service supports
+    .. note:: The dual-rail simulator in the |cloud|_ service supports
         floating-point numbers for this register.
 
     The :ref:`qcdl_basic_registers_arithmetic` section introduces registers.
@@ -759,8 +758,7 @@ class FixedPointRegister(
     decimal, and 16 bits to the right of the decimal, giving a resolution of
     :math:`2^{-16}`.
 
-    .. note:: The dual-rail simulator in the
-        `Leap <https://cloud.dwavesys.com/leap/>`_ service supports
+    .. note:: The dual-rail simulator in the |cloud|_ service supports
         floating-point numbers for this register.
 
     The :ref:`qcdl_basic_registers_arithmetic` section introduces registers.
