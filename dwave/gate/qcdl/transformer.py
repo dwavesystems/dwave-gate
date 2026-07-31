@@ -334,8 +334,8 @@ def display_qcdl(qcdl: Qcdl | Mapping[str, Any], **kwargs: Any) -> None:
                 q0.h()
                 q0.measure()
 
-            qcdl_dict = display_program()
-            display_qcdl(qcdl_dict)
+            qcdl_program = display_program()
+            display_qcdl(qcdl_program)
 
 
         The code above displays the following QCDL program.

@@ -37,7 +37,7 @@ Examples:
             measure(q0)
             measure(q1)
 
-        qcdl_dict = operations_api()
+        qcdl_program = operations_api()
 
     This example is equivalent to the above example.
 
@@ -52,7 +52,7 @@ Examples:
             q0.measure()
             q1.measure()
 
-        qcdl_dict = qcdl_module_methods()
+        qcdl_program = qcdl_module_methods()
 """
 
 from collections.abc import Sequence
@@ -118,8 +118,8 @@ def barrier(*qubits: QcdlModule, label: str | None = None) -> None:
                 x(q0)
                 measure(q0)
 
-            qcdl_dict = use_barrier()
-            print_qcdl(qcdl_dict)
+            qcdl_program = use_barrier()
+            print_qcdl(qcdl_program)
 
         The code above prints the following QCDL.
 
@@ -179,7 +179,7 @@ def measure(
                 h(q0)
                 measure(q0, tag="my measurement", register=r0)
 
-            qcdl_dict = measurement()
+            qcdl_program = measurement()
     """
     kwargs: dict[str, Any] = dict(log=log)
     if register:
@@ -226,7 +226,7 @@ def mced(qubit: QcdlModule, register: Register, mirror: bool = True) -> None:
                 rx(q0, phi=0.1)
                 measure(q0)
 
-            qcdl_dict = mced_use()
+            qcdl_program = mced_use()
     """
     qubit.procedure.add_statement(None, "mced", [qubit], dict(register=register))
     if register and mirror and len(register.qcdl_modules) > 1:
@@ -255,7 +255,7 @@ def x(qubit: QcdlModule) -> None:
                 x(q0)
                 measure(q0)
 
-            qcdl_dict = x_gate()
+            qcdl_program = x_gate()
     """
     qubit.procedure.add_statement(None, "x", [qubit], None)
 
@@ -279,7 +279,7 @@ def sx(qubit: QcdlModule) -> None:
                 sx(q0)
                 measure(q0)
 
-            qcdl_dict = sx_gate()
+            qcdl_program = sx_gate()
     """
     qubit.procedure.add_statement(None, "sx", [qubit], None)
 
@@ -303,7 +303,7 @@ def y(qubit: QcdlModule) -> None:
                 y(q0)
                 measure(q0)
 
-            qcdl_dict = y_gate()
+            qcdl_program = y_gate()
     """
     qubit.procedure.add_statement(None, "y", [qubit], None)
 
@@ -327,7 +327,7 @@ def sy(qubit: QcdlModule) -> None:
                 sy(q0)
                 measure(q0)
 
-            qcdl_dict = sy_gate()
+            qcdl_program = sy_gate()
     """
     qubit.procedure.add_statement(None, "ry", [qubit, np.pi / 2], None)
 
@@ -351,7 +351,7 @@ def sydg(qubit: QcdlModule) -> None:
                 sydg(q0)
                 measure(q0)
 
-            qcdl_dict = sydg_gate()
+            qcdl_program = sydg_gate()
     """
     qubit.procedure.add_statement(None, "ry", [qubit, -np.pi / 2], None)
 
@@ -375,7 +375,7 @@ def z(qubit: QcdlModule) -> None:
                 z(q0)
                 measure(q0)
 
-            qcdl_dict = z_gate()
+            qcdl_program = z_gate()
     """
     qubit.procedure.add_statement(None, "z", [qubit], None)
 
@@ -399,7 +399,7 @@ def s(qubit: QcdlModule) -> None:
                 s(q0)
                 measure(q0)
 
-            qcdl_dict = s_gate()
+            qcdl_program = s_gate()
     """
     qubit.procedure.add_statement(None, "s", [qubit], None)
 
@@ -423,7 +423,7 @@ def sdg(qubit: QcdlModule) -> None:
                 sdg(q0)
                 measure(q0)
 
-            qcdl_dict = sdg_gate()
+            qcdl_program = sdg_gate()
 
     """
     qubit.procedure.add_statement(None, "sdg", [qubit], None)
@@ -448,7 +448,7 @@ def t(qubit: QcdlModule) -> None:
                 t(q0)
                 measure(q0)
 
-            qcdl_dict = t_gate()
+            qcdl_program = t_gate()
     """
     qubit.procedure.add_statement(None, "t", [qubit], None)
 
@@ -472,7 +472,7 @@ def tdg(qubit: QcdlModule) -> None:
                 tdg(q0)
                 measure(q0)
 
-            qcdl_dict = tdg_gate()
+            qcdl_program = tdg_gate()
     """
     qubit.procedure.add_statement(None, "tdg", [qubit], None)
 
@@ -496,7 +496,7 @@ def h(qubit: QcdlModule) -> None:
                 h(q0)
                 measure(q0)
 
-            qcdl_dict = h_gate()
+            qcdl_program = h_gate()
     """
     qubit.procedure.add_statement(None, "h", [qubit], None)
 
@@ -526,7 +526,7 @@ def rx(qubit: QcdlModule, phi: AngleType) -> None:
                 rx(q0, phi=0.1)
                 measure(q0)
 
-            qcdl_dict = rx_gate()
+            qcdl_program = rx_gate()
     """
     qubit.procedure.add_statement(None, "rx", [qubit, phi], None)
 
@@ -553,7 +553,7 @@ def ry(qubit: QcdlModule, phi: AngleType) -> None:
                 ry(q0, phi=0.1)
                 measure(q0)
 
-            qcdl_dict = ry_gate()
+            qcdl_program = ry_gate()
     """
     qubit.procedure.add_statement(None, "ry", [qubit, phi], None)
 
@@ -580,7 +580,7 @@ def rz(qubit: QcdlModule, phi: AngleType) -> None:
                 rz(q0, phi=0.1)
                 measure(q0)
 
-            qcdl_dict = rz_gate()
+            qcdl_program = rz_gate()
     """
     qubit.procedure.add_statement(None, "rz", [qubit, phi], None)
 
@@ -606,7 +606,7 @@ def p(qubit: QcdlModule, theta: AngleType) -> None:
                 p(q0, theta=0.1)
                 measure(q0)
 
-            qcdl_dict = p_gate()
+            qcdl_program = p_gate()
     """
     qubit.procedure.add_statement(None, "p", [qubit, theta], None)
 
@@ -634,7 +634,7 @@ def u(qubit: QcdlModule, theta: AngleType, phi: AngleType, lam: AngleType) -> No
                 u(q0, theta=0.1, phi=0.2, lam=0.3)
                 measure(q0)
 
-            qcdl_dict = u_gate()
+            qcdl_program = u_gate()
     """
     qubit.procedure.add_statement(None, "u", [qubit, theta, phi, lam], None)
 
@@ -665,7 +665,7 @@ def swap(qubit1: QcdlModule, qubit2: QcdlModule) -> None:
                 swap(q0, q1)
                 measure(q1)
 
-            qcdl_dict = swap_gate()
+            qcdl_program = swap_gate()
     """
     qubit1.procedure.add_statement(None, "swap", [qubit1, qubit2], None)
 
@@ -691,7 +691,7 @@ def cx(control_qubit: QcdlModule, target_qubit: QcdlModule) -> None:
                 cx(control_qubit=q0, target_qubit=q1)
                 measure(q1)
 
-            qcdl_dict = cx_gate()
+            qcdl_program = cx_gate()
     """
     control_qubit.procedure.add_statement(
         None, "cx", [control_qubit, target_qubit], None
@@ -719,7 +719,7 @@ def cy(control_qubit: QcdlModule, target_qubit: QcdlModule) -> None:
                 cy(control_qubit=q0, target_qubit=q1)
                 measure(q1)
 
-            qcdl_dict = cy_gate()
+            qcdl_program = cy_gate()
     """
     control_qubit.procedure.add_statement(
         None, "cy", [control_qubit, target_qubit], None
@@ -747,7 +747,7 @@ def cz(control_qubit: QcdlModule, target_qubit: QcdlModule) -> None:
                 cz(control_qubit=q0, target_qubit=q1)
                 measure(q1)
 
-            qcdl_dict = cz_gate()
+            qcdl_program = cz_gate()
     """
     control_qubit.procedure.add_statement(
         None, "cz", [control_qubit, target_qubit], None
@@ -779,7 +779,7 @@ def crx(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) -
                 crx(control_qubit=q0, target_qubit=q1, theta=0.1)
                 measure(q1)
 
-            qcdl_dict = crx_gate()
+            qcdl_program = crx_gate()
     """
 
     control_qubit.procedure.add_statement(
@@ -809,7 +809,7 @@ def cry(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) -
                 cry(control_qubit=q0, target_qubit=q1, theta=0.1)
                 measure(q1)
 
-            qcdl_dict = cry_gate()
+            qcdl_program = cry_gate()
     """
 
     control_qubit.procedure.add_statement(
@@ -839,7 +839,7 @@ def crz(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) -
                 crz(control_qubit=q0, target_qubit=q1, theta=0.1)
                 measure(q1)
 
-            qcdl_dict = crz_gate()
+            qcdl_program = crz_gate()
     """
 
     control_qubit.procedure.add_statement(
@@ -869,7 +869,7 @@ def cp(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) ->
                 cp(control_qubit=q0, target_qubit=q1, theta=0.1)
                 measure(q1)
 
-            qcdl_dict = cp_gate()
+            qcdl_program = cp_gate()
 
     """
     control_qubit.procedure.add_statement(
@@ -912,7 +912,7 @@ def cu(
                 )
                 measure(q1)
 
-            qcdl_dict = cu_gate()
+            qcdl_program = cu_gate()
     """
     control_qubit.procedure.add_statement(
         None, "cu", [control_qubit, target_qubit, theta, phi, lam, gamma], None
@@ -942,7 +942,7 @@ def rxx(qubit1: QcdlModule, qubit2: QcdlModule, theta: AngleType) -> None:
                 rxx(q0, q1, theta=0.1)
                 measure(q0)
 
-            qcdl_dict = rxx_gate()
+            qcdl_program = rxx_gate()
     """
     qubit1.procedure.add_statement(None, "rxx", [qubit1, qubit2, theta], None)
 
@@ -970,7 +970,7 @@ def ryy(qubit1: QcdlModule, qubit2: QcdlModule, theta: AngleType) -> None:
                 ryy(q0, q1, theta=0.1)
                 measure(q0)
 
-            qcdl_dict = ryy_gate()
+            qcdl_program = ryy_gate()
     """
     qubit1.procedure.add_statement(None, "ryy", [qubit1, qubit2, theta], None)
 
@@ -998,6 +998,6 @@ def rzz(qubit1: QcdlModule, qubit2: QcdlModule, theta: AngleType) -> None:
                 rzz(q0, q1, theta=0.1)
                 measure(q0)
 
-            qcdl_dict = rzz_gate()
+            qcdl_program = rzz_gate()
     """
     qubit1.procedure.add_statement(None, "rzz", [qubit1, qubit2, theta], None)

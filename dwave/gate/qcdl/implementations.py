@@ -83,7 +83,7 @@ def mirror_bool_register(
                 mced(q0, register=r0)
                 mirror_bool_register(sender=q0, register=r0, receivers=receivers)
 
-            qcdl_dict = mirror_bool_example()
+            qcdl_program = mirror_bool_example()
     """
     receivers = _get_receivers(sender=sender, register=register, receivers=receivers)
     if not receivers:
@@ -147,7 +147,7 @@ def mirror_measurement_register(
                 measure(q0, register=r0)
                 mirror_measurement_register(sender=q0, register=r0, receivers=receivers)
 
-            qcdl_dict = mirror_measurement_example()
+            qcdl_program = mirror_measurement_example()
     """
     receivers = _get_receivers(sender=sender, register=register, receivers=receivers)
     if not receivers:
