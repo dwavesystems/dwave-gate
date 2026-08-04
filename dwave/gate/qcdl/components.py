@@ -2035,7 +2035,7 @@ def procedure(
             unspecified, generates a "mangled" name.
         use_signature_modules: If True, bases procedure name on module name. If
             False, the procedure is defined by its
-            :attr:`~dwave.gate.qcdl.Scope.qcdl_modules`.
+            :attr:`~dwave.gate.qcdl.Scope.qcdl_modules` attribute.
         validate_reused_procedures: If False and if the procedure has been seen
             before, as determined by its mangled name, it is automatically
             reused. Where safe to do so, set to False to save some time.
@@ -2052,14 +2052,15 @@ def procedure(
         .. testcode::
 
             from dwave.gate.qcdl import procedure, qcdl, Scope
+            from dwave.gate.qcdl.operations import h, measure, swap
 
             @procedure
             def my_procedure(qa, qb, r):
-                qa.h()
+                h(qa)
                 qa.sync(qb)
                 qb.h()
-                qa.swap(qb)
-                qa.measure(register=r)
+                swap(qb, qa)
+                measure(qa, register=r)
 
             @qcdl(2)
             def use_procedure(q0, q1):

@@ -632,8 +632,7 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
     Supports a range of values between -131,072 and 131,071
     (:math:`[-2^{17}, 2^{17-1}]`)).
 
-    .. note:: The dual-rail simulator in the
-        `Leap <https://cloud.dwavesys.com/leap/>`_ service supports
+    .. note:: The dual-rail simulator in the |cloud|_ service supports
         floating-point numbers for this register.
 
     The :ref:`qcdl_basic_registers_arithmetic` section introduces registers.
@@ -759,8 +758,7 @@ class FixedPointRegister(
     decimal, and 16 bits to the right of the decimal, giving a resolution of
     :math:`2^{-16}`.
 
-    .. note:: The dual-rail simulator in the
-        `Leap <https://cloud.dwavesys.com/leap/>`_ service supports
+    .. note:: The dual-rail simulator in the |cloud|_ service supports
         floating-point numbers for this register.
 
     The :ref:`qcdl_basic_registers_arithmetic` section introduces registers.
@@ -1203,6 +1201,7 @@ def arbitrary_function(
 
             import numpy as np
             from dwave.gate.qcdl import arbitrary_function, qcdl, Scope
+            from dwave.gate.qcdl.operations import h
 
             @qcdl(2)
             def an_arbitrary_func(q0, q1):
@@ -1224,7 +1223,7 @@ def arbitrary_function(
                 r2 = sc.FixedPointRegister(name="r2")
                 r2 <<= sin_half_x(r1)   # set r2 to sin(pi * r1 / 2) = sin(pi/4)
 
-                q0.h()
+                h(q0)
                 measure(q0, register=r0)
 
             qcdl_program = an_arbitrary_func()
