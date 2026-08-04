@@ -35,23 +35,13 @@ class ResultDict(BaseModel):
 
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
-    num_shots: int = Field(description="Total number of shots executed.")
-    start_time: str | None = Field(
+    shots: int = Field(description="Total number of shots executed.")
+    start_time: datetime.datetime | None = Field(
         default=None, description="ISO-8601 string for when execution began."
     )
-    end_time: str | None = Field(
+    end_time: datetime.datetime | None = Field(
         default=None, description="ISO-8601 string for when execution ended."
     )
-
-    @field_validator("start_time", "end_time", mode="after")
-    @classmethod
-    def _validate_iso_datetime(cls, v: str | None) -> str | None:
-        if v is not None:
-            try:
-                datetime.datetime.fromisoformat(v)
-            except ValueError:
-                raise ValueError(f"{v!r} is not a valid ISO-8601 datetime string")
-        return v
 
     run_time: float | None = Field(
         default=None, description="Wall-clock duration of the run in seconds."
@@ -108,9 +98,7 @@ class ResultDict(BaseModel):
     @model_validator(mode="after")
     def _check_end_time_after_start_time(self) -> ResultDict:
         if self.start_time is not None and self.end_time is not None:
-            start = datetime.datetime.fromisoformat(self.start_time)
-            end = datetime.datetime.fromisoformat(self.end_time)
-            if end < start:
+            if self.end_time < self.start_time:
                 raise ValueError(
                     f"end_time {self.end_time!r} must not be before"
                     f" start_time {self.start_time!r}"

@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 def _minimal(extra: dict | None = None) -> dict:
     """Minimal valid result dict (only the required field)."""
-    d = {"num_shots": 10}
+    d = {"shots": 10}
     if extra:
         d.update(extra)
     return d
@@ -62,12 +62,12 @@ def _make_result(extra: dict | None = None) -> Result:
 def test_result_dict_requires_num_shots():
     with pytest.raises(ValidationError) as exc_info:
         ResultDict.model_validate({})
-    assert any(e["loc"] == ("num_shots",) for e in exc_info.value.errors())
+    assert any(e["loc"] == ("shots",) for e in exc_info.value.errors())
 
 
 def test_result_dict_minimal_valid():
-    r = ResultDict.model_validate({"num_shots": 5})
-    assert r.num_shots == 5
+    r = ResultDict.model_validate({"shots": 5})
+    assert r.shots == 5
 
 
 # ---------------------------------------------------------------------------
@@ -76,7 +76,7 @@ def test_result_dict_minimal_valid():
 
 
 def test_result_dict_allows_extra_keys():
-    r = ResultDict.model_validate({"num_shots": 1, "future_field": "value"})
+    r = ResultDict.model_validate({"shots": 1, "future_field": "value"})
     assert r.model_extra["future_field"] == "value"
 
 
@@ -88,24 +88,24 @@ def test_result_dict_allows_extra_keys():
 def test_result_dict_valid_timestamps():
     r = ResultDict.model_validate(
         {
-            "num_shots": 1,
+            "shots": 1,
             "start_time": "2026-01-01T00:00:00",
             "end_time": "2026-01-01T01:00:00",
         }
     )
-    assert isinstance(r.start_time, str)
-    assert isinstance(r.end_time, str)
+    assert isinstance(r.start_time, datetime.datetime)
+    assert isinstance(r.end_time, datetime.datetime)
 
 
 def test_result_dict_invalid_start_time():
     with pytest.raises(ValidationError) as exc_info:
-        ResultDict.model_validate({"num_shots": 1, "start_time": "not-a-date"})
+        ResultDict.model_validate({"shots": 1, "start_time": "not-a-date"})
     assert any(e["loc"] == ("start_time",) for e in exc_info.value.errors())
 
 
 def test_result_dict_invalid_end_time():
     with pytest.raises(ValidationError) as exc_info:
-        ResultDict.model_validate({"num_shots": 1, "end_time": "yesterday"})
+        ResultDict.model_validate({"shots": 1, "end_time": "yesterday"})
     assert any(e["loc"] == ("end_time",) for e in exc_info.value.errors())
 
 
@@ -113,7 +113,7 @@ def test_result_dict_end_before_start_rejected():
     with pytest.raises(ValidationError, match="end_time.*must not be before"):
         ResultDict.model_validate(
             {
-                "num_shots": 1,
+                "shots": 1,
                 "start_time": "2026-01-02T00:00:00",
                 "end_time": "2026-01-01T00:00:00",
             }
@@ -123,14 +123,14 @@ def test_result_dict_end_before_start_rejected():
 def test_result_dict_equal_start_end_accepted():
     ts = "2026-01-01T12:00:00"
     r = ResultDict.model_validate(
-        {"num_shots": 1, "start_time": ts, "end_time": ts}
+        {"shots": 1, "start_time": ts, "end_time": ts}
     )
     assert r.start_time == r.end_time
 
 
 def test_result_dict_only_start_time():
     r = ResultDict.model_validate(
-        {"num_shots": 1, "start_time": "2026-01-01T00:00:00"}
+        {"shots": 1, "start_time": "2026-01-01T00:00:00"}
     )
     assert r.start_time is not None
     assert r.end_time is None
@@ -150,14 +150,14 @@ def test_result_dict_only_start_time():
     ],
 )
 def test_result_dict_record_format_coercion(value, expected):
-    r = ResultDict.model_validate({"num_shots": 1, "record_format": value})
+    r = ResultDict.model_validate({"shots": 1, "record_format": value})
     assert r.record_format is expected
 
 
 def test_result_dict_invalid_record_format():
     with pytest.raises(ValidationError):
         ResultDict.model_validate(
-            {"num_shots": 1, "record_format": "unknown_format"}
+            {"shots": 1, "record_format": "unknown_format"}
         )
 
 
@@ -170,7 +170,7 @@ def test_result_dict_invalid_record_format():
 def test_result_dict_log_format_accepts_str_records(fmt):
     r = ResultDict.model_validate(
         {
-            "num_shots": 1,
+            "shots": 1,
             "record_format": fmt.value,
             "records": "HEADER\tschema\nEND\t0",
         }
@@ -181,7 +181,7 @@ def test_result_dict_log_format_accepts_str_records(fmt):
 @pytest.mark.parametrize("fmt", [RecordFormat.POLARS, RecordFormat.TABLE])
 def test_result_dict_table_format_accepts_dict_records(fmt):
     r = ResultDict.model_validate(
-        {"num_shots": 1, "record_format": fmt.value, "records": {"q0": {"t": "data"}}}
+        {"shots": 1, "record_format": fmt.value, "records": {"q0": {"t": "data"}}}
     )
     assert isinstance(r.records, dict)
 
@@ -190,7 +190,7 @@ def test_result_dict_table_format_accepts_dict_records(fmt):
 def test_result_dict_log_format_rejects_dict_records(fmt):
     with pytest.raises(ValidationError, match="records must be a str"):
         ResultDict.model_validate(
-            {"num_shots": 1, "record_format": fmt.value, "records": {"q0": {}}}
+            {"shots": 1, "record_format": fmt.value, "records": {"q0": {}}}
         )
 
 
@@ -198,13 +198,13 @@ def test_result_dict_log_format_rejects_dict_records(fmt):
 def test_result_dict_table_format_rejects_str_records(fmt):
     with pytest.raises(ValidationError, match="records must be a dict"):
         ResultDict.model_validate(
-            {"num_shots": 1, "record_format": fmt.value, "records": "raw string"}
+            {"shots": 1, "record_format": fmt.value, "records": "raw string"}
         )
 
 
 def test_result_dict_records_without_format_accepted():
     # records present but no format — no consistency check fires
-    r = ResultDict.model_validate({"num_shots": 1, "records": {"q0": {"t": "x"}}})
+    r = ResultDict.model_validate({"shots": 1, "records": {"q0": {"t": "x"}}})
     assert r.records == {"q0": {"t": "x"}}
 
 
@@ -215,7 +215,7 @@ def test_result_dict_records_without_format_accepted():
 
 def test_result_dict_measurements_list_of_lists():
     r = ResultDict.model_validate(
-        {"num_shots": 2, "measurements": {"": [[0, 1], [1, 0]]}}
+        {"shots": 2, "measurements": {"": [[0, 1], [1, 0]]}}
     )
     assert r.measurements[""] == [[0, 1], [1, 0]]
 
@@ -223,7 +223,7 @@ def test_result_dict_measurements_list_of_lists():
 def test_result_dict_measurements_numpy_arrays():
     arr = np.array([0, 1], dtype=str)
     r = ResultDict.model_validate(
-        {"num_shots": 2, "measurements": {"tag": [arr]}}
+        {"shots": 2, "measurements": {"tag": [arr]}}
     )
     np.testing.assert_array_equal(r.measurements["tag"][0], arr)
 
@@ -233,21 +233,21 @@ def test_result_dict_measurements_numpy_arrays():
 # ---------------------------------------------------------------------------
 
 
-def test_aqumen_result_rejects_missing_num_shots():
+def test_result_rejects_missing_num_shots():
     with pytest.raises(ValidationError):
         Result({})
 
 
-def test_aqumen_result_rejects_bad_timestamps():
+def test_result_rejects_bad_timestamps():
     with pytest.raises(ValidationError):
-        Result({"num_shots": 1, "start_time": "bad"})
+        Result({"shots": 1, "start_time": "bad"})
 
 
-def test_aqumen_result_rejects_end_before_start():
+def test_result_rejects_end_before_start():
     with pytest.raises(ValidationError):
         Result(
             {
-                "num_shots": 1,
+                "shots": 1,
                 "start_time": "2026-01-02T00:00:00",
                 "end_time": "2026-01-01T00:00:00",
             },
@@ -259,7 +259,7 @@ def test_aqumen_result_rejects_end_before_start():
 # ---------------------------------------------------------------------------
 
 
-def test_aqumen_result_property_is_raw_dict():
+def test_result_property_is_raw_dict():
     d = _minimal({"record_format": RecordFormat.QIR_V2_1.value})
     ar = Result(d)
     assert ar.result is d
@@ -267,17 +267,17 @@ def test_aqumen_result_property_is_raw_dict():
     assert ar.result["record_format"] == RecordFormat.QIR_V2_1.value
 
 
-def test_aqumen_result_num_shots():
-    assert _make_result().num_shots == 10
+def test_result_num_shots():
+    assert _make_result().shots == 10
 
 
-def test_aqumen_result_start_end_time_none_when_absent():
+def test_result_start_end_time_none_when_absent():
     ar = _make_result()
     assert ar.start_time is None
     assert ar.end_time is None
 
 
-def test_aqumen_result_start_end_time_parsed():
+def test_result_start_end_time_parsed():
     ar = _make_result(
         {"start_time": "2026-01-01T00:00:00", "end_time": "2026-01-01T01:00:00"}
     )
@@ -297,7 +297,7 @@ def test_unmeasured_qubit():
     # value is used correctly and that the final result has an appropriate dtype
     register = [f"q{q}" for q in range(3)]
     memory = format_memory(
-        measurements=[[1, "*", 0], [1, 1, 0], []], register=register, num_shots=3
+        measurements=[[1, "*", 0], [1, 1, 0], []], register=register, shots=3
     )
     assert isinstance(memory, np.ndarray)
     assert memory.dtype.kind == "U"
@@ -305,7 +305,7 @@ def test_unmeasured_qubit():
     assert count_measurements(memory) == {"00_": 1, "11_": 1}
 
     memory = format_memory(
-        measurements=[[1, 0, 0], [1, 1, 0], []], register=register, num_shots=3
+        measurements=[[1, 0, 0], [1, 1, 0], []], register=register, shots=3
     )
     assert isinstance(memory, np.ndarray)
     assert memory.dtype.kind == "U"
@@ -318,7 +318,7 @@ def test_count_measurements(splats, val):
     # simple examples for how this works
     q3fmt = "{0:>03b}"
     b = q3fmt.format(val)
-    num_shots = 100
+    shots = 100
     if splats:
         data = np.array(
             [
@@ -330,20 +330,20 @@ def test_count_measurements(splats, val):
                     )
                     for v in b
                 ]
-                for shot in range(num_shots)
+                for shot in range(shots)
             ]
         )
         num_post_selected = sum("*" not in row for row in data)
         # make sure at least one shot will survive post selection
         assert num_post_selected > 0
     else:
-        data = np.array([[int(v) for v in b]] * num_shots)
-        num_post_selected = num_shots
-    assert len(data) == num_shots
+        data = np.array([[int(v) for v in b]] * shots)
+        num_post_selected = shots
+    assert len(data) == shots
     assert count_measurements(data, key_format="bin") == {b: num_post_selected}
     if splats:
         counts = count_measurements(data, key_format="bin", post_select=False)
-        assert sum(counts.values()) == num_shots
+        assert sum(counts.values()) == shots
         assert counts[b] >= 1
 
     assert count_measurements(data, key_format="hex") == {hex(val): num_post_selected}
@@ -353,10 +353,10 @@ def test_count_measurements(splats, val):
 
 @pytest.mark.parametrize("post_select", [True, False])
 def test_splats_and_unmeasured(post_select):
-    num_shots = 100
+    shots = 100
     num_qubits = 3
     data = np.array(
-        [random.choices([0, 1, "*", "_"], k=num_shots) for _ in range(num_qubits)]
+        [random.choices([0, 1, "*", "_"], k=shots) for _ in range(num_qubits)]
     )
     assert isinstance(
         count_measurements(data, key_format="bin", post_select=post_select), dict
@@ -383,7 +383,7 @@ def make_and_test_mock_results(mps_array, shots=10, register=None):
         measurements=measurements,
         unmeasured_value=unmeasured_value,
         register=register,
-        num_shots=shots,
+        shots=shots,
     )
 
     max_mps = max(mps_array)
@@ -427,7 +427,7 @@ def _mock_results(measured_qubits, num_qubits=3, shots=10):
 
     return dict(
         measurements=measurements,
-        num_shots=shots,
+        shots=shots,
     )
 
 

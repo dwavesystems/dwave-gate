@@ -84,7 +84,7 @@ def _decode_measurement_array(measurements: str, to_bit: bool = True) -> np.ndar
 
 def format_memory(
     measurements: list[Any] | dict[str, list[int | str] | np.ndarray],
-    num_shots: int,
+    shots: int,
     register: RegisterType | None = None,
     unmeasured_value: int | str = "_",
 ) -> np.ndarray:
@@ -109,7 +109,7 @@ def format_memory(
         measurements: The measurements 2D array or dict of arrays from either
             the simulator or qpu. If a 2D array is passed the qubit name is
             inferred from the index in the array.
-        num_shots: The number of shots to produce this data.
+        shots: The number of shots to produce this data.
         register: List of qubit names (or None) to go into the register. A None in 
             the list will fill in the unmeasured_value. If a register is not
             provided, get_default_register will be used to create one.
@@ -130,8 +130,8 @@ def format_memory(
     if not qubit_name_to_loc:
         raise ValueError("the measurements instance has no qubits")
 
-    if not num_shots:
-        raise ValueError("num_shots is required")
+    if not shots:
+        raise ValueError("shots is required")
 
     measurements_per_shot: dict[str, int] = {}
 
@@ -141,13 +141,13 @@ def format_memory(
             meas = np.array(meas, dtype=str)
             measurements[loc] = meas
         num_meas = len(meas)
-        mps = num_meas / float(num_shots)
-        if num_meas % num_shots == 0:
+        mps = num_meas / float(shots)
+        if num_meas % shots == 0:
             measurements_per_shot[qn] = int(mps)
         else:
             raise ValueError(
                 f"inconsistent number of measurements per shot {mps} for shots = "
-                f"{num_shots} and num measurements = {num_meas} for qubit {qn}"
+                f"{shots} and num measurements = {num_meas} for qubit {qn}"
             )
 
     max_mps: int = max(measurements_per_shot.values())
@@ -173,8 +173,8 @@ def format_memory(
             mps = 1
             # this is to support qiskit -- a qubit which isn't measured seems to
             # result in a zero in the bitstring
-            measurement_array = np.array([unmeasured_value] * num_shots).reshape(
-                (num_shots, mps)
+            measurement_array = np.array([unmeasured_value] * shots).reshape(
+                (shots, mps)
             )
 
         else:
@@ -183,7 +183,7 @@ def format_memory(
             qubit_measurements = cast(np.ndarray, measurements[loc])
 
             # all the measurements this qubit made, shaped by its mps
-            measurement_array = qubit_measurements.reshape((num_shots, mps))
+            measurement_array = qubit_measurements.reshape((shots, mps))
 
         if max_mps > mps:
             # only do padding if size does not match. pad up to the max_mps
@@ -193,14 +193,14 @@ def format_memory(
                 "constant",
                 constant_values=unmeasured_value,
             )
-        memory_list.append(measurement_array.reshape((num_shots, max_mps)))
+        memory_list.append(measurement_array.reshape((shots, max_mps)))
     memory = np.array(memory_list)
 
     memory = np.transpose(memory)
-    if memory.shape != (max_mps, num_shots, len(register)):
+    if memory.shape != (max_mps, shots, len(register)):
         raise RuntimeError(
             f"unexpected memory shape {memory.shape!r}, "
-            f"expected {(max_mps, num_shots, len(register))!r}"
+            f"expected {(max_mps, shots, len(register))!r}"
         )
 
     return memory
@@ -209,7 +209,7 @@ def format_memory(
 def count_measurements(
     memory: list | np.ndarray,
     key_format: str | None = "bin",
-    post_select=True,
+    post_select: bool = True,
 ) -> dict[int | str, int]:
     """Convert memory to a dict of observation counts.
 
@@ -373,9 +373,9 @@ class Result:
             return None
 
     @property
-    def num_shots(self) -> int:
+    def shots(self) -> int:
         """Number of shots in this result."""
-        return self.result["num_shots"]
+        return self.result["shots"]
 
     @property
     def tags(self) -> tuple[str, ...]:
@@ -453,7 +453,7 @@ class Result:
         tag: str | None = None,
         register: RegisterType | None = None,
         unmeasured_value: int | str = "_",
-        num_shots: int | None = None,
+        shots: int | None = None,
     ) -> np.ndarray:
         """Memory is the 3D array of measurements per shot x shots x qubits
 
@@ -466,7 +466,7 @@ class Result:
                 the inner dimension of the returned value.
             unmeasured_value: What to put in the register if a requested qubit
                 wasn't measured.
-            num_shots: Overrides the num_shots in the result object.
+            shots: Overrides the shots in the result object.
 
         Returns:
             Memory array.
@@ -480,7 +480,7 @@ class Result:
             measurements[tag],
             register=register,
             unmeasured_value=unmeasured_value,
-            num_shots=num_shots or self.num_shots,
+            shots=shots or self.shots,
         )
 
     def get_counts(
@@ -489,7 +489,7 @@ class Result:
         register: RegisterType | None = None,
         post_select: bool = False,
         unmeasured_value: int | str = "_",
-        num_shots: int | None = None,
+        shots: int | None = None,
     ) -> list[dict[int | str, int]]:
         """A counts dict is a summation over all the shots.
 
@@ -502,7 +502,7 @@ class Result:
             post_select: If the counts dict should include splats or not.
             unmeasured_value: What to put in the register if a requested qubit
                 wasn't measured.
-            num_shots: Overrides the num_shots in the result object.
+            shots: Overrides the shots in the result object.
 
         Returns:
             A summation of the memory.
@@ -513,7 +513,7 @@ class Result:
             tag=tag,
             register=register,
             unmeasured_value=unmeasured_value,
-            num_shots=num_shots,
+            shots=shots,
         )
         return [
             count_measurements(mem, key_format="bin", post_select=post_select)
