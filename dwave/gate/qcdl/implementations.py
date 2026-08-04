@@ -44,23 +44,46 @@ def mirror_bool_register(
     register: Register,
     receivers: list[QcdlModule] | None = None,
 ) -> None:
-    """Broadcast a bool register from one qubit to others.
+    """Mirror a Boolean register to registers associated with other qubits.
 
-    This may be useful for, for example, a register used with an mced.
+    May be useful for a :class:`~dwave.gate.qcdl.registers.Register` object used
+    for the outcome of a :func:`~dwave.gate.qcdl.operations.mced` operation. See
+    the :ref:`qcdl_advanced_registers_mirroring` section to learn about
+    mirroring.
 
-    This function assumes that:
+    This function requires the following:
 
-    * The register was already allocated on all the qubits.
-    * That the register on the sender has only a 0 or a 1. This
-      assumption is not verified at runtime.
+    *   Allocate the :class:`~dwave.gate.qcdl.registers.Register` to all the
+        relevant qubits.
+    *   A value of either :math:`0` or :math:`1` in the register associated with
+        the qubit specified by the ``sender`` parameter.
 
     Args:
-        sender (QcdlModule): The DR qubit which has already assigned
-           the measurement outcome to the register.
-        register (Register): The register to mirror.
-        receivers (list[QcdlModule] | None, optional): The DR qubits which need to have
-           their copy of the register updated. If not provided, it will
-           chose the other modules in the Register.
+        sender: Qubit associated with the register you are assigning the
+            measurement outcome to.
+        register: :class:`~dwave.gate.qcdl.registers.Register` object to mirror.
+        receivers: Qubits that need their associated registers updated. If not
+            specified, defaults to the other qubits associated with the register
+            selected by the ``Register`` parameter.
+
+    Examples:
+
+        .. testcode::
+
+            from dwave.gate.qcdl import qcdl, Scope
+            from dwave.gate.qcdl.implementations import mirror_bool_register
+            from dwave.gate.qcdl.operations import h, mced, x
+
+            @qcdl(3)
+            def mirror_bool_example(q0, q1, q2):
+                sc = Scope(q0, q1, q2)
+                h(q0)
+                r0 = Register(sc.qcdl_modules, name="r0")
+                receivers = [qubit for qubit in sc.qcdl_modules if qubit != q0]
+                mced(q0, register=r0)
+                mirror_bool_register(sender=q0, register=r0, receivers=receivers)
+
+            qcdl_program = mirror_bool_example()
     """
     receivers = _get_receivers(sender=sender, register=register, receivers=receivers)
     if not receivers:
@@ -83,33 +106,50 @@ def mirror_measurement_register(
     register: Register,
     receivers: list[QcdlModule] | None = None,
 ) -> None:
-    """Broadcast a 2-bit DR measurement from one qubit to others.
+    """Mirror a two-bit qubit measurement to registers associated with other
+    qubits.
 
-    A Register is actually a collection of registers corresponding to the scope
-    for which the Register was created. If a register is passed to a `measure`
-    operation, only the copy of the register on the measured qubit is updated;
-    an extra step involving digital communication is necessary to ensure that
-    registers on all other qubits in the Register are also updated.
+    May be useful for a :class:`~dwave.gate.qcdl.registers.Register` object used
+    for the outcome of a :func:`~dwave.gate.qcdl.operations.measurement`
+    operation. See the :ref:`qcdl_advanced_registers_mirroring` section to learn
+    about mirroring.
 
-    The outcome from a qubit measurement can be immediately written to a
-    register on that qubit. This function can mirror that outcome to the same
-    register stored on each of a set of other qubits (often all of them).
+    This function requires the following:
 
-    This function assumes that:
-
-    * The register was already allocated on all the qubits.
-    * The measurement outcome is already written to the register on the sender
-      qubit. This assumption is not verified at runtime.
-    * That it's a 2 bit DR measurement that we need to broadcast. This
-      assumption is not verified at runtime.
+    *   Allocate the :class:`~dwave.gate.qcdl.registers.Register` to all the
+        relevant qubits.
+    *   The measurement outcome is written to the register associated with the
+        qubit specified by the ``sender`` parameter.
+    *   The measurement outcome is two bits (a dual-rail qubit measurement).
 
     Args:
-        sender (QcdlModule): The DR qubit which has already assigned
-           the measurement outcome to the register.
-        register (Register): The register to mirror.
-        receivers (list[QcdlModule] | None, optional): The DR qubits which need to have
-           their copy of the register updated. If not provided, it will
-           chose the other modules in the Register.
+        sender: Qubit associated with the register you are assigning the
+            measurement outcome to.
+        register: :class:`~dwave.gate.qcdl.registers.Register` object to mirror.
+        receivers: Qubits that need their associated registers updated. If not
+            specified, defaults to the other qubits associated with the register
+            selected by the ``Register`` parameter.
+
+    Examples:
+        This is an artificial example to demonstrate usage (see the ``mirror``
+        parameter in the :func:`~dwave.gate.qcdl.operations.measure` operation).
+
+        .. testcode::
+
+            from dwave.gate.qcdl import qcdl, Scope
+            from dwave.gate.qcdl.implementations import mirror_measurement_register
+            from dwave.gate.qcdl.operations import h, measure, x
+
+            @qcdl(3)
+            def mirror_measurement_example(q0, q1, q2):
+                sc = Scope(q0, q1, q2)
+                h(q0)
+                r0 = Register(sc.qcdl_modules, name="r0")
+                receivers = [qubit for qubit in sc.qcdl_modules if qubit != q0]
+                measure(q0, register=r0)
+                mirror_measurement_register(sender=q0, register=r0, receivers=receivers)
+
+            qcdl_program = mirror_measurement_example()
     """
     receivers = _get_receivers(sender=sender, register=register, receivers=receivers)
     if not receivers:

@@ -574,7 +574,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     q1.z()
                     q1.measure()
 
-                qcdl_dict = single_if()
+                qcdl_program = single_if()
 
             A more complex example with nested conditionals:
 
@@ -597,7 +597,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     with Else():
                         r1 += 0.2
 
-                qcdl_dict = nested_if()
+                qcdl_program = nested_if()
         """
         self._If(
             condition=condition,
@@ -668,7 +668,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     print(q0.get_next_index_in_proc("q"))
                     q0.measure()
 
-                qcdl_dict: dict = unique()
+                qcdl_program = unique()
 
             The code above prints two unique indices for ``q``.
 
@@ -756,7 +756,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                         measure(q0, register=r0)
                         r1 += 1
 
-                qcdl_dict: dict = while_use()
+                qcdl_program = while_use()
         """
         with self._loop(_base_name, _base_idx) as (continue_label, _):
             with self.If(
@@ -805,7 +805,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                         q0.measure()
                         q1.x()
 
-                qcdl_dict: dict = while_use()
+                qcdl_program = while_use()
         """
         with self._loop("dowhile") as (continue_label, _):
             self.procedure._exclusive_modules.append(
@@ -878,7 +878,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                         q0.h()
                         measure(q0, register=r0)
 
-                qcdl_dict: dict = for_loop()
+                qcdl_program = for_loop()
 
         """
         loop_register <<= initial_value
@@ -926,7 +926,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                         q0.x()
                         q0.measure()
 
-                qcdl_dict: dict = repeat_use()
+                qcdl_program = repeat_use()
 
         """
         _base_name = "repeat"
@@ -1024,8 +1024,8 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     q1.comment("This is my comment")
                     q0.measure()
 
-                qcdl_dict: dict = add_comment()
-                print_qcdl(qcdl_dict)
+                qcdl_program = add_comment()
+                print_qcdl(qcdl_program)
 
             The code above prints the following QCDL.
 
@@ -1066,7 +1066,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     sc.sync()
                     q1.measure()
 
-                qcdl_dict: dict = add_sync1()
+                qcdl_program = add_sync1()
 
             The above is equivalent to the following use of ``sync`` on the
             qubit.
@@ -1081,7 +1081,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     q0.sync(q1)
                     q1.x()
 
-                qcdl_dict: dict = add_sync2()
+                qcdl_program = add_sync2()
         """
         self._multi_qubit_statement(
             "sync", *args, _impl="args", _allow_override=False, **kwargs
@@ -1163,7 +1163,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                         q1.x()
                         q1.measure()
 
-                qcdl_dict: dict = all_to_all_use()
+                qcdl_program = all_to_all_use()
 
         Raises:
             QCDLUserError: Invalid reduction operator.
@@ -1208,7 +1208,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     q0.x()
                     q0.measure()
 
-                qcdl_dict: dict = set_barrier()
+                qcdl_program = set_barrier()
         """
         if label is not None:
             barrier_kwargs: dict[str, Any] = dict(label=label)
@@ -1257,7 +1257,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
 
                     q0.measure()    # Next section of the quantum algorithm
 
-                qcdl_dict: dict = use_goto()
+                qcdl_program = use_goto()
         """
         self.state.set_or_check_nondeterministic_modules(
             self.qcdl_modules,
@@ -1493,7 +1493,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     measure(q1, register=r1)
                     sc.append_table_row(r1, table_name="after_swap")
 
-                qcdl_dict: dict = table_row()
+                qcdl_program = table_row()
         """
         shape_provided = shape is not None
         if not shape_provided:
@@ -1624,7 +1624,7 @@ class QcdlModule(QcdlModuleContainer):
                 print(q0.qcdl_module_name)      # Added for the example output
                 measure(q0)
 
-            qcdl_dict: dict = direct_op()
+            qcdl_program = direct_op()
 
         The code above prints the
         :attr:`~dwave.gate.qcdl.QcdlModule.qcdl_module_name` property of the
@@ -1653,7 +1653,7 @@ class QcdlModule(QcdlModuleContainer):
                     qubit="q0", op="measure", args=None, kwargs=None
                 )
 
-            qcdl_dict: dict = using_qcdlmodule()
+            qcdl_program = using_qcdlmodule()
 
     """
 
@@ -2002,8 +2002,8 @@ class Scope(QcdlModuleContainer):
                     q0.measure()
                     sc.comment(f"measure {sc.qcdl_modules[0].name}")
 
-                qcdl_dict: dict = modules_property()
-                print_qcdl(qcdl_dict)
+                qcdl_program = modules_property()
+                print_qcdl(qcdl_program)
 
             The code above prints the following QCDL.
 
@@ -2069,7 +2069,7 @@ def procedure(
                 my_procedure(q0, q1, r0)
                 my_procedure(q1, q0, r1)
 
-            qcdl_dict: dict = use_procedure()
+            qcdl_program = use_procedure()
 
     """
 

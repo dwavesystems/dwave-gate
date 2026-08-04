@@ -269,15 +269,16 @@ def print_qcdl(
     """Print a QCDl program.
 
     Args:
-        qcdl (Qcdl | Mapping[str, Any]): A QCDL model or mapping.
-        to_Display (bool, optional): If True, outputs the string to an IPython
-            terminal. Outside of a Jupyter notebook, equivalent to a print
-            statement. Set to False to return the string. Defaults to True.
-        blacken (bool, optional): Apply the
-            `Black <https://pypi.org/project/black/>`_ Python formatter to the
-            input QCDL. Defaults to False.
-        filename (str | None, optional): Write the string to a file. Defaults to
-            None.
+        qcdl: A QCDL model or mapping. Typically created by instantiating a
+            Python function containing QCDL instructions and annotated with the
+            :func:`~dwave.gate.qcdl.qcdl` decorator.
+        to_Display: If True, outputs the string to an
+            `IPython <https://ipython.org/>`_ terminal. Outside of a
+            `Jupyter <https://jupyter.org/>`_ notebook, equivalent to a print
+            statement. Set to False to return the string.
+        blacken: Apply the `Black <https://pypi.org/project/black/>`_ Python
+            formatter to the input QCDL.
+        filename: File name to write the string to.
 
     Returns:
         If displaying, the return is None; otherwise, the "qcdlv2" string.
@@ -308,14 +309,17 @@ def print_qcdl(
 
 
 def display_qcdl(qcdl: Qcdl | Mapping[str, Any], **kwargs: Any) -> None:
-    """Display formatted QCDL in a Jupyter notebook or similar.
+    """Display formatted QCDL in a `Jupyter <https://jupyter.org/>`_ notebook or
+    similar.
 
     Creates an `IPython Code
     <https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html#IPython.display.Code>`_
     object.
 
     Args:
-        qcdl (Qcdl | Mapping[str, Any]): A QCDL model or mapping.
+        qcdl: A QCDL model or mapping. Typically created by instantiating a
+            Python function containing QCDL instructions and annotated with the
+            :func:`~dwave.gate.qcdl.qcdl` decorator.
 
     Examples:
 
@@ -330,8 +334,8 @@ def display_qcdl(qcdl: Qcdl | Mapping[str, Any], **kwargs: Any) -> None:
                 q0.h()
                 q0.measure()
 
-            qcdl_dict: dict = display_program()
-            display_qcdl(qcdl_dict)
+            qcdl_program = display_program()
+            display_qcdl(qcdl_program)
 
 
         The code above displays the following QCDL program.
