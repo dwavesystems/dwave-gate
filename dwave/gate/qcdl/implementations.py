@@ -131,6 +131,8 @@ def mirror_measurement_register(
             selected by the ``Register`` parameter.
 
     Examples:
+        This is an artificial example to demonstrate usage (see the ``mirror``
+        parameter in the :func:`~dwave.gate.qcdl.operations.measure` operation).
 
         .. testcode::
 
