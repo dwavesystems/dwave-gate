@@ -454,6 +454,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
 
     @property
     def scope_id(self) -> int | None:
+        """Identity of the container."""
         return None
 
     def _If(
@@ -1923,28 +1924,36 @@ class QcdlModule(QcdlModuleContainer):
 
 
 class Scope(QcdlModuleContainer):
-    """List of qubits to be used for quantum operations.
+    """Qubits to be used for quantum operations.
 
     This subclass of :class:`QcdlModuleContainer` facilitates use of features
     related to real-time control flow.
 
+    Args:
+        *qubits: Qubits that are all or a subset of those of the main procedure
+            decorated by the :func:`~dwave.gate.qcdl.qcdl` decorator.
+        use_scope_id: Create the identity of the scope, the
+            :attr:`~dwave.gate.qcdl.Scope.scope_id` attribute.
+
     Examples:
-        This example defines a list of two qubits which it passes into a loop of
-        three operations on each.
+        This example defines a group of two qubits which it passes into a loop
+        of three operations on each.
 
         .. testcode::
 
             from dwave.gate.qcdl import qcdl, Scope
-            from dwave.gate.qcdl.operations import sx, measure
+            from dwave.gate.qcdl.operations import measure, sx
 
             @qcdl(2)
-            def main(q0, q1):
+            def scope_example(q0, q1):
                 sc = Scope(q0, q1)
                 with sc.Repeat(3):
                     sx(q0)
                     sx(q1)
                 measure(q0)
                 measure(q1)
+
+            qcdl_program = scope_example()
     """
 
     def __init__(self, *qubits: QcdlModuleContainer, use_scope_id: bool = True):
@@ -1978,6 +1987,27 @@ class Scope(QcdlModuleContainer):
 
     @property
     def scope_id(self) -> int | None:
+        """Identity of the scope.
+
+        Examples:
+
+        .. testcode::
+
+            from dwave.gate.qcdl import qcdl, Scope
+
+            @qcdl(2)
+            def scope_id_example(q0, q1):
+                sc = Scope(q0, q1, use_scope_id=False)
+                print(sc.scope_id)
+
+            qcdl_program = scope_id_example()
+
+        The code above creates a scope wihtout an identifier.
+
+            .. testoutput::
+
+                None
+        """
         return self._scope_id
 
     @property
@@ -1991,29 +2021,33 @@ class Scope(QcdlModuleContainer):
             property (i.e., ``q0.name``)
 
             .. testcode::
-                :skipif: True   # TODO: figure out why this test fails
 
                 from dwave.gate.qcdl import print_qcdl, qcdl, Scope
+                from dwave.gate.qcdl.operations import measure, sx
 
                 @qcdl(2)
                 def modules_property(q0, q1):
                     sc = Scope(q0, q1)
-                    q0.sx()
-                    q0.measure()
+                    sx(q0)
+                    measure(q0)
                     sc.comment(f"measure {sc.qcdl_modules[0].name}")
 
                 qcdl_program = modules_property()
                 print_qcdl(qcdl_program)
 
+            .. testcode::
+                :hide:
+
+                print(print_qcdl(qcdl_program))
+
             The code above prints the following QCDL.
 
             .. testoutput::
-                :skipif: True   # TODO: figure out why this test fails
                 :options: +NORMALIZE_WHITESPACE
 
                 begin quantum
-                    q0.sx()
-                    q0.measure()
+                    sx([q0], q0)
+                    measure([q0], q0, log=True)
                     # measure q0
                 end quantum
         """
