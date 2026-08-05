@@ -1091,22 +1091,26 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         self.procedure.add_statement(q.qcdl_module_name, "comment", [message], kwargs)
 
     def sync(self, *args: Any, **kwargs: Any) -> None:
-        """Synchronize all qubits in the container along with any passed in as args.
+        """Synchronize all qubits.
+
+        Synchronizes qubits in the container along with any passed in as
+        arguments.
 
         Examples:
-            The code below ensure that all operations before the ``sync`` must
-            be completed before any operations after the ``sync`` are started.
+            The code below ensures that all operations before the ``sync`` are
+            completed before any operations after the ``sync`` are started.
 
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import measure, x
 
                 @qcdl(2)
                 def add_sync1(q0, q1):
                     sc = Scope(q0, q1)
-                    q0.x()
+                    x(q0)
                     sc.sync()
-                    q1.measure()
+                    measure(q1)
 
                 qcdl_program = add_sync1()
 
@@ -1116,12 +1120,13 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import x
 
                 @qcdl(2)
                 def add_sync2(q0, q1):
-                    q0.x()
+                    x(q0)
                     q0.sync(q1)
-                    q1.x()
+                    x(q1)
 
                 qcdl_program = add_sync2()
         """
@@ -1144,26 +1149,48 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         CPU statements are classical operations that run in parallel to quantum
         operations, for example, operations on registers.
 
-        Do not call this method directly, use the :class:`Register` or
-        :class:`FixedPointRegister` abstractions instead.
+        This parameter is intended for use by developers of QCDL. Do not call
+        this method directly, use the :class:`Register` or
+        :class:`FixedPointRegister` classes instead.
 
         Args:
-            expression (str): A CPU expression.
+            expression: A CPU expression.
 
         Examples:
-            The example below generates a CPU statement that looks like
-            ``q0.cpu("r1 += 1", scope_id=None)`` for its final line.
+            The example below generates a CPU statement seen in the final line
+            of the output.
 
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Register
+                from dwave.gate.qcdl.operations import measure, x
 
                 @qcdl(1)
-                def main(q0):
-                    q0.x()
+                def cpu_example(q0):
+                    x(q0)
                     r1 = Register(q0, name="r1")
-                    q0.measure()
+                    measure(q0)
                     r1 += 1         # This is a CPU instruction
+
+                qcdl_program = cpu_example()
+                print_qcdl(qcdl_program)
+
+            .. testcode::
+                :hide:
+
+                print(print_qcdl(qcdl_program))
+
+            The code above prints the following QCDL.
+
+            .. testoutput::
+                :options: +NORMALIZE_WHITESPACE
+
+                begin quantum
+                    x([q0], q0)
+                    q0.allocate_memory("r1", initial_value=0, ...
+                    measure([q0], q0, log=True)
+                    q0.cpu("r1 += 1", scope_id=None)
+                end quantum
         """
         self._multi_qubit_statement("cpu", expression, _allow_override=False, **kwargs)
 
@@ -1208,7 +1235,8 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                 qcdl_program = all_to_all_use()
 
         Raises:
-            QCDLUserError: Invalid reduction operator.
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: Invalid
+                reduction operator.
         """
         valid_ops = ["&", "^", "|"]
         if reduce_op not in valid_ops:
