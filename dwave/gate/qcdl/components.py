@@ -1199,6 +1199,11 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
     ) -> None:
         """Send a 1-bit message from all qubits to all other qubits.
 
+        The :ref:`qcdl_advanced_signals` section describes how your QCDL must
+        ensure the information in any qubit's register is
+        :ref:`mirrored <qcdl_advanced_registers_mirroring>` to all qubits for a
+        :ref:`conditional statement <qcdl_advanced_conditionals>`.
+
         This method implements the following algorithm:
 
         1.  Evaluate the same expression for each qubit
@@ -1208,35 +1213,36 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         5.  The computed bit is placed on the branch condition of each qubit
             and is therefore identical for all
 
-        In terms of inputs and outputs, all qubits are treated the same. Behind
-        the scenes, the compiler implements a topology-aware algorithm.
-
         Args:
-            send (RegisterExpression): An expression (which evaluates to a bool)
-            reduce_op (str): The reduce operator
+            send: An expression that evaluates to a Boolean.
+            reduce_op: The reduce operator.
 
         Examples:
 
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import h, measure, x
 
                 @qcdl(2)
                 def all_to_all_use(q0, q1):
                     sc = Scope(q0, q1)
                     r1 = sc.Register(name="r1")
-                    q0.h()
+                    h(q0)
                     measure(q0, register=q0.Register(name="r1"))
                     sc.all_to_all(send=r1==1, reduce_op="&")
                     with sc.If(None):
-                        q1.x()
-                        q1.measure()
+                        x(q1)
+                        measure(q1)
 
                 qcdl_program = all_to_all_use()
 
         Raises:
             :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: Invalid
                 reduction operator.
+
+        See Also:
+            Examples in the :ref:`qcdl_advanced_signals` section.
         """
         valid_ops = ["&", "^", "|"]
         if reduce_op not in valid_ops:
@@ -1257,11 +1263,11 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
     def barrier(self, *args: Any, label: str | None = None) -> None:
         """Signal to transpiler a border for combining gates.
 
-        The transpiler does not combine gates across a barrier.
+        The transpiler does not combine gates across a barrier. See the
+        :ref:`qcdl_basic_gates_barrier` section for more information.
 
         Args:
-            label (str | None, optional): Label for the barrier.
-                Defaults to None.
+            label: Label for the barrier.
 
         Examples:
             The code below prevents the transpiler from combining the two
@@ -1270,13 +1276,14 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import barrier, measure, x
 
                 @qcdl(1)
                 def set_barrier(q0):
-                    q0.x()
-                    q0.barrier()
-                    q0.x()
-                    q0.measure()
+                    x(q0)
+                    barrier(q0)
+                    x(q0)
+                    measure(q0)
 
                 qcdl_program = set_barrier()
         """
@@ -1289,7 +1296,10 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         )
 
     def Return(self) -> None:
-        """Return from a procedure."""
+        """Return from a procedure.
+
+        This method is intended for use by developers of QCDL.
+        """
         self.sync(end=True)
 
     def Label(self, label: str) -> None:
@@ -1299,7 +1309,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         non-deterministically.
 
         Args:
-            label (str): Name of the label.
+            label: Name of the label.
 
         Examples:
             The code below uses the :meth:`.Goto` method to return to statements
@@ -1308,6 +1318,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import h, mced, measure
 
                 @qcdl(1)
                 def use_goto(q0):
@@ -1316,16 +1327,16 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     q0.reset()
 
                     # The next line represents the quantum algorithm
-                    q0.h()
+                    h(q0)
 
                     # This section returns to labeled section upon qubit erasure
                     erased = q0.Register(name="erased")
                     erased <<= 0
-                    q0.mced(register=erased)
+                    mced(q0, register=erased)
                     with q0.If(erased == 1):
                         sc.Goto("reset")
 
-                    q0.measure()    # Next section of the quantum algorithm
+                    measure(q0)    # Next section of the quantum algorithm
 
                 qcdl_program = use_goto()
         """
@@ -1343,7 +1354,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         non-deterministically.
 
         Args:
-            label (str): Name of the label.
+            label: Name of the label.
 
         Examples:
             See examples in the :meth:`.Label` method.

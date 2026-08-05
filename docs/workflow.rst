@@ -137,6 +137,8 @@ Qiskit the method call ``cz(q0, q1)``.
     passed as the angle for a gate, its value must be in units of π (see the
     :ref:`qcdl_basic_registers_arithmetic` section for more information).
 
+.. _qcdl_basic_gates_barrier:
+
 Barrier
 ~~~~~~~
 
