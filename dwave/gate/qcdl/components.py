@@ -1518,9 +1518,6 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         run-time conditions. This method provides an abstraction layer that
         facilitates easier interpretation.
 
-
-        Use this method by specifying registers.
-
         This method supports returning multiple tables; each invocation adds one
         row to one of the tables. Column names in the returned table are:
 
@@ -1532,25 +1529,23 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         *   If the name of the column is None, data is returned anonymously in
             an array instead of as a dict.
 
-        This method also execute post-processing: If the register is a float,
+        This method also executes post-processing: If the register is a float,
         an int is recast in the returned table.
 
-            This abstraction allows an arbitrary number.
-
         Args:
-            table_name (str | None, optional): Name of the table to append this
-                row to.
-            shape (RecordOutput | None, optional): Metadata describing the data.
-                If not provided, created based on the registers.
-            *args: Registers or literals that you want returned
-                in this row. You can leave unspecified; such rows present as NaN
-                or None in the returned table.
-            **kwargs: Registers or literals that you want returned
-                in this row. You can leave unspecified; such rows present as NaN
-                or None in the returned table.
+            table_name: Name of the table to append this row to.
+            shape: Metadata describing the data. If not specified, created
+                based on the registers.
+            *args: Registers or literals that you want returned in this row. You
+                can leave unspecified; such rows present as NaN or None in the
+                returned table.
+            **kwargs: Registers or literals that you want returned in this row.
+                You can leave unspecified; such rows present as NaN or None in
+                the returned table.
 
         Raises:
-            AqumenQCDLError: Specified an object that is not a register.
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: Specified
+                an object that is not a register.
 
         Returns:
             dict: Description of the table row.
