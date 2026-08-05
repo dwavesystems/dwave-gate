@@ -776,23 +776,30 @@ Supported Condition Values
         -   Description
         -   Notes
     *   -   ``q{N}``
-        -   The :math:`N`\ th qubit's most recent measurement.
+        -   The :math:`N`\ th qubit's most recent measurement. Branches if the
+            last measurement for the qubit is :math:`1`.
         -   Volatile and may change at the next measurement.
     *   -   Expressions
-        -   A classical expression evaluated at runtime.
+        -   A classical expression evaluated at runtime (e.g. ``reg2 < 5``).
         -   See the :ref:`qcdl_basic_registers_arithmetic` section for details.
     *   -   Signal
-        -   Specify ``q{N}.extf`` to branch off of the bit that ``q{N}`` is
+        -   Specify ``q{N}.signal`` to branch off of the bit that ``q{N}`` is
             currently signaling.
         -   See the :ref:`qcdl_advanced_signals` section for details.
     *   -   ``None``
         -   You can separate the steps of evaluating the branch condition and
-            branching by assigning the branch condition before the
-            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.If` statement, with that
-            branch condition persisting if ``None`` is specified.
+            branching by assigning the branch condition before the (e.g.,
+            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.If`) statement, with
+            that branch condition persisting if ``None`` is specified. The
+            branch condition might be set, for example, by a preceding
+            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.all_to_all` or
+            :meth:`~dwave.gate.qcdl.QcdlModule.one_to_all` call, which
+            places a signal from one qubit onto the branch condition of each
+            recipient qubit.
         -   See the :ref:`qcdl_advanced_signals` section.
     *   -   ``True`` or ``False``
-        -   Python Boolean that deterministically selects a branch.
+        -   Python Boolean that deterministically selects a branch taken by all
+            qubits.
         -   For troubleshooting.
 
 Guidelines for Using Conditionals
