@@ -58,13 +58,13 @@ def _make_result(extra: dict | None = None) -> Result:
 # ---------------------------------------------------------------------------
 
 
-def test_result_dict_requires_num_shots():
+def test_result_requires_num_shots():
     with pytest.raises(ValidationError) as exc_info:
         Result.model_validate({})
     assert any(e["loc"] == ("num_shots",) for e in exc_info.value.errors())
 
 
-def test_result_dict_minimal_valid():
+def test_result_minimal_valid():
     r = Result.model_validate({"num_shots": 5})
     assert r.num_shots == 5
 
@@ -74,7 +74,7 @@ def test_result_dict_minimal_valid():
 # ---------------------------------------------------------------------------
 
 
-def test_result_dict_allows_extra_keys():
+def test_result_allows_extra_keys():
     r = Result.model_validate({"num_shots": 1, "future_field": "value"})
     assert r.model_extra["future_field"] == "value"
 
@@ -84,7 +84,7 @@ def test_result_dict_allows_extra_keys():
 # ---------------------------------------------------------------------------
 
 
-def test_result_dict_valid_timestamps():
+def test_result_valid_timestamps():
     r = Result.model_validate({
             "num_shots": 1,
             "start_time": "2026-01-01T00:00:00",
@@ -95,19 +95,19 @@ def test_result_dict_valid_timestamps():
     assert isinstance(r.end_time, datetime.datetime)
 
 
-def test_result_dict_invalid_start_time():
+def test_result_invalid_start_time():
     with pytest.raises(ValidationError) as exc_info:
         Result.model_validate({"num_shots": 1, "start_time": "not-a-date"})
     assert any(e["loc"] == ("start_time",) for e in exc_info.value.errors())
 
 
-def test_result_dict_invalid_end_time():
+def test_result_invalid_end_time():
     with pytest.raises(ValidationError) as exc_info:
         Result.model_validate({"num_shots": 1, "end_time": "yesterday"})
     assert any(e["loc"] == ("end_time",) for e in exc_info.value.errors())
 
 
-def test_result_dict_end_before_start_rejected():
+def test_result_end_before_start_rejected():
     with pytest.raises(ValidationError, match="end_time.*must not be before"):
         Result.model_validate(
             {
@@ -118,13 +118,13 @@ def test_result_dict_end_before_start_rejected():
         )
 
 
-def test_result_dict_equal_start_end_accepted():
+def test_result_equal_start_end_accepted():
     ts = "2026-01-01T12:00:00"
     r = Result.model_validate({"num_shots": 1, "start_time": ts, "end_time": ts})
     assert r.start_time == r.end_time
 
 
-def test_result_dict_only_start_time():
+def test_result_only_start_time():
     r = Result.model_validate({"num_shots": 1, "start_time": "2026-01-01T00:00:00"})
     assert r.start_time is not None
     assert r.end_time is None
@@ -143,12 +143,12 @@ def test_result_dict_only_start_time():
         ("qir.v2.1", RecordFormat.QIR_V2_1),
     ],
 )
-def test_result_dict_record_format_coercion(value, expected):
+def test_result_record_format_coercion(value, expected):
     r = Result.model_validate({"num_shots": 1, "record_format": value})
     assert r.record_format is expected
 
 
-def test_result_dict_invalid_record_format():
+def test_result_invalid_record_format():
     with pytest.raises(ValidationError):
         Result.model_validate({"num_shots": 1, "record_format": "unknown_format"})
 
@@ -159,7 +159,7 @@ def test_result_dict_invalid_record_format():
 
 
 @pytest.mark.parametrize("fmt", [RecordFormat.QIR_V2_1])
-def test_result_dict_log_format_accepts_str_records(fmt):
+def test_result_log_format_accepts_str_records(fmt):
     r = Result.model_validate(
         {
             "num_shots": 1,
@@ -167,19 +167,19 @@ def test_result_dict_log_format_accepts_str_records(fmt):
             "records": "HEADER\tschema\nEND\t0",
         }
     )
-    assert isinstance(r.records, str)
+    assert isinstance(r.encoded_records, str)
 
 
 @pytest.mark.parametrize("fmt", [RecordFormat.POLARS, RecordFormat.TABLE])
-def test_result_dict_table_format_accepts_dict_records(fmt):
+def test_result_table_format_accepts_dict_records(fmt):
     r = Result.model_validate(
         {"num_shots": 1, "record_format": fmt.value, "records": {"q0": {"t": "data"}}}
     )
-    assert isinstance(r.records, dict)
+    assert isinstance(r.encoded_records, dict)
 
 
 @pytest.mark.parametrize("fmt", [RecordFormat.QIR_V2_1])
-def test_result_dict_log_format_rejects_dict_records(fmt):
+def test_result_log_format_rejects_dict_records(fmt):
     with pytest.raises(ValidationError, match="records must be a str"):
         Result.model_validate(
             {"num_shots": 1, "record_format": fmt.value, "records": {"q0": {}}}
@@ -187,17 +187,17 @@ def test_result_dict_log_format_rejects_dict_records(fmt):
 
 
 @pytest.mark.parametrize("fmt", [RecordFormat.POLARS, RecordFormat.TABLE])
-def test_result_dict_table_format_rejects_str_records(fmt):
+def test_result_table_format_rejects_str_records(fmt):
     with pytest.raises(ValidationError, match="records must be a dict"):
         Result.model_validate(
             {"num_shots": 1, "record_format": fmt.value, "records": "raw string"}
         )
 
 
-def test_result_dict_records_without_format_accepted():
+def test_result_records_without_format_accepted():
     # records present but no format — no consistency check fires
     r = Result.model_validate({"num_shots": 1, "records": {"q0": {"t": "x"}}})
-    assert r.records == {"q0": {"t": "x"}}
+    assert r.encoded_records == {"q0": {"t": "x"}}
 
 
 # ---------------------------------------------------------------------------
@@ -205,12 +205,12 @@ def test_result_dict_records_without_format_accepted():
 # ---------------------------------------------------------------------------
 
 
-def test_result_dict_measurements_list_of_lists():
+def test_result_measurements_list_of_lists():
     r = Result.model_validate({"num_shots": 2, "measurements": {"": [[0, 1], [1, 0]]}})
-    assert r.measurements[""] == [[0, 1], [1, 0]]
+    assert r.encoded_measurements[""] == [[0, 1], [1, 0]]
 
 
-def test_result_dict_measurements_numpy_arrays():
+def test_result_measurements_numpy_arrays():
     arr = np.array([0, 1], dtype=str)
     r = Result.model_validate({"num_shots": 2, "measurements": {"tag": [arr]}})
     np.testing.assert_array_equal(r.measurements["tag"][0], arr)
