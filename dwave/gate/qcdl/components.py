@@ -454,6 +454,12 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
 
     @property
     def scope_id(self) -> int | None:
+        """Identity of the container.
+
+        Examples:
+            See example for the :attr:`~dwave.gate.qcdl.Scope.scope_id`
+            property.
+        """
         return None
 
     def _If(
@@ -516,45 +522,24 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         """Conditionally execute an expression.
 
         All qubits in this :class:`.QcdlModuleContainer` participate in the
-        conditional. Each qubit's **branch condition** — a per-qubit boolean
-        register managed below the Instruction Set Architecture (ISA) level —
-        determines which branch is taken. The ``condition`` argument controls
-        how that register is populated before the branch is evaluated.
+        conditional. See the :ref:`qcdl_advanced_conditionals` section for
+        information on conditional branching.
 
         Args:
-            condition (RegisterExpression, QcdlModule, bool, str, None): How
-                to set each qubit's branch condition. The following forms are
-                supported:
-
-                *   Register expression such as ``reg < 5``: each qubit
-                    evaluates the expression and sets its branch condition
-                    accordingly.
-                *   :class:`.QcdlModule`: branch on whether the last
-                    measurement for the qubit was 1.
-                *   bool: all qubits always take the same branch.
-                *   str: a serialized register expression or
-                    :class:`QcdlModule`.
-                *   None: the branch condition is already set — for example,
-                    by a preceding
-                    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.all_to_all` or
-                    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.one_to_all` call,
-                    which places a signal from one qubit onto the branch
-                    condition of each recipient qubit.
-            all_sources_identical (bool, optional): For conditional statements
-                with multiple qubits, if the same condition computed on each
-                qubit yields the same result, you can skip broadcasting the
-                message. This is the case with transformers, but is not true in
-                general.
-            true_goto (str | None, optional): Overrides the default
-                behavior---upon completion of a True branch, control moves to
-                the statement following the Endif---to branch to elsewhere.
-                This is useful for implementing loop control flow. Defaults to
-                None.
-            false_goto (str | None, optional): Overrides the default
-                behavior---upon completion of a False branch, control moves to
-                the statement following the Endif---to branch to elsewhere.
-                This is useful for implementing loop control flow. Defaults to
-                None.
+            condition: Branch condition for the qubits. The
+                :ref:`qcdl_advanced_conditionals` section describes the
+                supported conditions.
+            all_sources_identical: For conditional statements with multiple
+                qubits, if the same condition computed on each qubit yields the
+                same result, skip broadcasting the message.
+            true_goto: Upon completion of a True branch, instead of continuing
+                to the statement that by default should execute after the ``If``
+                body, control moves to the labeled statement. Used for loop
+                control flow.
+            false_goto: Upon completion of a False branch, instead of continuing
+                to the statement that by default should execute after the ``If``
+                body, control moves to the labeled statement. Used for loop
+                control flow.
 
         Examples:
             A simple example with one ``If`` statement:
@@ -562,17 +547,18 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import h, measure, x, z
 
                 @qcdl(2)
                 def single_if(q0, q1):
                     sc = Scope(q0, q1)
-                    q0.h()
-                    q1.h()
-                    q0.measure()
+                    h(q0)
+                    h(q1)
+                    measure(q0)
                     with sc.If(True):
-                        q1.x()
-                    q1.z()
-                    q1.measure()
+                        x(q1)
+                    z(q1)
+                    measure(q1)
 
                 qcdl_program = single_if()
 
@@ -581,17 +567,18 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import h, measure
 
                 @qcdl(2)
                 def nested_if(q0, q1):
                     sc = Scope(q0, q1)
                     r1 = sc.FixedPointRegister(0.75, name="r1")
-                    q0.h()
-                    q1.h()
-                    q0.measure()
+                    h(q0)
+                    h(q1)
+                    measure(q0)
                     with sc.If(True) as Else:
                         r1 <<= -0.75
-                        q1.measure()
+                        measure(q1)
                         with sc.If(False):
                             r1 += 0.1
                     with Else():
@@ -650,7 +637,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         This method is mostly intended for use by developers of QCDL.
 
         Args:
-            name (str): Namespace for the index.
+            name: Namespace for the index.
 
         Returns:
             int: A unique index.
@@ -660,13 +647,14 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import measure
 
                 @qcdl(1)
                 def unique(q0):
                     sc = Scope(q0)
                     print(q0.get_next_index_in_proc("q"))
                     print(q0.get_next_index_in_proc("q"))
-                    q0.measure()
+                    measure(q0)
 
                 qcdl_program = unique()
 
@@ -721,29 +709,27 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         _base_name: str = "while",
         _base_idx: int | None = None,
     ) -> Iterator[None]:
-        """Do context statements while condition is true.
+        """Execute context statements while condition is true.
+
+        All qubits in this :class:`.QcdlModuleContainer` participate in the
+        conditional. See the :ref:`qcdl_advanced_conditionals` section for
+        information on conditional branching.
 
         Args:
-            condition (RegisterExpression or QcdlModule): The condition for
-                executing. The following conditions are supported:
-
-                *   Register expression such as ``reg < 5``.
-                *   :class:`.QcdlModule`: Conditions on whether the last
-                    measurement for the module, typically a qubit, was 1.
-                *   None: The branch condition is already set, for example, by an
-                    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.all_to_all` method.
-            all_sources_identical (bool, optional): For conditional statements
-                with multiple qubits, if the same condition computed on each
-                qubit yields the same result, you can skip broadcasting the
-                message. This is the case with transformers, but is not true
-                in general.
-            _base_name (str, optional): Label names. Defaults to "while".
+            condition: Branch condition for the qubits. The
+                :ref:`qcdl_advanced_conditionals` section describes the
+                supported conditions.
+            all_sources_identical: For conditional statements with multiple
+                qubits, if the same condition computed on each qubit yields the
+                same result, skip broadcasting the message.
+            _base_name: Label names. Defaults to "while".
 
         Examples:
 
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import h, measure
 
                 @qcdl(2)
                 def while_use(q0, q1):
@@ -752,7 +738,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     r1 = sc.Register(name="r1")
                     r1 <<= 1
                     with sc.While(condition=r1<3):
-                        q0.h()
+                        h(q0)
                         measure(q0, register=r0)
                         r1 += 1
 
@@ -772,22 +758,19 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         condition: RegisterExpression | QcdlModule | bool | str | None = None,
         all_sources_identical: bool = True,
     ) -> Iterator[None]:
-        """Do context statements while condition is true, and at least once.
+        """Execute context statements while condition is true, and at least once.
+
+        All qubits in this :class:`.QcdlModuleContainer` participate in the
+        conditional. See the :ref:`qcdl_advanced_conditionals` section for
+        information on conditional branching.
 
         Args:
-            condition (RegisterExpression or QcdlModule): The condition for
-                executing. The following conditions are supported:
-
-                *   Register expression such as ``reg < 5``.
-                *   :class:`.QcdlModule`: Conditions on whether the last
-                    measurement for the module, typically a qubit, was 1.
-                *   None: The branch condition is already set, for example, by an
-                    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.all_to_all` method.
-            all_sources_identical (bool, optional): For conditional statements
-                with multiple qubits, if the same condition computed on each
-                qubit yields the same result, you can skip broadcasting the
-                message. This is the case with transformers, but is not true
-                in general.
+            condition: Branch condition for the qubits. The
+                :ref:`qcdl_advanced_conditionals` section describes the
+                supported conditions.
+            all_sources_identical: For conditional statements with multiple
+                qubits, if the same condition computed on each qubit yields the
+                same result, skip broadcasting the message.
 
         Examples:
             This example stops running once a value of zero is measured for
@@ -796,14 +779,15 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import h, measure, x
 
                 @qcdl(2)
                 def while_use(q0, q1):
                     sc = Scope(q0, q1)
                     with sc.DoWhile(condition=q0):
-                        q0.h()
-                        q0.measure()
-                        q1.x()
+                        h(q0)
+                        measure(q0)
+                        x(q1)
 
                 qcdl_program = while_use()
         """
@@ -839,26 +823,22 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         An almost C-style for loop, similar to a :meth:`.While` loop with minor
         enhancement.
 
-        Args:
-            loop_register (Register): Register for the loop.
-            initial_value (RegisterExpression): Assigns an initial value to
-                ``loop_register``.
-            condition (RegisterExpression or QcdlModule): The condition for
-                executing. The following conditions are supported:
+        All qubits in this :class:`.QcdlModuleContainer` participate in the
+        conditional. See the :ref:`qcdl_advanced_conditionals` section for
+        information on conditional branching.
 
-                *   Register expression such as ``reg < 5``.
-                *   :class:`.QcdlModule`: Conditions on whether the last
-                    measurement for the module, typically a qubit, was 1.
-                *   None: The branch condition is already set, for example, by an
-                    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.all_to_all` method.
-            update (RegisterExpression): Value by which to increment
-                ``loop_register`` in every iteration.
-            all_sources_identical (bool, optional): For conditional statements
-                with multiple qubits, if the same condition computed on each
-                qubit yields the same result, you can skip broadcasting the
-                message. This is the case with transformers, but is not true
-                in general.
-            _base_name (str, optional): Label names. Defaults to "for".
+        Args:
+            loop_register: Register for the loop.
+            initial_value: Assigns an initial value to ``loop_register``.
+            condition: Branch condition for the qubits. The
+                :ref:`qcdl_advanced_conditionals` section describes the
+                supported conditions.
+            update: Value by which to increment ``loop_register`` in every
+                iteration.
+            all_sources_identical: For conditional statements with multiple
+                qubits, if the same condition computed on each qubit yields the
+                same result, skip broadcasting the message.
+            _base_name: Label names. Defaults to "for".
 
         Examples:
             This example runs the loop twice.
@@ -866,6 +846,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import h, measure
 
                 @qcdl(1)
                 def for_loop(q0):
@@ -875,7 +856,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     with sc.For(
                         loop_register=r1, initial_value=1, condition=r1<3, update=1
                     ):
-                        q0.h()
+                        h(q0)
                         measure(q0, register=r0)
 
                 qcdl_program = for_loop()
@@ -900,16 +881,21 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
     ) -> Iterator[Register]:
         """Loop over a fixed number of iterations.
 
+        All qubits in this :class:`.QcdlModuleContainer` participate in the
+        loop.
+
         Args:
-            number (int, Register): Number of repetitions. An integer
-                value less than one would cause an infinite loop so it raises
-                an exception; if your register would cause an infinite loop,
-                the control flow is adjusted to perform zero iterations.
-            ascending (bool): Increment (if True) or decrement (if False) the
-                counter.
+            number: Number of repetitions. Supports integer values greater than
+                :math:`1`. If a specified register would cause an infinite loop,
+                performs zero iterations.
+            ascending: Increment the counter if True or decrement if False.
 
         Returns:
             Register: The counter register.
+
+        Raises:
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: Integer
+                value less than one, which causes an infinite loop.
 
         Examples:
             This example repeats three times a branch that inverts a qubit and
@@ -918,13 +904,14 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import measure, x
 
                 @qcdl(1)
                 def repeat_use(q0):
                     sc = Scope(q0)
                     with sc.Repeat(3, ascending=False):
-                        q0.x()
-                        q0.measure()
+                        x(q0)
+                        measure(q0)
 
                 qcdl_program = repeat_use()
 
@@ -985,7 +972,33 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         """Exit current :meth:`.While`, :meth:`.DoWhile`, or :meth:`.For` loop.
 
         Raises:
-            QCDLUserError: If a :meth:`.Break` is encountered outside a loop.
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If a
+                :meth:`.Break` is encountered outside a loop.
+
+        Examples:
+
+            .. testcode::
+
+                from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import h, measure, x
+
+                @qcdl(2)
+                def break_example(q0, q1):
+                    sc = Scope(q0, q1)
+                    r0 = sc.Register(name="r0")
+                    h(q0)
+                    h(q1)
+                    measure(q0)
+                    with sc.For(
+                        loop_register=r0, initial_value=1, condition=r0<0, update=1
+                    ):
+                        x(q1)
+                        with sc.If(False):
+                            sc.Break()
+                        measure(q1)
+
+
+                qcdl_program = break_example()
         """
         if not self.procedure._break_labels:
             raise QCDLUserError("not in loop, can not break")
@@ -996,7 +1009,33 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         :meth:`.For` loop.
 
         Raises:
-            QCDLUserError: If a :meth:`.Continue` is encountered outside a loop.
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If a
+                :meth:`.Continue` is encountered outside a loop.
+
+        Examples:
+
+            .. testcode::
+
+                from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import h, measure, x
+
+                @qcdl(2)
+                def break_example(q0, q1):
+                    sc = Scope(q0, q1)
+                    r0 = sc.Register(name="r0")
+                    h(q0)
+                    h(q1)
+                    measure(q0)
+                    with sc.For(
+                        loop_register=r0, initial_value=1, condition=r0<0, update=1
+                    ):
+                        x(q1)
+                        with sc.If(False):
+                            sc.Continue()
+                        measure(q1)
+
+
+                qcdl_program = break_example()
         """
         if not self.procedure._continue_labels:
             raise QCDLUserError("not in loop, can not continue")
@@ -1008,35 +1047,38 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         The comment is attached to a single qubit so it is printed just once.
 
         Args:
-            message (str, optional): If None, prints a blank line. Defaults to
-                None.
+            message: Comment to print. If None, prints a blank line.
 
         Examples:
 
             .. testcode::
-                :skipif: True   # TODO: figure out why this test fails
 
                 from dwave.gate.qcdl import print_qcdl, qcdl
+                from dwave.gate.qcdl.operations import measure, x
 
                 @qcdl(2)
                 def add_comment(q0, q1):
-                    q0.x()
+                    x(q0)
                     q1.comment("This is my comment")
-                    q0.measure()
+                    measure(q0)
 
                 qcdl_program = add_comment()
                 print_qcdl(qcdl_program)
 
+            .. testcode::
+                :hide:
+
+                print(print_qcdl(qcdl_program))
+
             The code above prints the following QCDL.
 
             .. testoutput::
-                :skipif: True   # TODO: figure out why this test fails
                 :options: +NORMALIZE_WHITESPACE
 
                 begin quantum
-                   q0.x()
+                   x([q0], q0)
                    # This is my comment
-                   q0.measure()
+                   measure([q0], q0, log=True)
                 end quantum
 
         """
@@ -1049,22 +1091,26 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         self.procedure.add_statement(q.qcdl_module_name, "comment", [message], kwargs)
 
     def sync(self, *args: Any, **kwargs: Any) -> None:
-        """Synchronize all qubits in the container along with any passed in as args.
+        """Synchronize all qubits.
+
+        Synchronizes qubits in the container along with any passed in as
+        arguments.
 
         Examples:
-            The code below ensure that all operations before the ``sync`` must
-            be completed before any operations after the ``sync`` are started.
+            The code below ensures that all operations before the ``sync`` are
+            completed before any operations after the ``sync`` are started.
 
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import measure, x
 
                 @qcdl(2)
                 def add_sync1(q0, q1):
                     sc = Scope(q0, q1)
-                    q0.x()
+                    x(q0)
                     sc.sync()
-                    q1.measure()
+                    measure(q1)
 
                 qcdl_program = add_sync1()
 
@@ -1074,12 +1120,13 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import x
 
                 @qcdl(2)
                 def add_sync2(q0, q1):
-                    q0.x()
+                    x(q0)
                     q0.sync(q1)
-                    q1.x()
+                    x(q1)
 
                 qcdl_program = add_sync2()
         """
@@ -1102,26 +1149,48 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         CPU statements are classical operations that run in parallel to quantum
         operations, for example, operations on registers.
 
-        Do not call this method directly, use the :class:`Register` or
-        :class:`FixedPointRegister` abstractions instead.
+        This parameter is intended for use by developers of QCDL. Do not call
+        this method directly, use the :class:`Register` or
+        :class:`FixedPointRegister` classes instead.
 
         Args:
-            expression (str): A CPU expression.
+            expression: A CPU expression.
 
         Examples:
-            The example below generates a CPU statement that looks like
-            ``q0.cpu("r1 += 1", scope_id=None)`` for its final line.
+            The example below generates a CPU statement seen in the final line
+            of the output.
 
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Register
+                from dwave.gate.qcdl.operations import measure, x
 
                 @qcdl(1)
-                def main(q0):
-                    q0.x()
+                def cpu_example(q0):
+                    x(q0)
                     r1 = Register(q0, name="r1")
-                    q0.measure()
+                    measure(q0)
                     r1 += 1         # This is a CPU instruction
+
+                qcdl_program = cpu_example()
+                print_qcdl(qcdl_program)
+
+            .. testcode::
+                :hide:
+
+                print(print_qcdl(qcdl_program))
+
+            The code above prints the following QCDL.
+
+            .. testoutput::
+                :options: +NORMALIZE_WHITESPACE
+
+                begin quantum
+                    x([q0], q0)
+                    q0.allocate_memory("r1", initial_value=0, ...
+                    measure([q0], q0, log=True)
+                    q0.cpu("r1 += 1", scope_id=None)
+                end quantum
         """
         self._multi_qubit_statement("cpu", expression, _allow_override=False, **kwargs)
 
@@ -1129,6 +1198,11 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         self, send: RegisterExpression, reduce_op: str, **kwargs: Any
     ) -> None:
         """Send a 1-bit message from all qubits to all other qubits.
+
+        The :ref:`qcdl_advanced_signals` section describes how your QCDL must
+        ensure the information in any qubit's register is
+        :ref:`mirrored <qcdl_advanced_registers_mirroring>` to all qubits for a
+        :ref:`conditional statement <qcdl_advanced_conditionals>`.
 
         This method implements the following algorithm:
 
@@ -1139,34 +1213,36 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         5.  The computed bit is placed on the branch condition of each qubit
             and is therefore identical for all
 
-        In terms of inputs and outputs, all qubits are treated the same. Behind
-        the scenes, the compiler implements a topology-aware algorithm.
-
         Args:
-            send (RegisterExpression): An expression (which evaluates to a bool)
-            reduce_op (str): The reduce operator
+            send: An expression that evaluates to a Boolean.
+            reduce_op: The reduce operator.
 
         Examples:
 
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.qcdl.operations import h, measure, x
 
                 @qcdl(2)
                 def all_to_all_use(q0, q1):
                     sc = Scope(q0, q1)
                     r1 = sc.Register(name="r1")
-                    q0.h()
+                    h(q0)
                     measure(q0, register=q0.Register(name="r1"))
                     sc.all_to_all(send=r1==1, reduce_op="&")
                     with sc.If(None):
-                        q1.x()
-                        q1.measure()
+                        x(q1)
+                        measure(q1)
 
                 qcdl_program = all_to_all_use()
 
         Raises:
-            QCDLUserError: Invalid reduction operator.
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: Invalid
+                reduction operator.
+
+        See Also:
+            Examples in the :ref:`qcdl_advanced_signals` section.
         """
         valid_ops = ["&", "^", "|"]
         if reduce_op not in valid_ops:
@@ -1187,11 +1263,11 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
     def barrier(self, *args: Any, label: str | None = None) -> None:
         """Signal to transpiler a border for combining gates.
 
-        The transpiler does not combine gates across a barrier.
+        The transpiler does not combine gates across a barrier. See the
+        :ref:`qcdl_basic_gates_barrier` section for more information.
 
         Args:
-            label (str | None, optional): Label for the barrier.
-                Defaults to None.
+            label: Label for the barrier.
 
         Examples:
             The code below prevents the transpiler from combining the two
@@ -1200,13 +1276,14 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import barrier, measure, x
 
                 @qcdl(1)
                 def set_barrier(q0):
-                    q0.x()
-                    q0.barrier()
-                    q0.x()
-                    q0.measure()
+                    x(q0)
+                    barrier(q0)
+                    x(q0)
+                    measure(q0)
 
                 qcdl_program = set_barrier()
         """
@@ -1219,7 +1296,10 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         )
 
     def Return(self) -> None:
-        """Return from a procedure."""
+        """Return from a procedure.
+
+        This method is intended for use by developers of QCDL.
+        """
         self.sync(end=True)
 
     def Label(self, label: str) -> None:
@@ -1229,7 +1309,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         non-deterministically.
 
         Args:
-            label (str): Name of the label.
+            label: Name of the label.
 
         Examples:
             The code below uses the :meth:`.Goto` method to return to statements
@@ -1238,6 +1318,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
             .. testcode::
 
                 from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import h, mced, measure
 
                 @qcdl(1)
                 def use_goto(q0):
@@ -1246,16 +1327,16 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
                     q0.reset()
 
                     # The next line represents the quantum algorithm
-                    q0.h()
+                    h(q0)
 
                     # This section returns to labeled section upon qubit erasure
                     erased = q0.Register(name="erased")
                     erased <<= 0
-                    q0.mced(register=erased)
+                    mced(q0, register=erased)
                     with q0.If(erased == 1):
                         sc.Goto("reset")
 
-                    q0.measure()    # Next section of the quantum algorithm
+                    measure(q0)    # Next section of the quantum algorithm
 
                 qcdl_program = use_goto()
         """
@@ -1273,7 +1354,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         non-deterministically.
 
         Args:
-            label (str): Name of the label.
+            label: Name of the label.
 
         Examples:
             See examples in the :meth:`.Label` method.
@@ -1437,9 +1518,6 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         run-time conditions. This method provides an abstraction layer that
         facilitates easier interpretation.
 
-
-        Use this method by specifying registers.
-
         This method supports returning multiple tables; each invocation adds one
         row to one of the tables. Column names in the returned table are:
 
@@ -1451,25 +1529,23 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         *   If the name of the column is None, data is returned anonymously in
             an array instead of as a dict.
 
-        This method also execute post-processing: If the register is a float,
+        This method also executes post-processing: If the register is a float,
         an int is recast in the returned table.
 
-            This abstraction allows an arbitrary number.
-
         Args:
-            table_name (str | None, optional): Name of the table to append this
-                row to.
-            shape (RecordOutput | None, optional): Metadata describing the data.
-                If not provided, created based on the registers.
-            *args: Registers or literals that you want returned
-                in this row. You can leave unspecified; such rows present as NaN
-                or None in the returned table.
-            **kwargs: Registers or literals that you want returned
-                in this row. You can leave unspecified; such rows present as NaN
-                or None in the returned table.
+            table_name: Name of the table to append this row to.
+            shape: Metadata describing the data. If not specified, created
+                based on the registers.
+            *args: Registers or literals that you want returned in this row. You
+                can leave unspecified; such rows present as NaN or None in the
+                returned table.
+            **kwargs: Registers or literals that you want returned in this row.
+                You can leave unspecified; such rows present as NaN or None in
+                the returned table.
 
         Raises:
-            AqumenQCDLError: Specified an object that is not a register.
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: Specified
+                an object that is not a register.
 
         Returns:
             dict: Description of the table row.
@@ -1923,28 +1999,36 @@ class QcdlModule(QcdlModuleContainer):
 
 
 class Scope(QcdlModuleContainer):
-    """List of qubits to be used for quantum operations.
+    """Qubits to be used for quantum operations.
 
     This subclass of :class:`QcdlModuleContainer` facilitates use of features
     related to real-time control flow.
 
+    Args:
+        *qubits: Qubits that are all or a subset of those of the main procedure
+            decorated by the :func:`~dwave.gate.qcdl.qcdl` decorator.
+        use_scope_id: Create the identity of the scope, the
+            :attr:`~dwave.gate.qcdl.Scope.scope_id` attribute.
+
     Examples:
-        This example defines a list of two qubits which it passes into a loop of
-        three operations on each.
+        This example defines a group of two qubits which it passes into a loop
+        of three operations on each.
 
         .. testcode::
 
             from dwave.gate.qcdl import qcdl, Scope
-            from dwave.gate.qcdl.operations import sx, measure
+            from dwave.gate.qcdl.operations import measure, sx
 
             @qcdl(2)
-            def main(q0, q1):
+            def scope_example(q0, q1):
                 sc = Scope(q0, q1)
                 with sc.Repeat(3):
                     sx(q0)
                     sx(q1)
                 measure(q0)
                 measure(q1)
+
+            qcdl_program = scope_example()
     """
 
     def __init__(self, *qubits: QcdlModuleContainer, use_scope_id: bool = True):
@@ -1978,6 +2062,27 @@ class Scope(QcdlModuleContainer):
 
     @property
     def scope_id(self) -> int | None:
+        """Identity of the scope.
+
+        Examples:
+
+        .. testcode::
+
+            from dwave.gate.qcdl import qcdl, Scope
+
+            @qcdl(2)
+            def scope_id_example(q0, q1):
+                sc = Scope(q0, q1, use_scope_id=False)
+                print(sc.scope_id)
+
+            qcdl_program = scope_id_example()
+
+        The code above creates a scope wihtout an identifier.
+
+            .. testoutput::
+
+                None
+        """
         return self._scope_id
 
     @property
@@ -1991,29 +2096,33 @@ class Scope(QcdlModuleContainer):
             property (i.e., ``q0.name``)
 
             .. testcode::
-                :skipif: True   # TODO: figure out why this test fails
 
                 from dwave.gate.qcdl import print_qcdl, qcdl, Scope
+                from dwave.gate.qcdl.operations import measure, sx
 
                 @qcdl(2)
                 def modules_property(q0, q1):
                     sc = Scope(q0, q1)
-                    q0.sx()
-                    q0.measure()
+                    sx(q0)
+                    measure(q0)
                     sc.comment(f"measure {sc.qcdl_modules[0].name}")
 
                 qcdl_program = modules_property()
                 print_qcdl(qcdl_program)
 
+            .. testcode::
+                :hide:
+
+                print(print_qcdl(qcdl_program))
+
             The code above prints the following QCDL.
 
             .. testoutput::
-                :skipif: True   # TODO: figure out why this test fails
                 :options: +NORMALIZE_WHITESPACE
 
                 begin quantum
-                    q0.sx()
-                    q0.measure()
+                    sx([q0], q0)
+                    measure([q0], q0, log=True)
                     # measure q0
                 end quantum
         """

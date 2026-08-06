@@ -36,7 +36,7 @@ that can be passed to a compiler or simulator:
         measure(q0)
         measure(q1)
 
-    qcdl_dict = main()
+    qcdl_program = main()
 
 To run the program on a solver, use the Ocean SDK's cloud client to locate a solver
 that supports QCDL and submit the dictionary via ``sample_qcdl``:
@@ -49,7 +49,7 @@ that supports QCDL and submit the dictionary via ``sample_qcdl``:
     client = Client.from_config()
     solver = client.get_solver(supported_problem_types__contains="qcdl")
 
-    response = solver.sample_qcdl(qcdl_dict, shots=3)
+    response = solver.sample_qcdl(qcdl_program, shots=3)
     answer = orjson.loads(response.answer_data.read())
 
 .. end_gate_about
