@@ -317,7 +317,7 @@ class Result(BaseModel):
     fields do not cause validation failures.
 
     Attributes:
-        shots: Total number of shots executed.
+        num_shots: Total number of shots executed.
         start_time: Timestamp for when execution began.
         end_time: Timestamp for when execution ended.
         seconds_per_shot: Average wall-clock time per shot, in seconds.
@@ -330,7 +330,7 @@ class Result(BaseModel):
     """
     model_config = ConfigDict(extra="allow", frozen=True, arbitrary_types_allowed=True)
     
-    shots: int = Field(description="Total number of shots executed.")
+    num_shots: int = Field(description="Total number of shots executed.")
     start_time: datetime.datetime | None = Field(
         default=None, description="ISO-8601 string for when execution began."
     )
@@ -496,7 +496,7 @@ class Result(BaseModel):
             measurements[tag],
             register=register,
             unmeasured_value=unmeasured_value,
-            shots=shots or self.shots,
+            shots=shots or self.num_shots,
         )
 
     def get_counts(
