@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import base64
+import copy
 import datetime
 import enum
 import functools
@@ -24,14 +25,14 @@ import io
 import logging
 from collections import Counter
 from typing import Any, Iterable, cast
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 import numpy as np
 import polars as pl
 
 from dwave.gate.qcdl import LogicalOutcomeToInteger
 from dwave.gate.qcdl.records import RecordFormat
-from dwave.gate.result_schema import ResultDict
-
+from dwave.gate.qcdl.qcdl_models import Qcdl
 
 logger = logging.getLogger(__name__)
 
@@ -310,55 +311,81 @@ def count_measurements(
     return histogram
 
 
-class Result:
-    """A container and API for a result.
+class Result(BaseModel):
+    """Schema and API for a result returned by the simulator or QPU.
 
-    Args:
-        result: This is the dict response from the simulator or jcs
-            server.
-        job_dir: If the job used a local directory
-            to store data, it it is indicated here. Defaults to None.
+    This model permits unknown keys (``extra='allow'``) so newly added service
+    fields do not cause validation failures.
+
+    Attributes:
+        num_shots: Total number of shots executed.
+        start_time: Timestamp for when execution began.
+        end_time: Timestamp for when execution ended.
+        seconds_per_shot: Average wall-clock time per shot, in seconds.
+        num_qubits: Number of qubits used in the circuit.
+        simulated_qcdl: Label describing which QCDL was simulated.
+        record_format: Serialization format used for ``records``.
+        measurements: Raw measurement data keyed by tag.
+        records: Table data or raw QIR log output.
+        executed_qcdl: QCDL payload representing the executed program.
     """
+    model_config = ConfigDict(extra="allow", frozen=True, arbitrary_types_allowed=True)
+    
+    num_shots: int = Field(description="Total number of shots executed.")
+    start_time: datetime.datetime | None = Field(
+        default=None, description="ISO-8601 string for when execution began."
+    )
+    end_time: datetime.datetime | None = Field(
+        default=None, description="ISO-8601 string for when execution ended."
+    )
 
-    def __init__(
-        self,
-        result: dict,
-    ):
-        ResultDict.model_validate(result)
-        self._result: dict = result
+    seconds_per_shot: float | None = Field(
+        default=None, description="Average wall-clock time per shot in seconds."
+    )
+    num_qubits: int | None = Field(
+        default=None, description="Number of qubits used in the circuit."
+    )
+    simulated_qcdl: str | None = Field(
+        default=None,
+        description='Label describing which QCDL was simulated (e.g. ``"input"``).',
+    )
+    record_format: RecordFormat | None = Field(
+        repr=False,
+        default=None,
+        description=(
+            "Serialization format used for ``records``."
+            " Must be present when ``records`` is non-null."
+        ),
+    )
+    encoded_measurements: dict[str, list[str | list[int | str] | np.ndarray]] | None = Field(
+        alias="measurements",
+        default=None,
+        repr=False,
+        description=(
+            "Raw measurement data keyed by tag. Each value is a per-qubit list whose "
+            "elements are either a base64-encoded compressed array (str), a flat list "
+            "of int/str measurement values, or a pre-decoded NumPy array."
+        ),
+    )
+    encoded_records: dict[str, dict[str, Any]] | str | None = Field(
+        alias="records",
+        repr=False,
+        default=None,
+        description=(
+            "Table data produced by ``append_table_row``. "
+            "A ``dict`` keyed by qubit name then table name for table formats "
+            "(e.g. ``polars``), or a raw QIR log ``str`` for log formats "
+            "(``qir.v1``, ``qir.v2.1``)."
+        ),
+    )
 
-    @property
-    def result(self) -> dict:
-        """The unprocessed result object."""
-        return self._result
-
-    @functools.cached_property
-    def start_time(self) -> datetime.datetime | None:
-        """The time the simulation or QPU run started.
-
-        Returns:
-            Start time if available.
-        """
-        if start_time := self._result.get("start_time"):
-            return datetime.datetime.fromisoformat(start_time).replace(
-                tzinfo=datetime.timezone.utc
-            )
-        else:
-            return None
-
-    @functools.cached_property
-    def end_time(self) -> datetime.datetime | None:
-        """The time the simulation or QPU run ended.
-
-        Returns:
-            End time if available.
-        """
-        if end_time := self._result.get("end_time"):
-            return datetime.datetime.fromisoformat(end_time).replace(
-                tzinfo=datetime.timezone.utc
-            )
-        else:
-            return None
+    executed_qcdl: Qcdl | None = Field(
+        default=None,
+        description=(
+            "The :class:`~dwave.gate.qcdl.qcdl_models.Qcdl` payload"
+            " representing the program that was executed."
+        ),
+    )
 
     @functools.cached_property
     def run_time(self) -> float | None:
@@ -373,11 +400,6 @@ class Result:
             return None
 
     @property
-    def shots(self) -> int:
-        """Number of shots in this result."""
-        return self.result["shots"]
-
-    @property
     def tags(self) -> tuple[str, ...]:
         """The tags available in the measurements.
 
@@ -386,11 +408,10 @@ class Result:
         Returns:
             The tags.
         """
-        measurements = self.get_measurements()
-        if not measurements:
+        if not self.measurements:
             return tuple()
-        elif isinstance(measurements, dict):
-            return tuple(measurements.keys())
+        elif isinstance(self.measurements, dict):
+            return tuple(self.measurements.keys())
 
         return (DEFAULT_TAG,)
 
@@ -438,11 +459,10 @@ class Result:
         """
         if tag is None:
             tag = self.default_tag
-        measurements = self.get_measurements()
-        if not measurements:
+        if not self.measurements:
             return []
         register = [
-            f"q{q}" for q, meas in enumerate(measurements[tag]) if len(meas) > 0
+            f"q{q}" for q, meas in enumerate(self.measurements[tag]) if len(meas) > 0
         ]
         if descending:
             register = list(reversed(register))
@@ -473,14 +493,13 @@ class Result:
         """
         if tag is None:
             tag = self.default_tag
-        measurements = self.get_measurements()
-        if measurements is None:
+        if self.measurements is None:
             raise RuntimeError("measurements are not available for this result")
         return format_memory(
-            measurements[tag],
+            self.measurements[tag],
             register=register,
             unmeasured_value=unmeasured_value,
-            shots=shots or self.shots,
+            shots=shots or self.num_shots,
         )
 
     def get_counts(
@@ -520,13 +539,12 @@ class Result:
             for mem in memory
         ]
 
-    def get_records(self) -> dict | None:
+    @functools.cached_property
+    def records(self) -> dict | str | None:
         """Records are the data generated by append_table_row"""
-        records = self.result.get("records")
-        if records is None:
-            return None
+        records = copy.deepcopy(self.encoded_records)
 
-        if self.result["record_format"] == RecordFormat.POLARS.value:
+        if records and self.record_format is RecordFormat.POLARS:
             for tables in records.values():
                 for table_name, table_data in tables.items():
                     if isinstance(table_data, str):
@@ -537,10 +555,10 @@ class Result:
 
         return records
 
-    def get_measurements(self) -> dict[str, list[np.ndarray]] | None:
+    @functools.cached_property
+    def measurements(self) -> dict[str, list[np.ndarray]] | None:
         """Measurements are the data generated by log=True"""
-        measurements = self.result.get("measurements")
-        if measurements:
+        if measurements := copy.deepcopy(self.encoded_measurements):
             for data in measurements.values():
                 for loc, meas in enumerate(data):
                     if isinstance(meas, str):
@@ -552,6 +570,30 @@ class Result:
             return measurements
         else:
             return None
+
+    @model_validator(mode="after")
+    def _check_records_type_matches_format(self) -> Result:
+        if self.encoded_records is None or self.record_format is None:
+            return self
+        if self.record_format.is_log_format and not isinstance(self.encoded_records, str):
+            raise ValueError(
+                f"records must be a str for log record_format {self.record_format!r}"
+            )
+        if not self.record_format.is_log_format and not isinstance(self.encoded_records, dict):
+            raise ValueError(
+                f"records must be a dict for table record_format {self.record_format!r}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_end_time_after_start_time(self) -> Result:
+        if self.start_time is not None and self.end_time is not None:
+            if self.end_time < self.start_time:
+                raise ValueError(
+                    f"end_time {self.end_time!r} must not be before"
+                    f" start_time {self.start_time!r}"
+                )
+        return self
 
 
 class YieldHandling(enum.StrEnum):
