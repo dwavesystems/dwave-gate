@@ -532,14 +532,19 @@ class QCDLProcedureDef(BaseModel):
 
 
 class QCDLProgram(BaseModel):
-    """Pydantic model for the top-level QCDL compiler payload.
+    """`Pydantic <https://pydantic.dev/docs/>`_ model for the QCDL compiler.
 
-    :meth:`QCDLCircuit.to_model()` returns an instance of this class directly.
-    Use :meth:`model_dump` to recover a plain :class:`dict` suitable for the
-    compiler.
+    .. important:: This class is intended for use by developers of QCDL.
 
-    The ``extra="allow"`` config ensures that implementation-specific keys
-    added by future compiler versions are preserved through round-trips.
+    Use the :meth:`~dwave.gate.qcdl.qcdl_circuit.QcdlCircuit.to_model()` method
+    to generate an instance of this class.
+
+    You can recover a plain :class:`dict` (compatible with the compiler) with
+    the :meth:`~pydantic.BaseModel.model_dump` method.
+
+    The ``extra="allow"`` setting in ``model_config`` ensures that
+    implementation-specific keys of various compiler versions are preserved
+    through round trips.
     """
 
     model_config = ConfigDict(extra="allow")

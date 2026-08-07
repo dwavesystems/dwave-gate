@@ -1673,16 +1673,18 @@ class QCDLModule(QCDLModuleContainer):
     :class:`.Procedure` instance. This means that if a procedure is entered, a
     new :class:`.QCDLModule` is instantiated.
 
+    .. important:: This class is intended for use by developers of QCDL to
+        append instructions to a module, typically a qubit.
+
     This class is designed to provide an intuitive and convenient way to call
     the :meth:`~dwave.gate.qcdl.components.Procedure.add_statement` method. It does
     not perform validation and does not raise an error for unknown or invalid
-    methods and positional/keyword arguments. We recommend using the
-    :mod:`~dwave.gate.qcdl.operations` methods instead, where applicable, for
-    documentation and client-side validation.
+    methods and positional/keyword arguments. Use the
+    :mod:`~dwave.gate.qcdl.operations` methods instead, where applicable.
 
     Args:
-        module_name (str): Name of the module, typically a qubit.
-        proc (Procedure): :class:`.Procedure` instance this :class:`.QCDLModule`
+        module_name: Name of the module, typically a qubit.
+        proc: :class:`.Procedure` instance this :class:`.QCDLModule`
             is in.
 
     Examples:
@@ -1763,38 +1765,90 @@ class QCDLModule(QCDLModuleContainer):
         return QCDLModule(m.qcdl_module_name, proc)
 
     @property
-    def qcdl_modules(self) -> tuple[QCDLModule]:
+    def qcdl_modules(self) -> tuple[QcdlModule]:
         """tuple[QCDLModule]: The :class:`~dwave.gate.qcdl.QCDLModule` this
-        container holds."""
+        container holds.
+
+        Examples:
+            This is an artificial example; see the example for the
+            :attr:`~dwave.gate.qcdl.QCDLModule.name` for comparison.
+
+            .. testcode::
+
+                from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import h, measure
+
+                @qcdl(1)
+                def qcdl_modules(q0):
+                    h(q0)
+                    print(q0.qcdl_modules[0].name)      # Added for the example output
+                    measure(q0)
+
+                qcdl_modules()
+
+            The code above prints the module name.
+
+            .. testoutput::
+
+                q0
+        """
         # use a tuple so that it's not editable
         return (self,)
 
     @property
     def name(self) -> str:
-        """str: Name of this instance."""
+        """str: Name of this instance.
+
+        Examples:
+
+            .. testcode::
+
+                from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import h, measure
+
+                @qcdl(1)
+                def name_example(q0):
+                    h(q0)
+                    print(q0.name)      # Added for the example output
+                    measure(q0)
+
+                name_example()
+
+            The code above prints the module name.
+
+            .. testoutput::
+
+                q0
+        """
         return self.qcdl_module_name
 
     @property
     def signal(self) -> str:
-        """str: Symbol representing this qubit's signal — a boolean that other
-        qubits may incorporate into their branch condition.
+        """str: Signal that other qubits can condition a branch upon.
+
+        See the :ref:`qcdl_advanced_signals` section for a description and
+        examples of signals and the :ref:`qcdl_advanced_conditionals` section
+        for an introduction to conditioned execution.
         """
         return f"{self.qcdl_module_name}.signal"
 
     def one_to_all(
         self, destinations: Scope, send: RegisterExpression, **kwargs: Any
     ) -> None:
-        """Send a bit from one qubit to a :class:`~dwave.gate.qcdl.Scope` of other qubits.
+        """Send a bit from one qubit to a :class:`~dwave.gate.qcdl.Scope` of
+        other qubits.
+
+        See the :ref:`qcdl_advanced_signals` section for a description and
+        examples of signals.
 
         Args:
-            destinations (Scope): The scope of all qubits to send the message
-                to. The bit is placed on each qubit's branch condition to be
-                used in a conditional statement.
-            send (RegisterExpression): The expression to compute the bit
-               on the sender.
+            destinations: The scope of all qubits to send the message to. The
+                bit is placed on each qubit's branch condition to be used in a
+                conditional statement.
+            send: The expression to compute the bit on the sender.
 
         Raises:
-            ValueError: If the module has more than one qubit.
+            :exception:`ValueError`: If the module has more than one qubit.
         """
         self._multi_qubit_statement(
             "one_to_all",
@@ -1806,6 +1860,29 @@ class QCDLModule(QCDLModuleContainer):
 
     @property
     def qcdl_module_name(self) -> str:
+        """Return the name of the module.
+
+        Examples:
+
+            .. testcode::
+
+                from dwave.gate.qcdl import qcdl
+                from dwave.gate.qcdl.operations import h, measure
+
+                @qcdl(1)
+                def qcdl_module_name(q0):
+                    h(q0)
+                    print(q0.qcdl_module_name)      # Added for the example output
+                    measure(q0)
+
+                qcdl_module_name()
+
+            The code above prints the module name.
+
+            .. testoutput::
+
+                q0
+        """
         return self._module_name
 
     @property
@@ -1852,15 +1929,20 @@ class QCDLModule(QCDLModuleContainer):
         Applying instructions to this will automatically register it as one of
         the modules used by this procedure.
 
+        .. todo:: I could not get a working example for this method
+
         Args:
-            module_name (str): Name of the other module.
+            module_name: Name of the other module.
 
         Raises:
-            QCDLInternalError: Other modules are not available.
-            QCDLUserError: Other module is not in this procedure.
+            :class:`~dwave.gate.qcdl.exceptions.QCDLInternalError`: Other
+                modules are not available.
+            :class:`~dwave.gate.qcdl.exceptions.QCDLUserError`: Other module is
+                not in this procedure.
 
         Returns:
-            QCDLModule: The other module is in this same procedure scope.
+            :class:`~dwave.gate.qcdl.QCDLModule`: The other module is in this
+            same procedure scope.
         """
         if not self.state.all_modules:
             raise QCDLInternalError(
