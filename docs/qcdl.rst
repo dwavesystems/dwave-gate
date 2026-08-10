@@ -64,4 +64,8 @@ These classes are of interest mostly to developers of QCDL.
 
 .. automodule:: dwave.gate.qcdl.components
     :show-inheritance:
-    :members: Procedure
+    :members: Procedure, QCDLModuleName
+
+.. automodule:: dwave.gate.qcdl.qcdl_models
+    :show-inheritance:
+    :members: QCDLSignature

@@ -179,39 +179,56 @@ class QCDLModuleName(BaseModel):
 
 
 class QCDLStatement(BaseModel):
-    """Pydantic model for a single QCDL statement.
+    """`Pydantic <https://pydantic.dev/docs/>`_ model for a single QCDL
+    statement.
 
     Every declared field is optional (defaults are provided for all fields).
-    The ``extra="allow"`` config preserves compiler-specific keys (e.g.
+    The ``extra="allow"`` configuration preserves compiler-specific keys (e.g.
     ``card_name``) so they round-trip transparently through
     :meth:`~pydantic.BaseModel.model_dump`.
 
-    Use ``model_dump(exclude_unset=True)`` to reproduce the sparse dict
-    representation that :meth:`Procedure.add_statement` emits (fields
-    that were not explicitly set are omitted).
-
-    Derived API
-    -----------
+    Set the ``exclude_unset=True`` parameter for the
+    :meth:`~pydantic.BaseModel.model_dump` method to reproduce the sparse
+    :class:`dict` representation that
+    :meth:`~dwave.gate.qcdl.components.Procedure.add_statement` method generates
+    (fields that are not explicitly set are omitted).
 
     The following derived properties and methods are available directly on
-    this model:
+    this model.
 
-    * :attr:`qubit_name` — alias for :attr:`qubit`, returning its string name
-    * :attr:`is_procedure_call` — ``True`` when :attr:`qubit` is ``None``
-    * :attr:`modules` — all qubits/couplers referenced by the statement
-    * :attr:`caller_qubits` — qubits passed to the called procedure (empty
-      for normal statements); use :attr:`qubits` for full module access
-    * :attr:`qargs` — integer qubit indices derived from :attr:`modules`
-    * :attr:`cargs` — always ``None`` (Qiskit-style interface)
-    * :attr:`condition` — condition value for ``If``/``c_if``/``c_if_else``
-    * :meth:`simple_desc` — short human-readable description
-    * :meth:`reassign_arg` — replace a positional argument by index
-    * :meth:`reassign_kwarg` — replace a keyword argument by name
+    .. todo:: For the table below, I do not see an :attr:`qubit` attribute and `caller_qubits` has no docstring.
 
-    **Naming notes** — :attr:`args` and :attr:`kwargs` are raw serialization
-    fields (what the compiler receives).  :attr:`qubits` is a computed field
-    populated post-initialization and is included in serialization.
-    :meth:`reassign_arg` operates on the raw :attr:`args` list.
+    .. list-table::
+        :header-rows: 1
+
+        *   -   Property/Method
+            -   Description
+        *   -   :attr:`qubit_name`
+            -   Alias for :attr:`qubit`, returning its string name.
+        *   -   :attr:`is_procedure_call`
+            -   ``True`` when :attr:`qubit` is ``None``.
+        *   -   :attr:`modules`
+            -   All qubits/couplers referenced by the statement.
+        *   -   ``caller_qubits``
+            -   Qubits passed to the called procedure (empty for normal
+                statements); use :attr:`qubits` for full module access.
+        *   -   :attr:`qargs`
+            -   Integer qubit indices derived from :attr:`modules`.
+        *   -   :attr:`cargs`
+            -   Always ``None`` (Qiskit-style interface).
+        *   -   :attr:`condition`
+            -   Condition value for ``If``/``c_if``/``c_if_else``.
+        *   -   :meth:`simple_desc`
+            -   Short human-readable description.
+        *   -   :meth:`reassign_arg`
+            -   Replace a positional argument by index.
+        *   -   :meth:`reassign_kwarg`
+            -   Replace a keyword argument by name.
+
+    .. note:: ``args`` and ``kwargs`` are raw serialization fields that the
+        compiler receives.  The :attr:`qubits` property is a computed field
+        populated post-initialization and is included in serialization.
+        The :meth:`reassign_arg` method operates on the raw ``args`` list.
     """
 
     model_config = ConfigDict(extra="allow", validate_assignment=True)
@@ -283,12 +300,12 @@ class QCDLStatement(BaseModel):
         """All modules (qubits and couplers) referenced by this statement.
 
         Derived from every source in insertion order, without duplicates:
-        the :attr:`qubit` field, :attr:`caller_qubits` (for procedure calls),
-        ``kwargs["qubits"]``, module-like :attr:`args`, and op-specific logic
+        the :attr:`qubit` field, ``caller_qubits`` (for procedure calls),
+        ``kwargs["qubits"]``, module-like ``args``, and ``op``-specific logic
         for ``If``/``Else``/``Endif``.
 
         This is the primary API for callers that need to know which modules a
-        statement touches.  Always current — recomputed on each access so
+        statement touches.  Always current---recomputed on each access so
         mutations via :meth:`reassign_arg` / :meth:`reassign_kwarg` are
         reflected immediately.
         """
@@ -333,7 +350,7 @@ class QCDLStatement(BaseModel):
 
     @property
     def qubit_name(self) -> str | None:
-        """Alias for :attr:`qubit`, returning the plain string module name."""
+        """Alias for :attr:`qubit` that returns the plain string module name."""
         return self.qubit.name if self.qubit is not None else None
 
     @property
@@ -359,22 +376,22 @@ class QCDLStatement(BaseModel):
     def qubit_names(self) -> list[str]:
         """Names of all qubits referenced by this statement, from all sources.
 
-        Unlike :attr:`qubits`, which returns :class:`QCDLModuleName` objects
+        Unlike the :attr:`qubits` property, which returns
+        :class:`~dwave.gate.qcdl.components.QCDLModuleName` objects
         for all modules (including couplers), this property returns plain
-        string names for qubit modules only.
+        string names for qubits only.
 
         Equivalent to ``[m.name for m in self.modules if m.is_qubit]``.
-        Couplers are excluded.
         """
         return [m.name for m in self.modules if m.is_qubit]
 
     @property
     def non_module_args(self) -> list[Any]:
-        """Args that are not qubit/coupler/module references.
+        """Arguments that are not qubit/coupler/module references.
 
         Equivalent to the positional arguments after stripping out any
-        module name strings — mirrors the filtering that the legacy
-        ``Statement._args`` attribute performed.
+        module-name strings (mirrors the filtering that the legacy
+        ``Statement._args`` attribute performed).
         """
         if self.op in ["comment", "If", "c_if", "c_if_else"]:
             return list(self.args)
@@ -391,7 +408,7 @@ class QCDLStatement(BaseModel):
 
         Valid for ``op`` values ``"If"``, ``"c_if"``, and ``"c_if_else"``.
         Raises :class:`~dwave.gate.qcdl.exceptions.QCDLInternalError` for any
-        other op.
+        other ``op``.
         """
         if self.op not in ["If", "c_if", "c_if_else"]:
             raise QCDLInternalError(f"op {self.op!r} doesn't have a condition")
@@ -400,7 +417,7 @@ class QCDLStatement(BaseModel):
             condition = self.args[-1]
         elif self.args:
             condition = self.args[0]
-        elif self.kwargs and "condition" in self.kwargs:
+        elifß self.kwargs and "condition" in self.kwargs:
             condition = self.kwargs["condition"]
         else:
             raise QCDLInternalError(f"statement {self!s} doesn't have a condition")
@@ -417,11 +434,11 @@ class QCDLStatement(BaseModel):
     # ------------------------------------------------------------------
 
     def reassign_arg(self, i: int, new_value: Any) -> None:
-        """Replace the *i*-th entry in the raw :attr:`args` list."""
+        """Replace the :math:`i`-th entry in the raw ``args`` list."""
         self.args[i] = new_value
 
     def reassign_kwarg(self, name: str, new_value: Any) -> None:
-        """Set or replace the keyword argument *name* in :attr:`kwargs`."""
+        """Set or replace the keyword argument ``name`` in ``kwargs`` argument."""
         self.kwargs[name] = new_value
 
     def simple_desc(self) -> str:
@@ -466,8 +483,9 @@ class QCDLStatement(BaseModel):
 class QCDLSignature(BaseModel):
     """Pydantic model for a procedure signature.
 
-    All fields are required.  ``extra="forbid"`` rejects unrecognized
-    keys so that signature construction errors surface early.
+    All fields are required. The ``extra="forbid"`` setting in ``model_config``
+    rejects unrecognized keys so that signature construction errors surface
+    early.
     """
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
@@ -503,7 +521,8 @@ class QCDLSignature(BaseModel):
 
 
 class QCDLProcedureDef(BaseModel):
-    """Pydantic model for a compiled procedure definition.
+    """`Pydantic <https://pydantic.dev/docs/>`_ model for a compiled procedure
+    definition.
 
     Nesting :class:`QCDLStatement` and :class:`QCDLSignature`
     means that calling

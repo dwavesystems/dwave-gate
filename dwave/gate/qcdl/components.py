@@ -439,13 +439,14 @@ class QCDLStatementBridge:
 class QCDLModuleContainer(QCDLModuleContainerBase):
     """Base class for the :class:`.QCDLModule` and :class:`.Scope` classes.
 
+    .. important:: This class is not meant to be instantiated directly. Typical
+        QCDL programs use the :class:`.Scope` class.
+
     Defines shared methods such as
     :meth:`~dwave.gate.qcdl.QCDLModuleContainer.If`,
     :meth:`~dwave.gate.qcdl.QCDLModuleContainer.comment`, and
     :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync`.
 
-    This class is not meant to be instantiated directly. Typical QCDL programs
-    use the :class:`.Scope` class.
     """
 
     @property
