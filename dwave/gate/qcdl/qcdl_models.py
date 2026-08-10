@@ -417,7 +417,7 @@ class QCDLStatement(BaseModel):
             condition = self.args[-1]
         elif self.args:
             condition = self.args[0]
-        elifß self.kwargs and "condition" in self.kwargs:
+        elif self.kwargs and "condition" in self.kwargs:
             condition = self.kwargs["condition"]
         else:
             raise QCDLInternalError(f"statement {self!s} doesn't have a condition")
