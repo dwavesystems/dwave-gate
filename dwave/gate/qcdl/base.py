@@ -23,11 +23,11 @@ from typing import TYPE_CHECKING, Any
 from .exceptions import QCDLInternalError
 
 if TYPE_CHECKING:
-    from .components import Procedure, QcdlModule
-    from .qcdl_circuit import QcdlCircuit
+    from .components import Procedure, QCDLModule
+    from .qcdl_circuit import QCDLCircuit
 
 
-class QcdlArgument(abc.ABC):
+class QCDLArgument(abc.ABC):
     """This enables passing arbitrary objects to the compiler as args/kwargs to
     a procedure"""
 
@@ -38,23 +38,23 @@ class QcdlArgument(abc.ABC):
         raise NotImplementedError
 
 
-class QcdlModuleContainerBase(QcdlArgument):
-    """This lets you pass an object containing QcdlModules to a procedure"""
+class QCDLModuleContainerBase(QCDLArgument):
+    """This lets you pass an object containing QCDLModules to a procedure"""
 
     @property
     @abc.abstractmethod
-    def qcdl_modules(self) -> Sequence[QcdlModule]:
-        """The QcdlModule(s) this container holds
+    def qcdl_modules(self) -> Sequence[QCDLModule]:
+        """The QCDLModule(s) this container holds
 
         Returns:
-            sequence of QcdlModule
+            sequence of QCDLModule
         """
         raise NotImplementedError
 
     @property
     def name(self) -> str:
         names = ", ".join(m.qcdl_module_name for m in self.qcdl_modules)
-        return f"<QcdlModuleContainerBase {names}>"
+        return f"<QCDLModuleContainerBase {names}>"
 
     def serialize(self) -> list[str]:
         return [m.qcdl_module_name for m in self.qcdl_modules]
@@ -74,7 +74,7 @@ class QcdlModuleContainerBase(QcdlArgument):
         return proc
 
     @property
-    def state(self) -> QcdlCircuit:
+    def state(self) -> QCDLCircuit:
         return self.procedure.state
 
     def __str__(self) -> str:
@@ -82,14 +82,14 @@ class QcdlModuleContainerBase(QcdlArgument):
 
     @property
     def op_key(self) -> str | None:
-        """Intended to represent the contents of a QcdlModuleContainerBase
+        """Intended to represent the contents of a QCDLModuleContainerBase
         besides its qcdl_modules, used for procedure names when this is an
         argument.
         """
         return None
 
     def set_procedure(self, new_proc: Procedure) -> None:
-        """Rewrap the QcdlModule objects with the new procedure
+        """Rewrap the QCDLModule objects with the new procedure
 
         The default implementation assumes that `qcdl_modules` is a list.
 
@@ -98,10 +98,10 @@ class QcdlModuleContainerBase(QcdlArgument):
         """
 
         for idx, m in enumerate(self.qcdl_modules):
-            if isinstance(m, QcdlModuleContainerBase) and not m._is_qcdl_module:
+            if isinstance(m, QCDLModuleContainerBase) and not m._is_qcdl_module:
                 m.set_procedure(new_proc)
             else:
-                # QcdlModule's qcdl_modules is not mutable
+                # QCDLModule's qcdl_modules is not mutable
                 if not isinstance(self.qcdl_modules, MutableSequence):
                     raise QCDLInternalError(
                         f"the default implementation only supports list,"
@@ -111,7 +111,7 @@ class QcdlModuleContainerBase(QcdlArgument):
                 self.qcdl_modules[idx] = m.from_rewrapping(m, new_proc=new_proc)
 
 
-class VariableExpression(QcdlArgument):
+class VariableExpression(QCDLArgument):
     """A QCDL variable expression
 
     This is a compile-time expression.
@@ -270,7 +270,7 @@ class VariableExpression(QcdlArgument):
         return self._apply_operator("%", operand)
 
 
-class Variable(QcdlArgument):
+class Variable(QCDLArgument):
     """This is the QCDL approach for creating a QCDL Variable
 
     Corresponds 1-to-1 with the qcdl_objects.py Variable. There will be
@@ -295,7 +295,7 @@ class Variable(QcdlArgument):
 
 
 class IndexerMixin:
-    """This is used as a mixin for Procedure and QcdlCircuit"""
+    """This is used as a mixin for Procedure and QCDLCircuit"""
 
     def __init__(self, next_indices: dict[str, int] | None = None) -> None:
         self._next_indices: defaultdict[str, int] = defaultdict(lambda: 0)

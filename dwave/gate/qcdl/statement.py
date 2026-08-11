@@ -20,7 +20,7 @@ from typing import Any, cast
 from addict import Addict
 
 from .exceptions import QCDLInternalError
-from .qcdl_models import QcdlStatement
+from .qcdl_models import QCDLStatement
 from .qcdl_objects import format_signature
 from .utils import is_qubit_name, is_qubit_or_coupler_name
 
@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 
 
 class Statement:
-    def __init__(self, statement: dict | QcdlStatement):
+    def __init__(self, statement: dict | QCDLStatement):
         stmt: dict = (
             statement.model_dump(exclude_unset=True)
-            if isinstance(statement, QcdlStatement)
+            if isinstance(statement, QCDLStatement)
             else statement
         )
         if not isinstance(stmt, dict):

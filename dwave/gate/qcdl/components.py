@@ -32,14 +32,14 @@ from typing import TYPE_CHECKING, Any, Callable, Iterator
 
 import numpy as np
 
-from .base import IndexerMixin, QcdlArgument, QcdlModuleContainerBase
+from .base import IndexerMixin, QCDLArgument, QCDLModuleContainerBase
 from .constants import MIN_INT_REGISTER_VALUE, NUM_RECS
 from .exceptions import QCDLInternalError, QCDLUserError
 from .qcdl_models import (
-    QcdlModuleName,
-    QcdlProcedureDef,
-    QcdlSignature,
-    QcdlStatement,
+    QCDLModuleName,
+    QCDLProcedureDef,
+    QCDLSignature,
+    QCDLStatement,
 )
 from .records import RecordOutput
 from .registers import (
@@ -54,7 +54,7 @@ from .statement import Statement  # noqa: F401  kept for public API
 from .utils import map_container, objwalk
 
 if TYPE_CHECKING:
-    from .qcdl_circuit import QcdlCircuit
+    from .qcdl_circuit import QCDLCircuit
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class StatementToHashEncoder(json.JSONEncoder):
     """
 
     def default(self, obj: Any) -> Any:
-        if isinstance(obj, QcdlStatementBridge):
+        if isinstance(obj, QCDLStatementBridge):
             return str(obj)
         elif hasattr(obj, "unique_name"):
             return obj.unique_name
@@ -85,8 +85,8 @@ class Procedure(IndexerMixin):
             unique, the @procedure decorator will incorporate the
             args/kwargs (or a hash thereof) to create a "mangled" version of
             the name.
-        state (QcdlCircuit): the state of the overall circuit
-        modules (list[QcdlModule] | None, optional): modules refers to the externally
+        state (QCDLCircuit): the state of the overall circuit
+        modules (list[QCDLModule] | None, optional): modules refers to the externally
             facing method signature if set to None, then it will be taken
             from modules_used (i.e., determine the signature based on the
             statements). Defaults to None.
@@ -102,8 +102,8 @@ class Procedure(IndexerMixin):
     def __init__(
         self,
         proc_name: str,
-        state: QcdlCircuit,
-        modules: list[QcdlModule] | None = None,
+        state: QCDLCircuit,
+        modules: list[QCDLModule] | None = None,
         args: Sequence[Any] | None = None,
         kwargs: Mapping[Any, Any] | None = None,
         qcdl_operator: str | None = None,
@@ -114,14 +114,14 @@ class Procedure(IndexerMixin):
         self.state = state
         self.modules = modules
         self.is_main = is_main
-        self.statements: list[QcdlStatement] = []
+        self.statements: list[QCDLStatement] = []
         self._expression_queue: list[Any] | None = None
         self._child_proc: Procedure | None = None
 
         # modules_used tracks which modules are actually used which may
         # include ones not in the signature.
         # for example, `q0.swap(q1)` might include coupler c0
-        self.modules_used: list[QcdlModuleName] = []
+        self.modules_used: list[QCDLModuleName] = []
 
         self.args = args or []
         self.kwargs = kwargs or {}
@@ -140,7 +140,7 @@ class Procedure(IndexerMixin):
 
         self._procedure_ended = False
 
-    def to_model(self) -> QcdlProcedureDef:
+    def to_model(self) -> QCDLProcedureDef:
         """The encoded version of the python code
 
         NOTE: The compiler calls the fields qubits and qubits_used, even
@@ -153,19 +153,19 @@ class Procedure(IndexerMixin):
             )
 
         if self.modules:
-            qubits: list[QcdlModuleName] = [
-                QcdlModuleName.model_validate(str(q)) for q in self.modules
+            qubits: list[QCDLModuleName] = [
+                QCDLModuleName.model_validate(str(q)) for q in self.modules
             ]
         else:
             qubits = list(self.modules_used)
-        signature = QcdlSignature(
+        signature = QCDLSignature(
             qcdl_operator=self.qcdl_operator,
             qubits=qubits,
             qubits_used=list(self.modules_used),
-            args=QcdlModule.unwrap(self.args),
-            kwargs=QcdlModule.unwrap(self.kwargs),
+            args=QCDLModule.unwrap(self.args),
+            kwargs=QCDLModule.unwrap(self.kwargs),
         )
-        return QcdlProcedureDef(
+        return QCDLProcedureDef(
             statements=self.statements,
             statement_hash=self.statement_hash,
             signature=signature,
@@ -242,7 +242,7 @@ class Procedure(IndexerMixin):
         """
         if module_name is None:
             return
-        module = QcdlModuleName.model_validate(module_name)
+        module = QCDLModuleName.model_validate(module_name)
         if module not in self.modules_used:
             self.modules_used.append(module)
 
@@ -326,15 +326,15 @@ class Procedure(IndexerMixin):
                 " while a cpu expression queue is active"
             )
 
-        args = QcdlModule.unwrap(args)
-        kwargs = QcdlModule.unwrap(kwargs)
+        args = QCDLModule.unwrap(args)
+        kwargs = QCDLModule.unwrap(kwargs)
 
-        stmt = QcdlStatement(
+        stmt = QCDLStatement(
             op=op,
-            qubit=QcdlModuleName.model_validate(qubit) if qubit is not None else None,
+            qubit=QCDLModuleName.model_validate(qubit) if qubit is not None else None,
             args=list(args) if args else [],
             kwargs=dict(kwargs) if kwargs else {},
-            caller_qubits=[QcdlModuleName.model_validate(q) for q in caller_qubits]
+            caller_qubits=[QCDLModuleName.model_validate(q) for q in caller_qubits]
             if caller_qubits
             else [],
         )
@@ -370,8 +370,8 @@ class Procedure(IndexerMixin):
     def __getattr__(self, procedure_name: str) -> Callable[..., None]:
         """Call one procedure from another
 
-        This is similar to __getattr__ on QcdlModules except that
-        it can be invoked from a procedure instead of from a QcdlModule.
+        This is similar to __getattr__ on QCDLModules except that
+        it can be invoked from a procedure instead of from a QCDLModule.
         The called procedure must have been ended so that this method
         can determine which qubits are sent to it using its signature.
 
@@ -401,18 +401,18 @@ class Procedure(IndexerMixin):
 
         return f
 
-    def q(self, name: str | int) -> QcdlModule:
-        """Dynamically get a qubit QcdlModule
+    def q(self, name: str | int) -> QCDLModule:
+        """Dynamically get a qubit QCDLModule
 
         Args:
             name (str or int): name of the module
 
         Returns:
-            QcdlModule: module ready for your instructions
+            QCDLModule: module ready for your instructions
         """
         if isinstance(name, int):
             name = "q%i" % name
-        return QcdlModule(name, self)
+        return QCDLModule(name, self)
 
     def __str__(self) -> str:
         return "<Procedure %s>" % self.proc_name
@@ -421,8 +421,8 @@ class Procedure(IndexerMixin):
         return str(self)
 
 
-class QcdlStatementBridge:
-    """Object that tracks if a getattr from QcdlModule ever gets resolved"""
+class QCDLStatementBridge:
+    """Object that tracks if a getattr from QCDLModule ever gets resolved"""
 
     def __init__(self, proc: Procedure, qubit_name: str, method_name: str):
         self._proc = proc
@@ -436,13 +436,13 @@ class QcdlStatementBridge:
         self._proc.add_statement(self._qubit_name, self._method_name, args, kwargs)
 
 
-class QcdlModuleContainer(QcdlModuleContainerBase):
-    """Base class for the :class:`.QcdlModule` and :class:`.Scope` classes.
+class QCDLModuleContainer(QCDLModuleContainerBase):
+    """Base class for the :class:`.QCDLModule` and :class:`.Scope` classes.
 
     Defines shared methods such as
-    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.If`,
-    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.comment`, and
-    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync`.
+    :meth:`~dwave.gate.qcdl.QCDLModuleContainer.If`,
+    :meth:`~dwave.gate.qcdl.QCDLModuleContainer.comment`, and
+    :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync`.
 
     This class is not meant to be instantiated directly. Typical QCDL programs
     use the :class:`.Scope` class.
@@ -464,7 +464,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
 
     def _If(
         self,
-        condition: RegisterExpression | QcdlModule | bool | str | None,
+        condition: RegisterExpression | QCDLModule | bool | str | None,
         all_sources_identical: bool = True,
         debug: bool = False,
         _exclusivity: bool = False,
@@ -511,7 +511,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
     @contextmanager
     def If(
         self,
-        condition: RegisterExpression | QcdlModule | bool | str | None,
+        condition: RegisterExpression | QCDLModule | bool | str | None,
         all_sources_identical: bool = True,
         debug: bool = False,
         true_goto: str | None = None,
@@ -521,7 +521,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
     ) -> Iterator[Callable[..., Any]]:
         """Conditionally execute an expression.
 
-        All qubits in this :class:`.QcdlModuleContainer` participate in the
+        All qubits in this :class:`.QCDLModuleContainer` participate in the
         conditional. See the :ref:`qcdl_advanced_conditionals` section for
         information on conditional branching.
 
@@ -704,14 +704,14 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
     @contextmanager
     def While(
         self,
-        condition: RegisterExpression | QcdlModule | bool | str | None = None,
+        condition: RegisterExpression | QCDLModule | bool | str | None = None,
         all_sources_identical: bool = True,
         _base_name: str = "while",
         _base_idx: int | None = None,
     ) -> Iterator[None]:
         """Execute context statements while condition is true.
 
-        All qubits in this :class:`.QcdlModuleContainer` participate in the
+        All qubits in this :class:`.QCDLModuleContainer` participate in the
         conditional. See the :ref:`qcdl_advanced_conditionals` section for
         information on conditional branching.
 
@@ -755,12 +755,12 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
     @contextmanager
     def DoWhile(
         self,
-        condition: RegisterExpression | QcdlModule | bool | str | None = None,
+        condition: RegisterExpression | QCDLModule | bool | str | None = None,
         all_sources_identical: bool = True,
     ) -> Iterator[None]:
         """Execute context statements while condition is true, and at least once.
 
-        All qubits in this :class:`.QcdlModuleContainer` participate in the
+        All qubits in this :class:`.QCDLModuleContainer` participate in the
         conditional. See the :ref:`qcdl_advanced_conditionals` section for
         information on conditional branching.
 
@@ -823,7 +823,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         An almost C-style for loop, similar to a :meth:`.While` loop with minor
         enhancement.
 
-        All qubits in this :class:`.QcdlModuleContainer` participate in the
+        All qubits in this :class:`.QCDLModuleContainer` participate in the
         conditional. See the :ref:`qcdl_advanced_conditionals` section for
         information on conditional branching.
 
@@ -881,7 +881,7 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
     ) -> Iterator[Register]:
         """Loop over a fixed number of iterations.
 
-        All qubits in this :class:`.QcdlModuleContainer` participate in the
+        All qubits in this :class:`.QCDLModuleContainer` participate in the
         loop.
 
         Args:
@@ -1385,17 +1385,17 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         _type_error_raises (bool): If True, if the requested _impl isn't
             compatible with the method on the qubit, then raise the TypeError
             exception instead of falling back to add_statement (see code).
-        _allow_override (bool): If the instance is not a :class:`QcdlModule`, then this
+        _allow_override (bool): If the instance is not a :class:`QCDLModule`, then this
             would allow subclasses or other implementations to override
-            :class:`QcdlModule`'s method.
+            :class:`QCDLModule`'s method.
         """
         q, others = self.qcdl_modules[0], self.qcdl_modules[1:]
 
         def _stmt(name: Any, args: Any, kwargs: Any) -> None:
             use_add_statement = True
             if (
-                _allow_override and hasattr(q, op) and type(q) is not QcdlModule
-            ):  # Implicitly check if it is either a System or SystemQcdlModule
+                _allow_override and hasattr(q, op) and type(q) is not QCDLModule
+            ):  # Implicitly check if it is either a System or SystemQCDLModule
                 # check if it's possible to call on the qubit directly
                 f = getattr(q, op)
                 sig = inspect.signature(f)
@@ -1663,15 +1663,15 @@ class QcdlModuleContainer(QcdlModuleContainerBase):
         return shape, table_row
 
 
-class QcdlModule(QcdlModuleContainer):
+class QCDLModule(QCDLModuleContainer):
     """Wrapper around a :class:`.Procedure` instance.
 
     .. important:: This class is intended for use by developers of QCDL to
         append instructions to a module, typically a qubit.
 
-    A :class:`QcdlModule` instance is associated with a specific
+    A :class:`QCDLModule` instance is associated with a specific
     :class:`.Procedure` instance. This means that if a procedure is entered, a
-    new :class:`.QcdlModule` is instantiated.
+    new :class:`.QCDLModule` is instantiated.
 
     This class is designed to provide an intuitive and convenient way to call
     the :meth:`~dwave.gate.qcdl.components.Procedure.add_statement` method. It does
@@ -1682,12 +1682,12 @@ class QcdlModule(QcdlModuleContainer):
 
     Args:
         module_name (str): Name of the module, typically a qubit.
-        proc (Procedure): :class:`.Procedure` instance this :class:`.QcdlModule`
+        proc (Procedure): :class:`.Procedure` instance this :class:`.QCDLModule`
             is in.
 
     Examples:
         This example shows a typical use of :mod:`~dwave.gate.qcdl.operations`
-        methods, which indirectly instantiates a :class:`QcdlModule` instance.
+        methods, which indirectly instantiates a :class:`QCDLModule` instance.
 
         .. testcode::
 
@@ -1703,8 +1703,8 @@ class QcdlModule(QcdlModuleContainer):
             qcdl_program = direct_op()
 
         The code above prints the
-        :attr:`~dwave.gate.qcdl.QcdlModule.qcdl_module_name` property of the
-        :class:`QcdlModule` class.
+        :attr:`~dwave.gate.qcdl.QCDLModule.qcdl_module_name` property of the
+        :class:`QCDLModule` class.
 
         .. testoutput::
 
@@ -1747,24 +1747,24 @@ class QcdlModule(QcdlModuleContainer):
         return True
 
     @staticmethod
-    def from_rewrapping(m: QcdlModule, new_proc: Procedure) -> QcdlModule:
-        """Repackage a QcdlModule to be appropriate to the procedure scope.
+    def from_rewrapping(m: QCDLModule, new_proc: Procedure) -> QCDLModule:
+        """Repackage a QCDLModule to be appropriate to the procedure scope.
 
         Args:
-            m (QcdlModule): original QcdlModule
+            m (QCDLModule): original QCDLModule
             new_proc (Procedure): The new procedure to wrap it in.
 
         Returns:
-            QcdlModule: rewrapped QcdlModule
+            QCDLModule: rewrapped QCDLModule
 
         :meta private:
         """
         proc = new_proc or m.procedure
-        return QcdlModule(m.qcdl_module_name, proc)
+        return QCDLModule(m.qcdl_module_name, proc)
 
     @property
-    def qcdl_modules(self) -> tuple[QcdlModule]:
-        """tuple[QcdlModule]: The :class:`~dwave.gate.qcdl.QcdlModule` this
+    def qcdl_modules(self) -> tuple[QCDLModule]:
+        """tuple[QCDLModule]: The :class:`~dwave.gate.qcdl.QCDLModule` this
         container holds."""
         # use a tuple so that it's not editable
         return (self,)
@@ -1817,7 +1817,7 @@ class QcdlModule(QcdlModuleContainer):
         return self._proc
 
     @classmethod
-    def find_modules(cls, *args: Any, **kwargs: Any) -> Iterator[QcdlModule]:
+    def find_modules(cls, *args: Any, **kwargs: Any) -> Iterator[QCDLModule]:
         """Find all unique modules from the args and kwargs
 
         Some statements need to do something for every module, for example,
@@ -1828,7 +1828,7 @@ class QcdlModule(QcdlModuleContainer):
         will recursively search all args and kwargs for any modules.
 
         Yields:
-            QcdlModule: modules
+            QCDLModule: modules
 
         :meta private:
         """
@@ -1840,14 +1840,14 @@ class QcdlModule(QcdlModuleContainer):
                 if a.qcdl_module_name not in returned:
                     yield a
                 returned[a.qcdl_module_name] = a
-            elif isinstance(a, QcdlModuleContainerBase):
+            elif isinstance(a, QCDLModuleContainerBase):
                 for q in a.qcdl_modules:
                     if q.qcdl_module_name not in returned:
                         yield q
                     returned[q.qcdl_module_name] = q
 
-    def get_other_qcdl_module(self, module_name: str) -> QcdlModule:
-        """Create an ad hoc :class:`QcdlModule` in the same procedure.
+    def get_other_qcdl_module(self, module_name: str) -> QCDLModule:
+        """Create an ad hoc :class:`QCDLModule` in the same procedure.
 
         Applying instructions to this will automatically register it as one of
         the modules used by this procedure.
@@ -1860,7 +1860,7 @@ class QcdlModule(QcdlModuleContainer):
             QCDLUserError: Other module is not in this procedure.
 
         Returns:
-            QcdlModule: The other module is in this same procedure scope.
+            QCDLModule: The other module is in this same procedure scope.
         """
         if not self.state.all_modules:
             raise QCDLInternalError(
@@ -1871,7 +1871,7 @@ class QcdlModule(QcdlModuleContainer):
                 f"module {module_name} is not available in procedure {self.procedure}"
             )
         m = self.state.all_modules[module_name]
-        return QcdlModule.from_rewrapping(m, new_proc=self.procedure)
+        return QCDLModule.from_rewrapping(m, new_proc=self.procedure)
 
     @classmethod
     def unwrap(cls, container: Set | Sequence | Mapping | None) -> Any:
@@ -1886,10 +1886,10 @@ class QcdlModule(QcdlModuleContainer):
 
         The objects that are replaced are:
 
-        * QcdlModule objects and Systems are converted to their string names
+        * QCDLModule objects and Systems are converted to their string names
           (i.e., "q0", "q3", etc). Their procedure context is encoded elsewhere
           in the json file and does not need to be preserved here.
-        * QcdlArguments are also transformed by their to_dict implementation.
+        * QCDLArguments are also transformed by their to_dict implementation.
         * as a convenience, this method will handle np types
 
         NOTE: This code is used in contexts where the output is not required to be
@@ -1916,7 +1916,7 @@ class QcdlModule(QcdlModuleContainer):
                 obj = []
             elif isinstance(raw_obj, cls):  # This only catches QCDL modules!
                 obj = raw_obj.qcdl_module_name
-            elif isinstance(raw_obj, QcdlArgument):
+            elif isinstance(raw_obj, QCDLArgument):
                 obj = raw_obj.serialize()
             else:
                 obj = raw_obj
@@ -1939,12 +1939,12 @@ class QcdlModule(QcdlModuleContainer):
 
     @classmethod
     def rewrap(cls, args: Any, kwargs: Any, proc: Procedure) -> None:
-        """Create QcdlModule wrappers around modules in provided args/kwargs
+        """Create QCDLModule wrappers around modules in provided args/kwargs
 
-        A QcdlModule is a module wrapped in a Procedure, so when passing a
+        A QCDLModule is a module wrapped in a Procedure, so when passing a
         module into a procedure, each module must be rewrapped with the
         Procedure. This method will recursively scan args/kwargs and replace
-        every QcdlModule with a new QcdlModule (or for a System, reassign proc)
+        every QCDLModule with a new QCDLModule (or for a System, reassign proc)
 
         Args:
             args (Any): container of parameters
@@ -1957,17 +1957,17 @@ class QcdlModule(QcdlModuleContainer):
         def mapper(value: Any) -> Any:
             if isinstance(value, cls):
                 return value.from_rewrapping(value, new_proc=proc)
-            elif isinstance(value, QcdlModuleContainerBase):
+            elif isinstance(value, QCDLModuleContainerBase):
                 value.set_procedure(proc)
             return value
 
         map_container(
             [args, kwargs],
             map_value=mapper,
-            map_value_instance_types=(cls, QcdlModuleContainerBase),
+            map_value_instance_types=(cls, QCDLModuleContainerBase),
         )
 
-    def __getattr__(self, name: str) -> QcdlStatementBridge:
+    def __getattr__(self, name: str) -> QCDLStatementBridge:
         """The __getattr__ implements a mechanism for appending arbitrary
         instructions to the Procedure.
 
@@ -1979,7 +1979,7 @@ class QcdlModule(QcdlModuleContainer):
             name (str): The name of the instruction.
 
         Returns:
-            QcdlStatementBridge: an instance which may be invoked to add args/kwargs to
+            QCDLStatementBridge: an instance which may be invoked to add args/kwargs to
             the invocation.
 
         :meta public:
@@ -1987,21 +1987,21 @@ class QcdlModule(QcdlModuleContainer):
         # NOTE: this does not validate whether the procedure/method exists or not
 
         # At this point, the returned object is expected to be evaluated as a callable
-        # and not actually stored in the qcdl json. A QcdlStatementBridge can help
+        # and not actually stored in the qcdl json. A QCDLStatementBridge can help
         # format an appropriate error message if the user intended to get an element.
-        return QcdlStatementBridge(self._proc, self.qcdl_module_name, name)
+        return QCDLStatementBridge(self._proc, self.qcdl_module_name, name)
 
     def __str__(self) -> str:
-        return "<QcdlModule %s/%s>" % (self.procedure.name, self.qcdl_module_name)
+        return "<QCDLModule %s/%s>" % (self.procedure.name, self.qcdl_module_name)
 
     def __repr__(self) -> str:
         return str(self)
 
 
-class Scope(QcdlModuleContainer):
+class Scope(QCDLModuleContainer):
     """Qubits to be used for quantum operations.
 
-    This subclass of :class:`QcdlModuleContainer` facilitates use of features
+    This subclass of :class:`QCDLModuleContainer` facilitates use of features
     related to real-time control flow.
 
     Args:
@@ -2031,13 +2031,13 @@ class Scope(QcdlModuleContainer):
             qcdl_program = scope_example()
     """
 
-    def __init__(self, *qubits: QcdlModuleContainer, use_scope_id: bool = True):
+    def __init__(self, *qubits: QCDLModuleContainer, use_scope_id: bool = True):
         # Deduplicate by assembling a dict
         qubits_by_name = {
             mod.qcdl_module_name: mod for q in qubits for mod in q.qcdl_modules
         }
 
-        # this needs to be a list so that QcdlModuleContainer can update
+        # this needs to be a list so that QCDLModuleContainer can update
         # qubits when a Scope goes in and out of procedures.
         self._qubits = list(qubits_by_name.values())
 
@@ -2086,13 +2086,13 @@ class Scope(QcdlModuleContainer):
         return self._scope_id
 
     @property
-    def qcdl_modules(self) -> list[QcdlModule]:
-        """list[QcdlModule]: The QCDL modules, typically qubits, in this scope.
+    def qcdl_modules(self) -> list[QCDLModule]:
+        """list[QCDLModule]: The QCDL modules, typically qubits, in this scope.
 
         Examples:
             This example uses the :attr:`~Scope.qcdl_modules` property to add a
             comment in generated QCDL with a qubit's name. In practice, you
-            would likely use the simpler :attr:`~dwave.gate.qcdl.QcdlModule.name`
+            would likely use the simpler :attr:`~dwave.gate.qcdl.QCDLModule.name`
             property (i.e., ``q0.name``)
 
             .. testcode::
@@ -2189,7 +2189,7 @@ def procedure(
         kwargs = dict(kwargs)
 
         # all modules that are passed will go into the procedure
-        # so search all arguments for a QcdlModule, any will do
+        # so search all arguments for a QCDLModule, any will do
         caller = None
 
         # we need to capture the invoking signature to preserve
@@ -2202,7 +2202,7 @@ def procedure(
         def _add_module(m: Any, _caller: Any, update_op_key: bool = True) -> Any:
             # modifies sig_modules and op_key from outer scope
             # _caller used to set caller in outer scope
-            if isinstance(m, QcdlModuleContainerBase) and not isinstance(m, QcdlModule):
+            if isinstance(m, QCDLModuleContainerBase) and not isinstance(m, QCDLModule):
                 container_op_key = m.op_key  # type: ignore[attr-defined]
                 for q in m.qcdl_modules:
                     _caller = _add_module(
@@ -2235,14 +2235,14 @@ def procedure(
         else:
             wrap_args = args
 
-        # recursively find all QcdlModules and Systems
+        # recursively find all QCDLModules and Systems
         # add them in the order they appear
         for path, a in objwalk([wrap_args, kwargs]):
             if isinstance(a, (FixedPointRegister, Register)):
                 # we want the name of the register in the procedure name
                 op_key.append(str(a))
                 caller = _add_module(a, caller)
-            elif isinstance(a, (QcdlModule, QcdlModuleContainerBase)):
+            elif isinstance(a, (QCDLModule, QCDLModuleContainerBase)):
                 if path[0] == 1:
                     # if it was passed as a kwarg, then include the name of the
                     # kwarg
@@ -2299,10 +2299,10 @@ def procedure(
                 kwargs=kwargs,
                 qcdl_operator=op_name,
             )
-            QcdlModule.rewrap(wrap_args, kwargs, p)
+            QCDLModule.rewrap(wrap_args, kwargs, p)
 
             # NOTE: we can't prevent f from changing args or kwargs. If f drops
-            # a QcdlModule from args/kwargs, then rewrapping it will need to
+            # a QCDLModule from args/kwargs, then rewrapping it will need to
             # happen some other way if necessary
             rtrn = f(*args, **kwargs)
 
@@ -2316,14 +2316,14 @@ def procedure(
 
         if call_method:
             # Reset modules to prior procedure
-            QcdlModule.rewrap(wrap_args, kwargs, caller)
+            QCDLModule.rewrap(wrap_args, kwargs, caller)
 
             # in case f altered args or kwargs by dropping modules, reset the
             # modules we collected too since modules doesn't have the
             # args/kwargs structure, the alterations here are in-place (see
             # rewrap) (rewrapping an object twice with the same caller isn't a
             # problem)
-            QcdlModule.rewrap(modules, {}, caller)
+            QCDLModule.rewrap(modules, {}, caller)
 
         return rtrn
 

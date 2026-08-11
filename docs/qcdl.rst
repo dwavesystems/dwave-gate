@@ -53,5 +53,5 @@ QCDL Development
 
 .. automodule:: dwave.gate.qcdl
     :show-inheritance:
-    :members: Qcdl, QcdlModule, QcdlModuleContainer, QcdlProcedureDef,
-        QcdlStatement
+    :members: QCDLProgram, QCDLModule, QCDLModuleContainer, QCDLProcedureDef,
+        QCDLStatement

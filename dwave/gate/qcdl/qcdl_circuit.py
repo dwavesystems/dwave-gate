@@ -26,9 +26,9 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, TypeAlias, overload
 import numpy as np
 
 from .base import IndexerMixin
-from .components import Procedure, QcdlModule
+from .components import Procedure, QCDLModule
 from .exceptions import QCDLInternalError, QCDLUserError
-from .qcdl_models import Qcdl, QcdlModuleName, QcdlProcedureDef
+from .qcdl_models import QCDLProgram, QCDLModuleName, QCDLProcedureDef
 from .transformer import print_qcdl
 from .utils import is_qubit_or_coupler_name
 
@@ -41,18 +41,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class QcdlCircuit(IndexerMixin):
+class QCDLCircuit(IndexerMixin):
     """The circuit coordinates/stores data across the qubits/procedures and
     prepares the data structure for transmission to the compiler.
 
     A simple use case would be:
 
-        qcdl = QcdlCircuit(environment)
+        qcdl = QCDLCircuit(environment)
 
         # create the objects used for invoking statements
         qmods = qcdl.initialize_modules()
 
-        # call whatever instructions on those QcdlModules
+        # call whatever instructions on those QCDLModules
         qmods["q0"].x()
         qmods["q0"].measure()
 
@@ -91,7 +91,7 @@ class QcdlCircuit(IndexerMixin):
         """
         super().__init__(next_indices=next_indices)
         self._environment = environment
-        self._all_modules: dict[str, QcdlModule] | None = None
+        self._all_modules: dict[str, QCDLModule] | None = None
 
         self._output_pools: dict[str, dict[str, list[str]]] = defaultdict(
             lambda: dict(
@@ -100,8 +100,8 @@ class QcdlCircuit(IndexerMixin):
         )
 
         self._main: Procedure | None = None
-        self._program: QcdlProcedureDef | None = None
-        self._procedures: dict[str, QcdlProcedureDef] = {}
+        self._program: QCDLProcedureDef | None = None
+        self._procedures: dict[str, QCDLProcedureDef] = {}
         self._validate_non_deterministic_qubits_mid = (
             validate_non_deterministic_qubits_mid
         )
@@ -121,7 +121,7 @@ class QcdlCircuit(IndexerMixin):
     def environment(self) -> Environment:
         if self._environment is None:
             raise QCDLUserError(
-                "This QcdlCircuit was not initialized with an environment"
+                "This QCDLCircuit was not initialized with an environment"
             )
 
         return self._environment
@@ -135,8 +135,8 @@ class QcdlCircuit(IndexerMixin):
         main_name: str = "main",
         modules: Sequence[Module] | None = None,
         **kwargs: Any,
-    ) -> dict[str, QcdlModule]:
-        """Initialize a dict of QcdlModules
+    ) -> dict[str, QCDLModule]:
+        """Initialize a dict of QCDLModules
 
         Args:
             main_name (str, optional): Name for the main procedure.
@@ -148,7 +148,7 @@ class QcdlCircuit(IndexerMixin):
             QCDLUserError: can only do this once
 
         Returns:
-            dict[str, QcdlModule]: dictionary of QcdlModules
+            dict[str, QCDLModule]: dictionary of QCDLModules
         """
 
         if self._main:
@@ -162,7 +162,7 @@ class QcdlCircuit(IndexerMixin):
 
         p = Procedure(main_name, state=self, **kwargs)
 
-        all_mods = {m.name: QcdlModule(m.name, p) for m in modules}
+        all_mods = {m.name: QCDLModule(m.name, p) for m in modules}
         self.all_modules = all_mods
         self._main = p
         return all_mods
@@ -174,28 +174,28 @@ class QcdlCircuit(IndexerMixin):
         return self._main
 
     @property
-    def all_modules(self) -> dict[str, QcdlModule] | None:
-        """A dict of all the QcdlModules in the system
+    def all_modules(self) -> dict[str, QCDLModule] | None:
+        """A dict of all the QCDLModules in the system
 
         These objects are not necessarily ready to be used in a circuit as-is,
         they probably need to be rewrapped based on the procedure, so clients
         should use `get_other_qcdl_module` instead of accessing this directly.
 
         Returns:
-            dict[str, QcdlModule] | None: QcdlModule objects
+            dict[str, QCDLModule] | None: QCDLModule objects
         """
         return self._all_modules
 
     @all_modules.setter
-    def all_modules(self, all_modules: dict[str, QcdlModule]) -> None:
-        """This setter should only be called after all QcdlModules are instantiated
+    def all_modules(self, all_modules: dict[str, QCDLModule]) -> None:
+        """This setter should only be called after all QCDLModules are instantiated
         (so that all may be provided together)
         """
         self._all_modules = all_modules
 
     def get_or_add_arbitrary_function(
         self,
-        qubit: QcdlModule,
+        qubit: QCDLModule,
         tag: Any,
         foo: Any,
         dtype: Any,
@@ -220,7 +220,7 @@ class QcdlCircuit(IndexerMixin):
         is only used by the arbitrary_function decorator.
 
         Args:
-            qubit (QcdlModule): the location this arbfn should be stored
+            qubit (QCDLModule): the location this arbfn should be stored
             tag (str): Name of the arbitrary function
             foo (callable or list): The mechanism for generating the table
             dtype (int or float): The data type of the output.
@@ -228,7 +228,7 @@ class QcdlCircuit(IndexerMixin):
             validate (bool): Validate the data for range. It would be reasonable
                to skip this if you won't use this function in the invalid intervals of
                the domain.
-            qubits (QcdlModule, optional): other qubits to add this arbfn
+            qubits (QCDLModule, optional): other qubits to add this arbfn
 
         Raises:
             QCDLUserError: only a max of 8 arbitrary functions are allowed
@@ -306,7 +306,7 @@ class QcdlCircuit(IndexerMixin):
         arbfns[tag] = True
 
     def available_outputs(
-        self, qubits: QcdlModule | Sequence[QcdlModule], category: str
+        self, qubits: QCDLModule | Sequence[QCDLModule], category: str
     ) -> set[str] | None:
         """Which outputs are available for a qubit (or list of qubits)
 
@@ -314,7 +314,7 @@ class QcdlCircuit(IndexerMixin):
         all qubits.
 
         Args:
-            qubits (QcdlModule or list[QcdlModule]): spaces to search
+            qubits (QCDLModule or list[QCDLModule]): spaces to search
             category (str): DYN or GOF
 
         Raises:
@@ -340,7 +340,7 @@ class QcdlCircuit(IndexerMixin):
         return intersection_available
 
     def reserve_output(
-        self, qubit: QcdlModule, category: str | None = None, name: str | None = None
+        self, qubit: QCDLModule, category: str | None = None, name: str | None = None
     ) -> str | None:
         """Reserve an output (DYN or GOF)
 
@@ -351,7 +351,7 @@ class QcdlCircuit(IndexerMixin):
         same output at the same time. Only 3 DYN and 4 GOF are available.
 
         Args:
-            qubit (QcdlModule): where to reserve it
+            qubit (QCDLModule): where to reserve it
             category (str): DYN or GOF
             name (str): reserve a specific output
 
@@ -387,11 +387,11 @@ class QcdlCircuit(IndexerMixin):
         else:
             return pool.pop()
 
-    def release_output(self, qubit: QcdlModule, output: str) -> None:
+    def release_output(self, qubit: QCDLModule, output: str) -> None:
         """Release an output back to the pool
 
         Args:
-            qubit (QcdlModule): where the output came from
+            qubit (QCDLModule): where the output came from
             output (str): the DYNi or GOFi to return
 
         Raises:
@@ -412,7 +412,7 @@ class QcdlCircuit(IndexerMixin):
 
     def set_or_check_nondeterministic_modules(
         self,
-        modules: Iterable[str | QcdlModule | QcdlModuleName],
+        modules: Iterable[str | QCDLModule | QCDLModuleName],
         validate: bool = True,
         description: str | None = None,
     ) -> None:
@@ -442,7 +442,7 @@ class QcdlCircuit(IndexerMixin):
                     m
                     if isinstance(m, str)
                     else (
-                        m.name if isinstance(m, QcdlModuleName) else m.qcdl_module_name
+                        m.name if isinstance(m, QCDLModuleName) else m.qcdl_module_name
                     )
                 )
                 for m in modules
@@ -467,10 +467,10 @@ class QcdlCircuit(IndexerMixin):
                 logger.error(msg)
 
     @property
-    def procedures(self) -> dict[str, QcdlProcedureDef]:
+    def procedures(self) -> dict[str, QCDLProcedureDef]:
         return self._procedures
 
-    def get_procedure(self, procedure_name: str) -> QcdlProcedureDef | None:
+    def get_procedure(self, procedure_name: str) -> QCDLProcedureDef | None:
         return self.procedures.get(procedure_name)
 
     def register_procedure(self, procedure: Procedure) -> None:
@@ -497,11 +497,11 @@ class QcdlCircuit(IndexerMixin):
                 )
         self.procedures[procedure.proc_name] = cur_def
 
-    def to_model(self) -> Qcdl:
+    def to_model(self) -> QCDLProgram:
         """Build and return the validated QCDL model for this circuit.
 
         Returns:
-            Qcdl: the validated program model, ready to pass to a
+            QCDLProgram: the validated program model, ready to pass to a
                 compiler or convert to a plain dict via
                 ``model.model_dump(exclude_unset=True)``.
         """
@@ -515,7 +515,7 @@ class QcdlCircuit(IndexerMixin):
             description="in qubits used in circuit",
         )
 
-        return Qcdl(
+        return QCDLProgram(
             program=self._program,
             procedures=self.procedures,
             next_indices=dict(self._next_indices),
@@ -535,7 +535,7 @@ def _get_fspec(f: Any) -> tuple[list[str], str | None]:
     return fspec.args, f_keywords
 
 
-QcdlV2: TypeAlias = str
+QCDLV2: TypeAlias = str
 """Display-oriented QCDL string representation returned by @qcdl when
 ``to_qcdlv2=True``.
 
@@ -543,14 +543,14 @@ This form is intended primarily for visualization, debugging, or compatibility
 with older QCDL tooling.
 """
 
-QcdlSource: TypeAlias = Callable[..., None]
+QCDLSource: TypeAlias = Callable[..., None]
 """Type of an undecorated QCDL builder function consumed by @qcdl.
 
 The signature is intentionally broad because @qcdl injects qubit/module
 arguments at runtime.
 """
 
-QcdlFunc: TypeAlias = Callable[..., Qcdl]
+QCDLFunc: TypeAlias = Callable[..., QCDLProgram]
 """Decorated callable returned by ``@qcdl`` when producing a payload.
 
 The resulting function may accept ordinary user parameters, while qubit or
@@ -558,7 +558,7 @@ module parameters are supplied by the decorator machinery. Calling it returns a
 structured QCDL payload.
 """
 
-QcdlFuncV2: TypeAlias = Callable[..., QcdlV2]
+QCDLFuncV2: TypeAlias = Callable[..., QCDLV2]
 """Decorated callable returned by ``@qcdl`` when producing a v2 display form.
 
 This variant is mainly useful for inspection or rendering of QCDL in an older
@@ -576,7 +576,7 @@ def qcdl(
     to_qcdlv2: Literal[False] = False,
     validate_non_deterministic_qubits_mid: bool = True,
     validate_non_deterministic_qubits_end: bool = True,
-) -> Callable[[QcdlSource], QcdlFunc]: ...
+) -> Callable[[QCDLSource], QCDLFunc]: ...
 
 
 @overload
@@ -588,7 +588,7 @@ def qcdl(
     to_qcdlv2: Literal[True] = True,
     validate_non_deterministic_qubits_mid: bool = True,
     validate_non_deterministic_qubits_end: bool = True,
-) -> Callable[[QcdlSource], QcdlFuncV2]: ...
+) -> Callable[[QCDLSource], QCDLFuncV2]: ...
 
 
 def qcdl(
@@ -599,7 +599,7 @@ def qcdl(
     to_qcdlv2: bool = False,
     validate_non_deterministic_qubits_mid: bool = True,
     validate_non_deterministic_qubits_end: bool = True,
-) -> Callable[[QcdlSource], Callable[..., Qcdl | QcdlV2]]:
+) -> Callable[[QCDLSource], Callable[..., QCDLProgram | QCDLV2]]:
     """Decorator to construct a :ref:`QCDL <qcdl_programming_basic>` program.
 
     The decorated function returns a
@@ -617,7 +617,7 @@ def qcdl(
             supported by the environment. This parameter is intended for use by
             developers of QCDL.
         machine: If a machine is provided, the machine supplies system instances
-            instead of the :class:`~dwave.gate.qcdl.QcdlModule` instance. This
+            instead of the :class:`~dwave.gate.qcdl.QCDLModule` instance. This
             parameter is intended for use by developers of QCDL.
         next_indices: Values from which to start the circuit's indices. This
             facilitates uniqueness across compiler "visitors".
@@ -668,9 +668,9 @@ def qcdl(
 
     """
 
-    def decorator(f: QcdlSource) -> Callable[..., Qcdl | QcdlV2]:
+    def decorator(f: QCDLSource) -> Callable[..., QCDLProgram | QCDLV2]:
         @functools.wraps(f)
-        def wrapper(*args: Any, **kwargs: Any) -> Qcdl | QcdlV2:
+        def wrapper(*args: Any, **kwargs: Any) -> QCDLProgram | QCDLV2:
             if machine and environment:
                 raise QCDLUserError("may not provide both machine and environment")
 
@@ -681,7 +681,7 @@ def qcdl(
                 # outer scope
                 _env = environment
 
-            qcdl_circuit = QcdlCircuit(
+            qcdl_circuit = QCDLCircuit(
                 environment=_env,
                 next_indices=next_indices,
                 validate_non_deterministic_qubits_mid=validate_non_deterministic_qubits_mid,
