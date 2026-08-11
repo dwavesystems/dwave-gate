@@ -77,26 +77,22 @@ class StatementToHashEncoder(json.JSONEncoder):
 
 
 class Procedure(IndexerMixin):
-    """A QCDL Procedure
+    """A QCDL procedure.
 
 
     Args:
-        proc_name (str): name of the procedure. Since this needs to be
-            unique, the @procedure decorator will incorporate the
-            args/kwargs (or a hash thereof) to create a "mangled" version of
-            the name.
-        state (QCDLCircuit): the state of the overall circuit
-        modules (list[QCDLModule] | None, optional): modules refers to the externally
-            facing method signature if set to None, then it will be taken
-            from modules_used (i.e., determine the signature based on the
-            statements). Defaults to None.
-        args (Sequence[Any] | None, optional): The args for the signature.
-            Not really used for QCDL. Defaults to None.
-        kwargs (Mapping[Any, Any] | None, optional): The kwargs for the signature.
-            Defaults to None.
-        qcdl_operator (str | None, optional): This is the original name of the
-            method, before mangling. Defaults to None.
-        is_main (bool, optional): If this is the top-most procedure. Defaults to True.
+        proc_name: Name of the procedure. To ensure a unique name, the
+            :class:`~dwave.gate.qcdl.procedure` decorator incorporates
+            arguments or keyword arguments (or a hash of these) to create a
+            mangled name.
+        state: State of the overall circuit.
+        modules: Modules refers to the externally facing method signature if set
+            to None, taken from ``modules_used`` (i.e., determines the signature
+            based on the statements).
+        args: Arguments for the signature. Not used for QCDL.
+        kwargs: Keyword arguments for the signature.
+        qcdl_operator: Original name of the method before mangling.
+        is_main: True for the top-most procedure.
     """
 
     def __init__(
@@ -141,10 +137,10 @@ class Procedure(IndexerMixin):
         self._procedure_ended = False
 
     def to_model(self) -> QCDLProcedureDef:
-        """The encoded version of the python code
+        """Encoded version of the python code.
 
-        NOTE: The compiler calls the fields qubits and qubits_used, even
-        though they could be couplers.
+        .. note:: The compiler calls the fields ``qubits`` and ``qubits_used``
+            even for couplers.
         """
 
         if not self._procedure_ended:
@@ -177,16 +173,15 @@ class Procedure(IndexerMixin):
 
     @property
     def statement_hash(self) -> str:
-        """A hash of the statements added so far
+        """Hash of current statements.
 
-        Used for comparing the statements within two procedures.
+        Used for comparing the statements of two procedures.
 
-        In order to ensure that the hash can't change, a procedure must have
-        been ended (which blocks additional statements) before trying to
-        obtain its hash.
+        .. tip:: To ensure that the hash cannot change, end the procedure
+            (blocking additional statements) before obtaining its hash.
 
         Returns:
-            str: hash of the statements
+            Hash of the statements.
         """
         if not self._procedure_ended:
             raise QCDLInternalError(
@@ -200,13 +195,13 @@ class Procedure(IndexerMixin):
         name: str,
         **kwargs: Any,
     ) -> Procedure:
-        """Start a child procedure of this procedure
+        """Start a child procedure of the current procedure.
 
-        We rely on the execution of the python code to validate the arguments,
-        we don't need to trap everything
+        .. note:: Argument validation relies on the execution of the python
+            code, so not everything is trapped.
 
-        It's not allowed to add a statement to a caller procedure if the callee
-        procedure is not ended.
+        You are not allowed to add a statement to a caller procedure if the
+        callee procedure is not ended.
         """
         self._child_proc = Procedure(
             name,
@@ -219,7 +214,7 @@ class Procedure(IndexerMixin):
         return self._child_proc
 
     def end_procedure(self) -> None:
-        """End this procedure, register it"""
+        """End this procedure and register it."""
         self._procedure_ended = True
         if self._exclusive_modules:
             raise QCDLInternalError(
@@ -228,17 +223,17 @@ class Procedure(IndexerMixin):
         self.state.register_procedure(self)
 
     def register_module_used(self, module_name: str | None) -> None:
-        """Track which modules a procedure uses
+        """Track the modules a procedure uses.
 
-        Record which modules this procedure actually uses, which may be different
-        from the call signature modules.
+        Record which modules this procedure uses, which may be different
+        from the call-signature modules.
 
-        This list is only relative to the given qcdl. For example, `qa.swap(qb)`
-        includes qa and qb in its signature, but if those qubits are not
-        connected, transpilation may introduce other qubits.
+        This list is only for the given QCDL; for example, ``qa.swap(qb)``
+        includes ``qa`` and ``qb`` in its signature, but if those qubits are not
+        connected, transpilation may add qubits.
 
         Args:
-            module_name (str): Name of a module
+            module_name: Name of a module.
         """
         if module_name is None:
             return
@@ -248,22 +243,26 @@ class Procedure(IndexerMixin):
 
     @property
     def expression_queue(self) -> list | None:
-        """An expression queue lets you combine multiple cpu expressions into
-        one qcdl statement (i.e., ExpressionAggregator)
+        """Create an expression queue.
 
-        If the expression_queue is None, then it's inactive. Otherwise, it's
-        active (and managed by ExpressionAggregator) and statements will be
-        added to it instead of the procedure.
+        Expression queues let you combine multiple CPU expressions into
+        one QCDL statement (see the
+        :class:`~dwave.gate.qcdl.registers.ExpressionAggregator` class).
+
+        If this property is None, it is inactive. Otherwise, it is
+        active and managed by the
+        :class:`~dwave.gate.qcdl.registers.ExpressionAggregator` class, and
+        statements are added to it instead of to the procedure.
         """
         return self._expression_queue
 
     @expression_queue.setter
     def expression_queue(self, expression_queue: list | None) -> None:
-        """Activate (or deactivate) an expression queue
+        """Activate or deactivate an expression queue.
 
         Args:
-            expression_queue (list or None): Must be an empty list
-            (to activate the queue) or None to deactivate it.
+            expression_queue: Must be an empty list to activate the queue or
+                None to deactivate it.
         """
         if expression_queue is not None:
             if self._expression_queue is not None:
@@ -284,20 +283,21 @@ class Procedure(IndexerMixin):
         kwargs: Mapping[Any, Any] | None,
         caller_qubits: Sequence[str] | None = None,
     ) -> None:
-        """Append a statement to this Procedure
+        """Append a statement to this procedure.
 
-        A Procedure is merely a list of statements. This method will append a
-        statement to that list. There is no validation done here on the
-        statement. Any method name, args, or args are accepted.
+        A :func:`~dwave.gate.qcdl.procedure` is merely a list of statements.
+        This method appends a statement to that list.
+
+        No validation done here on the statement (any method name, arguments,
+        and keyword arguments are accepted).
 
         Args:
-            qubit (str | None): To give the appearance of the method invoked on
-                an instance of something, this is its name.
-            op (str): The name of the method invoked.
-            args (Sequence[Any] | None): Arguments to the method.
-            kwargs (Mapping[Any, Any] | None): Keyword arguments to the method.
-            caller_qubits (Sequence[str] | None, optional): Defaults to
-                None.
+            qubit: To give the appearance of the method invoked on an instance,
+                this is its name.
+            op: Name of the method invoked.
+            args: Arguments to the method.
+            kwargs: Keyword arguments to the method.
+            caller_qubits: Caller qubits.
         """
         if self._child_proc:
             if not self._child_proc._procedure_ended:
@@ -402,13 +402,13 @@ class Procedure(IndexerMixin):
         return f
 
     def q(self, name: str | int) -> QCDLModule:
-        """Dynamically get a qubit QCDLModule
+        """Dynamically get a qubit :class:`~dwave.gate.qcdl.QCDLModule`.
 
         Args:
-            name (str or int): name of the module
+            name: Name of the module.
 
         Returns:
-            QCDLModule: module ready for your instructions
+            Module ready for your instructions.
         """
         if isinstance(name, int):
             name = "q%i" % name
