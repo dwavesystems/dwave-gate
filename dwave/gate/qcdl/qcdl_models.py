@@ -12,33 +12,20 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-"""Pydantic models for the QCDL compiler-facing data structures.
+"""
+.. Keeping out of the documentation until this info can be incorporated with
+    some reading order
 
-This module provides Pydantic-based models for validating, documenting, and
-serializing QCDL payloads.  The models add runtime validation, field-level
-documentation, and structured serialization/deserialization.
+    Pydantic models for the QCDL compiler-facing data structures.
 
-:class:`QCDLStatement` also surfaces a full derived API
-(``modules``, ``qargs``, ``condition``, ``simple_desc``, etc.) directly
-on the model for statement-level logic.
+    This module provides Pydantic-based models for validating, documenting, and
+    serializing QCDL payloads.  The models add runtime validation, field-level
+    documentation, and structured serialization/deserialization.
 
-Round-tripping
---------------
+    :class:`QCDLStatement` also surfaces a full derived API
+    (``modules``, ``qargs``, ``condition``, ``simple_desc``, etc.) directly
+    on the model for statement-level logic.
 
-:meth:`QCDLCircuit.to_model()` returns a :class:`QCDLProgram` directly.
-To recover a plain :class:`dict` for transmission to the compiler::
-
-    payload = model.model_dump()
-
-Statement dict sparsity
------------------------
-
-:meth:`Procedure.add_statement` only stores ``args``, ``kwargs``, and
-``qubits`` in the statement dict when they are non-empty.  Use
-``model_dump(exclude_unset=True)`` on a :class:`QCDLStatement` to
-recover the same sparse representation::
-
-    sparse = stmt_model.model_dump(exclude_unset=True)
 """
 
 from __future__ import annotations
@@ -452,7 +439,7 @@ class QCDLStatement(BaseModel):
 
 
 class QCDLSignature(BaseModel):
-    """Pydantic model for a procedure signature.
+    """`Pydantic <https://pydantic.dev/docs/>`_ model for a procedure signature.
 
     All fields are required. The ``extra="forbid"`` setting in ``model_config``
     rejects unrecognized keys so that signature construction errors surface
