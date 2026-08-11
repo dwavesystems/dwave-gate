@@ -35,7 +35,7 @@ from dwave.gate.qcdl.qcdl_models import Qcdl
 
 
 def _check_serializable(data):
-    # Aqusim uses multiprocessing which requires that qcdls are pickleable.
+    # ensure that qcdls are pickleable
     assert pickle.loads(pickle.dumps(data)) == data
     raw = data.model_dump(exclude_unset=True)
     assert json.loads(json.dumps(raw)) == raw
