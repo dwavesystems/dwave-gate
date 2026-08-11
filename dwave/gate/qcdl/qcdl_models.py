@@ -91,6 +91,8 @@ class QCDLModuleName(BaseModel):
 
     Examples
     --------
+    >>> from dwave.gate.qcdl.components import QCDLModuleName
+    ...
     >>> QCDLModuleName.model_validate("q2")
     QCDLModuleName('q2')
     >>> QCDLModuleName(kind="coupler", index=5).name
