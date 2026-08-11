@@ -71,36 +71,36 @@ def _get_module_from_arg(arg: Any) -> str | None:
 
 
 class QCDLModuleName(BaseModel):
-    """A concrete qubit, coupler, or arbitrary-prefix module referenced in a
-    QCDL statement.
+    """A qubit, coupler, or arbitrary-prefix module referenced in a QCDL statement.
 
-    Validates from the string names used in raw QCDL dicts (``"q0"``,
+    Validates from string names used in raw QCDL dicts (e.g., ``"q0"``,
     ``"c3"``, ``"m1"``, ``"m"`` etc.) and serializes back to that form, so
-    that ``model_dump()`` on any parent model still produces plain strings
-    for the compiler.
+    that the :meth:`~pydantic.BaseModel.model_dump` method on any parent model
+    still produces plain strings for the compiler.
 
-    Attributes
-    ----------
-    kind:
-        ``"qubit"`` for ``q`` or ``qN`` names, ``"coupler"`` for ``c`` or
-        ``cN`` names, or the raw prefix string for any other pattern (e.g.
-        ``"m"`` for ``m`` or ``mN``).
-    index:
-        The non-negative integer embedded in the name, or ``None`` when the
-        name carries no numeric suffix (e.g. ``"q"`` → ``index=None``).
+    Args:
+        kind:
+            *   ``"qubit"`` for ``q`` or ``qN`` names
+            *   ``"coupler"`` for ``c`` or ``cN`` names
+            *   Raw prefix string for any other pattern (e.g. ``"m"`` for ``m``
+                or ``mN``).
+        index:
+            The non-negative integer embedded in the name, or ``None`` when the
+            name carries no numeric suffix (e.g. ``"q"`` returns
+            ``index=None``).
 
-    Examples
-    --------
-    >>> from dwave.gate.qcdl.components import QCDLModuleName
-    ...
-    >>> QCDLModuleName.model_validate("q2")
-    QCDLModuleName('q2')
-    >>> QCDLModuleName(kind="coupler", index=5).name
-    'c5'
-    >>> QCDLModuleName.model_validate("m0")
-    QCDLModuleName('m0')
-    >>> QCDLModuleName.model_validate("m")
-    QCDLModuleName('m')
+    Examples:
+
+        >>> from dwave.gate.qcdl.components import QCDLModuleName
+        ...
+        >>> QCDLModuleName.model_validate("q2")
+        QCDLModuleName('q2')
+        >>> QCDLModuleName(kind="coupler", index=5).name
+        'c5'
+        >>> QCDLModuleName.model_validate("m0")
+        QCDLModuleName('m0')
+        >>> QCDLModuleName.model_validate("m")
+        QCDLModuleName('m')
     """
 
     model_config = ConfigDict(frozen=True)
@@ -150,7 +150,12 @@ class QCDLModuleName(BaseModel):
 
     @property
     def name(self) -> str:
-        """String form of this module (e.g. ``"q0"``, ``"c3"``, ``"m"``)."""
+        """String form of this module.
+
+        Examples:
+            Example strings: ``"q0"``, ``"c3"``, ``"m"``.
+
+        """
         return self.prefix if self.index is None else f"{self.prefix}{self.index}"
 
     @property
