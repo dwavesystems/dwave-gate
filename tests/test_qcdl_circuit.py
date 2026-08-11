@@ -52,14 +52,14 @@ def _assert_statement_count(model, expected=4):
 
 
 class FakeModule:
-    """Minimal stand-in for an aqumen_environment Module."""
+    """Minimal stand-in for an environment Module."""
 
     def __init__(self, name):
         self.name = name
 
 
 class FakeEnv:
-    """Minimal stand-in for an aqumen_environment Environment."""
+    """Minimal stand-in for an environment Environment."""
 
     def __init__(self, qubit_names):
         self._modules = [FakeModule(n) for n in qubit_names]
