@@ -58,10 +58,13 @@ class Machine(Protocol):
 
 
 class QCDLCircuit(IndexerMixin):
-    """The circuit coordinates/stores data across the qubits/procedures and
-    prepares the data structure for transmission to the compiler.
+    """Coordinates and stores data across qubits and procedures.
 
-    A simple use case would be:
+    Also prepares the data structure for transmission to a compiler.
+
+    The code below shows a simple use case.
+
+    .. code-block:: python
 
         qcdl = QCDLCircuit(environment)
 
@@ -72,7 +75,7 @@ class QCDLCircuit(IndexerMixin):
         qmods["q0"].x()
         qmods["q0"].measure()
 
-        # convert this data structure to json and pass it to the compiler
+        # convert this data structure to JSON and pass it to the compiler
         qcdl_model = qcdl.to_model()
 
     """
@@ -146,17 +149,17 @@ class QCDLCircuit(IndexerMixin):
         main_name: str = "main",
         **kwargs: Any,
     ) -> dict[str, QCDLModule]:
-        """Initialize a dict of QCDLModules
+        """Initialize a dict of QCDL modules.
 
         Args:
-            main_name (str, optional): Name for the main procedure.
-                Defaults to "main"
+            main_name: Name for the main procedure.
 
         Raises:
-            QCDLUserError: can only do this once
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: Can only do
+                this once.
 
         Returns:
-            dict[str, QCDLModule]: dictionary of QCDLModules
+            Dictionary of QCDL modules.
         """
 
         if self._main:
@@ -182,14 +185,15 @@ class QCDLCircuit(IndexerMixin):
 
     @property
     def all_modules(self) -> dict[str, QCDLModule] | None:
-        """A dict of all the QCDLModules in the system
+        """A dict of all QCDL modules in the system.
 
-        These objects are not necessarily ready to be used in a circuit as-is,
-        they probably need to be rewrapped based on the procedure, so clients
-        should use `get_other_qcdl_module` instead of accessing this directly.
+        These objects are not necessarily ready to be used as-is in a circuit,
+        needing to be rewrapped based on the procedure. Use the
+        :meth:`~dwave.gate.qcdl.QcdlModule.get_other_qcdl_module` instead of
+        accessing this property directly.
 
         Returns:
-            dict[str, QCDLModule] | None: QCDLModule objects
+            QCDL modules objects.
         """
         return self._all_modules
 
@@ -211,37 +215,42 @@ class QCDLCircuit(IndexerMixin):
         validate: bool = True,
         qubits: Any = None,
     ) -> None:
-        """Add an arbitrary function
+        """Add an arbitrary function.
 
-        An arbitrary function is a table of values stored on the qubit with both
-        domain and range [-2, 2) (which is the limit of a FixedPointRegister)
+        An arbitrary function is a table of values stored on the qubit (for
+        domain and range of supported values, see the
+        :class:`~dwave.gate.qcdl.registers.FixedPointRegister` class).
 
-        The implementation here allows the table to be defined as:
-        - an array of 512 values (which correspond to the arbfn's domain). This
-          this feature is not currently exposed in QCDL as the arbitrary_function
-          decorator takes a callable.
-        - a callable function which takes a numpy array and returns a numpy
-          array or a string (to be evaluated on server)
+        The implementation here allows the table to be defined as follows:
 
-        NOTE: it is not supported for QCDL authors to call this directly, this
-        is only used by the arbitrary_function decorator.
+        *   An array of 512 values. This is not currently exposed in QCDL as the
+            :meth:`~dwave.gate.qcdl.registers.arbitrary_function` decorator
+            takes a callable.
+        *   A callable function that takes a NumPy array and returns a NumPy
+            array or a string (to be evaluated on-server).
+
+        .. note:: Calling this function directly from QCDL is not supported (it
+            is used by the :meth:`~dwave.gate.qcdl.registers.arbitrary_function`
+            decorator).
 
         Args:
-            qubit (QCDLModule): the location this arbfn should be stored
-            tag (str): Name of the arbitrary function
-            foo (callable or list): The mechanism for generating the table
-            dtype (int or float): The data type of the output.
-            desc (str, optional): Description for the comment. Defaults to None.
-            validate (bool): Validate the data for range. It would be reasonable
-               to skip this if you won't use this function in the invalid intervals of
-               the domain.
-            qubits (QCDLModule, optional): other qubits to add this arbfn
+            qubit: The qubits associated with this arbitrary function.
+            tag: Name of the arbitrary function.
+            foo: The mechanism for generating the table.
+            dtype: Data type of the output.
+            desc: Description for the comment.
+            validate: Validate the data for range. Skip if you are not using
+                this function outside the supported domain.
+            qubits: Other qubits to associate with this arbitrary function.
 
         Raises:
-            QCDLUserError: only a max of 8 arbitrary functions are allowed
-            QCDLUserError: if a string is used for an arbitrary function, must
-                be a function of x
-            QCDLUserError: pass either a list of values or a function
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: Only up to
+                8 arbitrary functions are allowed.
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If a string
+                is used for an arbitrary function, must be a function of
+                :math:`x`.
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: Pass either
+                a list of values or a function.
         """
         addr_space = qubit.qcdl_module_name
         if self._arbitrary_funcs is None:
@@ -315,20 +324,21 @@ class QCDLCircuit(IndexerMixin):
     def available_outputs(
         self, qubits: QCDLModule | Sequence[QCDLModule], category: str
     ) -> set[str] | None:
-        """Which outputs are available for a qubit (or list of qubits)
+        """Outputs that are available for one or more qubits.
 
-        If it's a list of qubits, it searches for an output that's available for
-        all qubits.
+        For a list of qubits, searches for an output that is available for
+        all the qubits.
 
         Args:
-            qubits (QCDLModule or list[QCDLModule]): spaces to search
-            category (str): DYN or GOF
+            qubits: Spaces to search.
+            category: DYN or GOF types of registers.
 
         Raises:
-            QCDLUserError: If the category is not DYN or GOF
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If the
+                category is not DYN or GOF.
 
         Returns:
-            set[str]: which outputs are available
+            Which outputs are available.
         """
         qubits = [qubits] if not isinstance(qubits, Sequence) else qubits
 
@@ -349,24 +359,23 @@ class QCDLCircuit(IndexerMixin):
     def reserve_output(
         self, qubit: QCDLModule, category: str | None = None, name: str | None = None
     ) -> str | None:
-        """Reserve an output (DYN or GOF)
+        """Reserve an output.
 
-        You can request by specific name (e.g., DYN1) or by category (e.g.,
-        DYN).
-
-        This provides a way to ensure that multiple parts of code don't use the
-        same output at the same time. Only 3 DYN and 4 GOF are available.
+        A way to ensure that multiple parts of code are not trying to use the
+        same output simultaneously. Three DYN and four GOF outputs are
+        available.
 
         Args:
-            qubit (QCDLModule): where to reserve it
-            category (str): DYN or GOF
-            name (str): reserve a specific output
+            qubit: Where to reserve the output.
+            category: DYN or GOF types of registers.
+            name: Reserve a specific output (e.g., DYN1).
 
         Raises:
-            QCDLUserError: the output isn't available
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: The output
+                is unavailable.
 
         Returns:
-            str: one of the DYN or GOF outputs
+            One of the DYN or GOF outputs.
         """
         if not name and not category:
             raise QCDLUserError("must specify either name or category")
@@ -395,14 +404,15 @@ class QCDLCircuit(IndexerMixin):
             return pool.pop()
 
     def release_output(self, qubit: QCDLModule, output: str) -> None:
-        """Release an output back to the pool
+        """Release an output back to the pool of available outputs.
 
         Args:
-            qubit (QCDLModule): where the output came from
-            output (str): the DYNi or GOFi to return
+            qubit: Where the output was reserved.
+            output: The DYNi or GOFi to release.
 
         Raises:
-            QCDLUserError: if the output had not been reserved
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If the
+                output was not reserved.
         """
         space = qubit.qcdl_module_name
         category = output[:3]
@@ -423,25 +433,23 @@ class QCDLCircuit(IndexerMixin):
         validate: bool = True,
         description: str | None = None,
     ) -> None:
-        """Check for circuits which will desynchronize their qubits.
+        """Check for and set circuits that desynchronize qubits.
 
-        We allow qubits to use non-deterministic control flow (e.g., loops,
-        Label, Goto) and you may even nest them. However, we require that if any qubits
-        are handled non-deterministically, then all qubits used in the circuit
-        must be handled the same way, because otherwise their qubits would
-        desynchronize.
+        QCDL supports non-deterministic control flow, as described in the
+        :ref:`qcdl_advanced_control_flow` section. Your QCDl program must ensure
+        that when any qubits execute a non-deterministic section of a circuit,
+        all qubits in the circuit must be kept synchronized.
 
-        Some loops are not actually non-deterministic and in principle could be
-        unrolled at compile time. Unfortunately, this is not currently
-        implemented. If you want to unroll your loops, then you'll need to do
-        that in your own Python code.
+        The first time this method is called it assigns the set of modules.
+        Subsequent calls assert that these sets are the same.
 
-        The first time this method is called it'll assign the set of modules.
-        Subsequent calls will assert that the sets are the same.
+        .. note:: Conditional statements in themselves are not non-deterministic
+            and the compiler synchronizes them such that the True and False
+            branches execute in the same amount of time.
 
-        NOTE: conditional statements themselves are not non-deterministic (the
-        compiler will sync them so that True and False branches take exactly the
-        same amount of time).
+        .. tip:: Some loops are not actually non-deterministic; you can unroll
+            such loops in your Python code.
+
         """
         module_names: set[str] = set(
             [
@@ -481,13 +489,14 @@ class QCDLCircuit(IndexerMixin):
         return self.procedures.get(procedure_name)
 
     def register_procedure(self, procedure: Procedure) -> None:
-        """Register a procedure
+        """Register a procedure.
 
         Args:
-            procedure (Procedure): procedure to register
+            procedure: Procedure to register.
 
         Raises:
-            QCDLUserError: if procedure is not unique
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If procedure
+                is not unique.
         """
         cur_def = procedure.to_model()
 
@@ -508,9 +517,9 @@ class QCDLCircuit(IndexerMixin):
         """Build and return the validated QCDL model for this circuit.
 
         Returns:
-            QCDLProgram: the validated program model, ready to pass to a
-                compiler or convert to a plain dict via
-                ``model.model_dump(exclude_unset=True)``.
+            Validated program model, ready to pass to a compiler or convert to a
+            plain dict via the :meth:`~pydantic.BaseModel.model_dump` method
+            with ``exclude_unset=True``.
         """
         self.main.end_procedure()
         if self._program is None:
