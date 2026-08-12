@@ -73,8 +73,7 @@ def format_signature(
             v = repr(v).replace(" ", "")
             return v
         elif v and isinstance(v, set):
-            # for reproducibility when comparing qcdls, e.g. in
-            # aqumen_web/data/compare_jmz_with_aqumen_service.py
+            # for reproducibility when comparing qcdls
             return "{%s}" % (", ".join(sorted([str(x) for x in v])))
         elif hasattr(v, "name"):
             # e.g., an element

@@ -298,7 +298,7 @@ program. You can measure qubits multiple times in a given shot (usually
 resetting the qubit(s) in between).
 
 .. tip::
-    Using the :attr:`~dwave.gate.AqumenResult.tags` property is the recommended way
+    Using the :attr:`~dwave.gate.Result.tags` property is the recommended way
     to organize measurement data.
 
 Measurement outcomes are handled in three different ways:
@@ -310,9 +310,9 @@ Measurement outcomes are handled in three different ways:
     from the other qubits, this data is returned to you in a 3D array
     (per ``tag``) with shape "number of measurements per shot, number of shots,
     number of qubits". This data structure may be retrieved using
-    ``AqumenResult.get_memory``. For circuits with a deterministic number of
+    ``Result.get_memory``. For circuits with a deterministic number of
     measurements per shot consistent for all qubits, this data structure may be
-    converted into a counts dictionary with ``AqumenResult.get_counts``
+    converted into a counts dictionary with ``Result.get_counts``
     (``get_counts`` calls ``get_memory``).
 2.  The outcome may be saved to a register. When doing so, even if the register
     is defined on multiple qubits, only the register copy on the qubit measured
@@ -345,7 +345,7 @@ Measurement outcomes are handled in three different ways:
     number of measurements per shot, you cannot relate measurement outcomes with
     the generating instruction.
 
-By default, the :meth:`~dwave.gate.AqumenResult.get_counts` method returns all data,
+By default, the :meth:`~dwave.gate.Result.get_counts` method returns all data,
 including erasures. To return only results without the ``*``, thereby
 post-selecting on the detected errors, use the ``post_select=True`` flag.
 
@@ -389,8 +389,8 @@ though it were a cross between a print statement and a breakpoint.
 .. todo:: update for Ocean
 
 If your QCDL uses the :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row`
-method, the :class:`~dwave.gate.AqumenResult` output contains records that you may
-retrieve with :meth:`~AqumenResult.get_records` method.
+method, the :class:`~dwave.gate.Result` output contains records that you may
+retrieve with :meth:`~Result.get_records` method.
 
 .. testcode::
     :skipif: True

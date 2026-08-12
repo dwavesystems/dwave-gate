@@ -521,7 +521,6 @@ def test_register_is_container():
     def inner(q, register):
         q.rx(0.123)
         # this test handles the case where a register is a QCDLModuleContainer
-        # see https://github.com/quantumcircuits/aqumen_environment/issues/1330
         register += 1
 
     @qcdl(2)
@@ -576,7 +575,6 @@ def test_parent_proc_not_altered():
         q0.rx(0.123)
         # this test handles the case where something containing modules but
         # is not a QCDLModuleContainer is passed
-        # see https://github.com/quantumcircuits/aqumen_environment/issues/1330
         hider.register += 1
 
     @qcdl(1)

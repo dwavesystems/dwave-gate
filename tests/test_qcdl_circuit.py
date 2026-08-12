@@ -35,7 +35,7 @@ from dwave.gate.qcdl.qcdl_models import QCDLProgram
 
 
 def _check_serializable(data):
-    # Aqusim uses multiprocessing which requires that qcdls are pickleable.
+    # ensure that qcdls are pickleable
     assert pickle.loads(pickle.dumps(data)) == data
     raw = data.model_dump(exclude_unset=True)
     assert json.loads(json.dumps(raw)) == raw
@@ -52,14 +52,14 @@ def _assert_statement_count(model, expected=4):
 
 
 class FakeModule:
-    """Minimal stand-in for an aqumen_environment Module."""
+    """Minimal stand-in for an environment Module."""
 
     def __init__(self, name):
         self.name = name
 
 
 class FakeEnv:
-    """Minimal stand-in for an aqumen_environment Environment."""
+    """Minimal stand-in for an environment Environment."""
 
     def __init__(self, qubit_names):
         self._modules = [FakeModule(n) for n in qubit_names]
