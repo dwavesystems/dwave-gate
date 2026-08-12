@@ -22,7 +22,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from .base import VariableExpression
-from .qcdl_models import Qcdl, QcdlProcedureDef, QcdlStatement
+from .qcdl_models import QCDLProgram, QCDLProcedureDef, QCDLStatement
 from .qcdl_objects import (
     AsmSync,
     ParserAsmInstruction,
@@ -48,15 +48,15 @@ except ImportError:
     HAVE_IPYTHON = False
 
 if TYPE_CHECKING:
-    from .qcdl_circuit import QcdlV2
+    from .qcdl_circuit import QCDLV2
 
 
 def transform_statement(
-    statement: QcdlStatement | dict,
+    statement: QCDLStatement | dict,
     label_suffix: str | None = None,
 ) -> ParserAsmInstruction | ProcedureCallStatement | AsmSync:
-    stmt: QcdlStatement = (
-        QcdlStatement.model_validate(statement)
+    stmt: QCDLStatement = (
+        QCDLStatement.model_validate(statement)
         if isinstance(statement, dict)
         else statement
     )
@@ -122,7 +122,7 @@ def transform_statement(
 
 
 def transform_statements(
-    statements: Sequence[QcdlStatement | dict],
+    statements: Sequence[QCDLStatement | dict],
     label_suffix: str | None = None,
 ) -> ParserAsmProgram:
     """Generally this is called for procedures or macros
@@ -137,12 +137,12 @@ def transform_statements(
 
 
 def transform_procedures(
-    procedures: Mapping[str, QcdlProcedureDef | dict],
+    procedures: Mapping[str, QCDLProcedureDef | dict],
 ) -> list[dict]:
     procs = []
     for proc_name, proc in procedures.items():
         if isinstance(proc, dict):
-            proc = QcdlProcedureDef.model_validate(proc)
+            proc = QCDLProcedureDef.model_validate(proc)
         prog = transform_statements(proc.statements)
         procs.append(
             dict(
@@ -164,13 +164,13 @@ def transform_procedures(
     return procs
 
 
-def transform_qcdl(qcdl: Qcdl | Mapping[str, Any]) -> dict:
+def transform_qcdl(qcdl: QCDLProgram | Mapping[str, Any]) -> dict:
     """This converts the output from QCDL into an object that
     mirrors what the lark parser produces from a .qcdl file.
     """
     if isinstance(qcdl, dict):
-        qcdl_model = Qcdl.model_validate(qcdl)
-    elif isinstance(qcdl, Qcdl):
+        qcdl_model = QCDLProgram.model_validate(qcdl)
+    elif isinstance(qcdl, QCDLProgram):
         qcdl_model = qcdl
     else:
         raise TypeError(f"QCDL must be a dictionary, not a {type(qcdl)}")
@@ -231,14 +231,14 @@ def transform_statements_to_qcdl_str(
     return txt
 
 
-def transform_program_to_qcdl_str(qcdl: dict) -> QcdlV2:
+def transform_program_to_qcdl_str(qcdl: dict) -> QCDLV2:
     txt = "begin quantum\n"
     txt += transform_statements_to_qcdl_str(qcdl["quantum_program"], initial_indent=3)
     txt += "end quantum\n"
     return txt
 
 
-def blacken_qcdl_str(qcdl_str: QcdlV2) -> QcdlV2:
+def blacken_qcdl_str(qcdl_str: QCDLV2) -> QCDLV2:
     """Treat the code like python and try to use black to reformat it"""
     blackened = []
     indent = 0
@@ -261,11 +261,11 @@ def blacken_qcdl_str(qcdl_str: QcdlV2) -> QcdlV2:
 
 
 def print_qcdl(
-    qcdl: Qcdl | Mapping[str, Any],
+    qcdl: QCDLProgram | Mapping[str, Any],
     to_Display: bool = True,
     blacken: bool = False,
     filename: str | None = None,
-) -> QcdlV2 | None:
+) -> QCDLV2 | None:
     """Print a QCDl program.
 
     Args:
@@ -308,7 +308,7 @@ def print_qcdl(
         return qcdl_str
 
 
-def display_qcdl(qcdl: Qcdl | Mapping[str, Any], **kwargs: Any) -> None:
+def display_qcdl(qcdl: QCDLProgram | Mapping[str, Any], **kwargs: Any) -> None:
     """Display formatted QCDL in a `Jupyter <https://jupyter.org/>`_ notebook or
     similar.
 

@@ -29,12 +29,12 @@ from dwave.gate.qcdl import (
 from dwave.gate.qcdl.components import (
     IndexerMixin,
     Procedure,
-    QcdlModule,
-    QcdlStatementBridge,
+    QCDLModule,
+    QCDLStatementBridge,
     objwalk,
 )
-from dwave.gate.qcdl.qcdl_circuit import QcdlCircuit
-from dwave.gate.qcdl.qcdl_models import QcdlStatement
+from dwave.gate.qcdl.qcdl_circuit import QCDLCircuit
+from dwave.gate.qcdl.qcdl_models import QCDLStatement
 
 
 def _check_serializable(data):
@@ -55,7 +55,7 @@ def test_unwrap():
         [1, dict(a=1, b=2), 2],
         np.arange(10),
     ]:
-        new_cont = QcdlModule.unwrap(cont)
+        new_cont = QCDLModule.unwrap(cont)
 
         if not isinstance(cont, int):
             assert cont is not new_cont
@@ -169,7 +169,7 @@ def test_scope_id():
     assert isinstance(scope_id, int)
 
     for stmt in qcdl_input["program"]["statements"]:
-        s = QcdlStatement.model_validate(stmt)
+        s = QCDLStatement.model_validate(stmt)
         assert s.kwargs["scope_id"] == scope_id
 
 
@@ -177,7 +177,7 @@ def test_procedure_op_key():
     num_qubits = 4
 
     @procedure
-    def my_proc(sender: QcdlModule, register: Register):
+    def my_proc(sender: QCDLModule, register: Register):
         sender.x()
         register += 1
 
@@ -204,7 +204,7 @@ def test_serialization_error():
         def default(self, obj):
             if isinstance(obj, np.ndarray):
                 return obj.tolist()
-            if isinstance(obj, QcdlStatementBridge):
+            if isinstance(obj, QCDLStatementBridge):
                 raise QCDLUserError(f"Unresolved statement {obj}")
 
             try:
@@ -216,7 +216,7 @@ def test_serialization_error():
 
     with pytest.raises(QCDLUserError, match="not_an_element"):
         for path, a in objwalk(val):
-            if isinstance(a, QcdlStatementBridge):
+            if isinstance(a, QCDLStatementBridge):
                 dotted_path = ".".join([str(p) for p in path])
                 raise QCDLUserError(f"Unresolved statement {a} at {dotted_path}")
 
@@ -247,7 +247,7 @@ def test_unique_statements_to_procs():
 
 
 def test_get_next_index():
-    circuit = QcdlCircuit()
+    circuit = QCDLCircuit()
     objs = [circuit, IndexerMixin(), Procedure("myproc", circuit)]
 
     for obj in objs:

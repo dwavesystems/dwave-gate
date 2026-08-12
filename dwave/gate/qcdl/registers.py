@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Type
 
 import numpy as np
 
-from .base import QcdlArgument, QcdlModuleContainerBase
+from .base import QCDLArgument, QCDLModuleContainerBase
 from .constants import (
     FLOAT_TO_INT,
     INT_TO_FLOAT,
@@ -43,7 +43,7 @@ from .exceptions import QCDLInternalError, QCDLUserError
 from .utils import is_qubit_or_coupler_name
 
 if TYPE_CHECKING:
-    from .components import Procedure, QcdlModule
+    from .components import Procedure, QCDLModule
 
 operators_to_math = {
     # special
@@ -224,7 +224,7 @@ class RegisterInitializerMixin:
 
     def _register_initialization(
         self,
-        modules: Sequence[QcdlModule],
+        modules: Sequence[QCDLModule],
         initial_value: Any,
         dtype: str | type,
         name: str | None = None,
@@ -294,13 +294,13 @@ class RegisterInitializerMixin:
         return self._value
 
     @property
-    def modules(self) -> Sequence[QcdlModule]:
+    def modules(self) -> Sequence[QCDLModule]:
         return self._modules
 
 
 def prepare_multiqubit_stmt(
-    modules: Sequence[QcdlModule],
-) -> tuple[QcdlModule, dict[str, Any]]:
+    modules: Sequence[QCDLModule],
+) -> tuple[QCDLModule, dict[str, Any]]:
     """Support for conversion of a set of identical statements on multiple
     qubits into one statement on a single qubit using the qubits kwarg"""
     other_qubits = [m for m in modules[1:]]
@@ -357,7 +357,7 @@ class OpsMixin:
 
     @staticmethod
     def _assert_compatible_modules(a: Any, b: Any) -> bool | None:
-        """We only allow objects with the same QcdlModules to interact with
+        """We only allow objects with the same QCDLModules to interact with
         each other"""
         mods: list[set[Any]] = [set(), set()]
         for i, obj in enumerate([a, b]):
@@ -557,7 +557,7 @@ class IntegerOpsMixin(NumberOpsMixin):
 
     # dev note: update the docstring when adding new methods
 
-class Target(OpsMixin, QcdlModuleContainerBase):
+class Target(OpsMixin, QCDLModuleContainerBase):
     """A Target represents a location on a qubit that may be written to. This
     object should not be directly instantiated by an end user."""
 
@@ -576,7 +576,7 @@ class Target(OpsMixin, QcdlModuleContainerBase):
 
     @property
     @abc.abstractmethod
-    def modules(self) -> Sequence[QcdlModule]:
+    def modules(self) -> Sequence[QCDLModule]:
         raise NotImplementedError
 
     @property
@@ -588,19 +588,19 @@ class Target(OpsMixin, QcdlModuleContainerBase):
         return False
 
     @property
-    def qcdl_modules(self) -> Sequence[QcdlModule]:
-        # this allows the procedure decorator to rewrap the QcdlModules for the
+    def qcdl_modules(self) -> Sequence[QCDLModule]:
+        # this allows the procedure decorator to rewrap the QCDLModules for the
         # invoked procedure
         return self.modules
 
 
-class RegisterExpression(IntegerOpsMixin, OpsMixin, QcdlArgument):
+class RegisterExpression(IntegerOpsMixin, OpsMixin, QCDLArgument):
     """An RegisterExpression is composed of operations on registers. It should not be
     instantiated by an end user"""
 
     def __init__(
         self,
-        modules: Sequence[QcdlModule],
+        modules: Sequence[QCDLModule],
         expr: str,
         scope_id: int | None = None,
         master_kwargs: dict[str, Any] | None = None,
@@ -612,7 +612,7 @@ class RegisterExpression(IntegerOpsMixin, OpsMixin, QcdlArgument):
         self.master_kwargs = master_kwargs
 
     def _emit_instructions(self) -> None:
-        """Generate the qcdl instruction and execute it on the QcdlModules"""
+        """Generate the qcdl instruction and execute it on the QCDLModules"""
         q, kwargs = prepare_multiqubit_stmt(self.modules)
         if self.master_kwargs:
             kwargs.update(self.master_kwargs)
@@ -667,7 +667,7 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
             already allocated (and does not raise an exception).
         scope_id: Identity of the :class:`~dwave.gate.qcdl.Scope` this register
             is derived from. The
-            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Register` method sets
+            :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Register` method sets
             this value when you create a register from a
             :class:`~dwave.gate.qcdl.Scope` instance.
 
@@ -721,12 +721,12 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
 
     See Also:
         :class:`.FixedPointRegister`,
-        :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Register`
+        :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Register`
     """
 
     def __init__(
         self,
-        modules: Sequence[QcdlModule],
+        modules: Sequence[QCDLModule],
         initial_value: int = 0,
         name: str | None = None,
         master_kwargs: dict[str, Any] | None = None,
@@ -784,7 +784,7 @@ class FixedPointRegister(
             already allocated (and does not raise an exception).
         scope_id: Identity of the :class:`~dwave.gate.qcdl.Scope` this register
             is derived from. The
-            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.FixedPointRegister`
+            :meth:`~dwave.gate.qcdl.QCDLModuleContainer.FixedPointRegister`
             method sets this value when you create a register from a
             :class:`~dwave.gate.qcdl.Scope` instance.
 
@@ -819,12 +819,12 @@ class FixedPointRegister(
 
     See Also:
         :class:`.Register`,
-        :meth:`~dwave.gate.qcdl.QcdlModuleContainer.FixedPointRegister`
+        :meth:`~dwave.gate.qcdl.QCDLModuleContainer.FixedPointRegister`
     """
 
     def __init__(
         self,
-        modules: Sequence[QcdlModule],
+        modules: Sequence[QCDLModule],
         initial_value: float = 0.0,
         name: str | None = None,
         master_kwargs: dict[str, Any] | None = None,
@@ -850,7 +850,7 @@ class Output(Target):
     This class is intended for use by developers of QCDL and advanced users.
 
     You can write data to these outputs but not read from them. For usage, see
-    the :meth:`~dwave.gate.qcdl.QcdlModuleContainer.append_table_row` method.
+    the :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row` method.
 
     Args:
         modules: Modules, typically qubits.
@@ -875,7 +875,7 @@ class Output(Target):
 
     def __init__(
         self,
-        modules: Sequence[QcdlModule],
+        modules: Sequence[QCDLModule],
         name: str | None = None,
         category: str | None = None,
         master_kwargs: dict[str, Any] | None = None,
@@ -928,7 +928,7 @@ class Output(Target):
         self._released = True
 
 
-class _SENS(IntegerOpsMixin, OpsMixin, QcdlArgument):
+class _SENS(IntegerOpsMixin, OpsMixin, QCDLArgument):
     """SENS is a read-only integer on the qubit that provides values read from
     the CPU sensors.
 
@@ -1018,7 +1018,7 @@ class Array(RegisterInitializerMixin):
 
     def __init__(
         self,
-        modules: Sequence[QcdlModule],
+        modules: Sequence[QCDLModule],
         initial_value: Any,
         name: str | None = None,
         dtype: str = "int",
@@ -1123,7 +1123,7 @@ class ExpressionAggregator:
 
     def __init__(
         self,
-        modules: Sequence[QcdlModule],
+        modules: Sequence[QCDLModule],
         master_kwargs: dict[str, Any] | None = None,
         scope_id: int | None = None,
     ) -> None:
@@ -1168,7 +1168,7 @@ class ExpressionAggregator:
 
 
 def arbitrary_function(
-    modules: Sequence[QcdlModule],
+    modules: Sequence[QCDLModule],
     in_dtype: Type[int] | Type[float],
     out_dtype: Type[int] | Type[float],
     name: str | None = None,

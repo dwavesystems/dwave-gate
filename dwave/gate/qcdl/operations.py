@@ -61,7 +61,7 @@ from typing import Any, TypeAlias
 import numpy as np
 
 from . import implementations
-from .components import QcdlModule
+from .components import QCDLModule
 from .exceptions import QCDLUserError
 from .registers import FixedPointRegister, Register
 
@@ -70,7 +70,7 @@ AngleType: TypeAlias = float | FixedPointRegister
 # Operations
 
 
-def initialize(*qubits: QcdlModule) -> None:
+def initialize(*qubits: QCDLModule) -> None:
     """Initialize qubits.
 
     This function has non-deterministic duration because the implementation is
@@ -81,14 +81,14 @@ def initialize(*qubits: QcdlModule) -> None:
         all programs.
 
     Args:
-        *qubits (QcdlModule): Qubits to initialize. It is not an error to do
+        *qubits (QCDLModule): Qubits to initialize. It is not an error to do
             so, but unused qubits should not be included.
 
     """
     qubits[0].initialize(*qubits[1:])
 
 
-def barrier(*qubits: QcdlModule, label: str | None = None) -> None:
+def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
     """Place a barrier on qubits.
 
     The transpiler does not combine gates across a barrier. This is a directive
@@ -96,11 +96,11 @@ def barrier(*qubits: QcdlModule, label: str | None = None) -> None:
     like a comment.
 
     .. note:: This operation is different from a
-        :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` method, which is used
+        :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` method, which is used
         to control the order that the compiler schedules operations.
 
     Args:
-        *qubits (QcdlModule): The qubits to put a barrier on.
+        *qubits (QCDLModule): The qubits to put a barrier on.
         label (str, optional): An annotation.
 
     Examples:
@@ -141,7 +141,7 @@ def barrier(*qubits: QcdlModule, label: str | None = None) -> None:
 
 
 def measure(
-    qubit: QcdlModule,
+    qubit: QCDLModule,
     log: bool = True,
     tag: str | None = None,
     register: Register | None = None,
@@ -150,7 +150,7 @@ def measure(
     """Measure a qubit.
 
     Args:
-        qubit (QcdlModule): The qubit to measure.
+        qubit (QCDLModule): The qubit to measure.
         log (bool, optional): If True, the measurement result is logged, meaning
             it is included in the returned array for this qubit.
         tag (str | None, optional): Name for this measurement, used to organize the
@@ -196,11 +196,11 @@ def measure(
         implementations.mirror_measurement_register(sender=qubit, register=register)
 
 
-def mced(qubit: QcdlModule, register: Register, mirror: bool = True) -> None:
+def mced(qubit: QCDLModule, register: Register, mirror: bool = True) -> None:
     """Perform a non-destructive mid-circuit erasure detection (MCED).
 
     Args:
-        qubit (QcdlModule): The qubit to inspect.
+        qubit (QCDLModule): The qubit to inspect.
         register (Register): Register used for storing the outcome. Supported
             outcomes are:
 
@@ -236,7 +236,7 @@ def mced(qubit: QcdlModule, register: Register, mirror: bool = True) -> None:
 # 1 Qubit Non-Parameterized Gates
 
 
-def x(qubit: QcdlModule) -> None:
+def x(qubit: QCDLModule) -> None:
     """`X <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.XGate>`_
     gate.
 
@@ -260,7 +260,7 @@ def x(qubit: QcdlModule) -> None:
     qubit.procedure.add_statement(None, "x", [qubit], None)
 
 
-def sx(qubit: QcdlModule) -> None:
+def sx(qubit: QCDLModule) -> None:
     r"""`Square-root of X <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SXGate>`_
     (:math:`\sqrt X`) gate.
 
@@ -284,7 +284,7 @@ def sx(qubit: QcdlModule) -> None:
     qubit.procedure.add_statement(None, "sx", [qubit], None)
 
 
-def y(qubit: QcdlModule) -> None:
+def y(qubit: QCDLModule) -> None:
     """`Y <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.YGate>`_
     gate.
 
@@ -308,7 +308,7 @@ def y(qubit: QcdlModule) -> None:
     qubit.procedure.add_statement(None, "y", [qubit], None)
 
 
-def sy(qubit: QcdlModule) -> None:
+def sy(qubit: QCDLModule) -> None:
     r"""SQRT of Y gate.
     TODO it's not a qiskit gate
 
@@ -332,7 +332,7 @@ def sy(qubit: QcdlModule) -> None:
     qubit.procedure.add_statement(None, "ry", [qubit, np.pi / 2], None)
 
 
-def sydg(qubit: QcdlModule) -> None:
+def sydg(qubit: QCDLModule) -> None:
     r"""SQRT of Y_adjoint gate.
     TODO it's not a qiskit gate
 
@@ -356,7 +356,7 @@ def sydg(qubit: QcdlModule) -> None:
     qubit.procedure.add_statement(None, "ry", [qubit, -np.pi / 2], None)
 
 
-def z(qubit: QcdlModule) -> None:
+def z(qubit: QCDLModule) -> None:
     """`Z <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.ZGate>`_
     gate.
 
@@ -380,7 +380,7 @@ def z(qubit: QcdlModule) -> None:
     qubit.procedure.add_statement(None, "z", [qubit], None)
 
 
-def s(qubit: QcdlModule) -> None:
+def s(qubit: QCDLModule) -> None:
     """`S <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SGate>`_
     gate.
 
@@ -404,7 +404,7 @@ def s(qubit: QcdlModule) -> None:
     qubit.procedure.add_statement(None, "s", [qubit], None)
 
 
-def sdg(qubit: QcdlModule) -> None:
+def sdg(qubit: QCDLModule) -> None:
     r"""`S-adjoint <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SdgGate>`_
     (:math:`S^\dagger`) gate.
 
@@ -429,7 +429,7 @@ def sdg(qubit: QcdlModule) -> None:
     qubit.procedure.add_statement(None, "sdg", [qubit], None)
 
 
-def t(qubit: QcdlModule) -> None:
+def t(qubit: QCDLModule) -> None:
     r"""`T <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.TGate>`_
     (:math:`\sqrt[4]{Z}`) gate.
 
@@ -453,7 +453,7 @@ def t(qubit: QcdlModule) -> None:
     qubit.procedure.add_statement(None, "t", [qubit], None)
 
 
-def tdg(qubit: QcdlModule) -> None:
+def tdg(qubit: QCDLModule) -> None:
     r"""`T-adjoint <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.TdgGate>`_
     (:math:`T^\dagger`) gate.
 
@@ -477,7 +477,7 @@ def tdg(qubit: QcdlModule) -> None:
     qubit.procedure.add_statement(None, "tdg", [qubit], None)
 
 
-def h(qubit: QcdlModule) -> None:
+def h(qubit: QCDLModule) -> None:
     """`Hadamard <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.HGate>`_
     gate.
 
@@ -504,7 +504,7 @@ def h(qubit: QcdlModule) -> None:
 # 1 Qubit Parameterized Gates
 
 
-def rx(qubit: QcdlModule, phi: AngleType) -> None:
+def rx(qubit: QCDLModule, phi: AngleType) -> None:
     r"""Single-qubit
     `X-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RXGate>`_
     gate.
@@ -531,7 +531,7 @@ def rx(qubit: QcdlModule, phi: AngleType) -> None:
     qubit.procedure.add_statement(None, "rx", [qubit, phi], None)
 
 
-def ry(qubit: QcdlModule, phi: AngleType) -> None:
+def ry(qubit: QCDLModule, phi: AngleType) -> None:
     r"""Single-qubit
     `Y-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RYGate>`_
     gate.
@@ -558,7 +558,7 @@ def ry(qubit: QcdlModule, phi: AngleType) -> None:
     qubit.procedure.add_statement(None, "ry", [qubit, phi], None)
 
 
-def rz(qubit: QcdlModule, phi: AngleType) -> None:
+def rz(qubit: QCDLModule, phi: AngleType) -> None:
     r"""Single-qubit
     `Z-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RZGate>`_
     gate.
@@ -585,7 +585,7 @@ def rz(qubit: QcdlModule, phi: AngleType) -> None:
     qubit.procedure.add_statement(None, "rz", [qubit, phi], None)
 
 
-def p(qubit: QcdlModule, theta: AngleType) -> None:
+def p(qubit: QCDLModule, theta: AngleType) -> None:
     r"""`Phase <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.PhaseGate>`_
     gate.
 
@@ -611,7 +611,7 @@ def p(qubit: QcdlModule, theta: AngleType) -> None:
     qubit.procedure.add_statement(None, "p", [qubit, theta], None)
 
 
-def u(qubit: QcdlModule, theta: AngleType, phi: AngleType, lam: AngleType) -> None:
+def u(qubit: QCDLModule, theta: AngleType, phi: AngleType, lam: AngleType) -> None:
     r"""Single-qubit
     `generic U <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.UGate>`_
     gate.
@@ -642,7 +642,7 @@ def u(qubit: QcdlModule, theta: AngleType, phi: AngleType, lam: AngleType) -> No
 # 2 Qubit Non-Parameterized Gates
 
 
-def swap(qubit1: QcdlModule, qubit2: QcdlModule) -> None:
+def swap(qubit1: QCDLModule, qubit2: QCDLModule) -> None:
     """`Swap <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SwapGate>`_
     gate.
 
@@ -670,7 +670,7 @@ def swap(qubit1: QcdlModule, qubit2: QcdlModule) -> None:
     qubit1.procedure.add_statement(None, "swap", [qubit1, qubit2], None)
 
 
-def cx(control_qubit: QcdlModule, target_qubit: QcdlModule) -> None:
+def cx(control_qubit: QCDLModule, target_qubit: QCDLModule) -> None:
     """`Controlled-X <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CXGate>`_
     gate.
 
@@ -698,7 +698,7 @@ def cx(control_qubit: QcdlModule, target_qubit: QcdlModule) -> None:
     )
 
 
-def cy(control_qubit: QcdlModule, target_qubit: QcdlModule) -> None:
+def cy(control_qubit: QCDLModule, target_qubit: QCDLModule) -> None:
     """`Controlled-Y <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CYGate>`_
     gate.
 
@@ -726,7 +726,7 @@ def cy(control_qubit: QcdlModule, target_qubit: QcdlModule) -> None:
     )
 
 
-def cz(control_qubit: QcdlModule, target_qubit: QcdlModule) -> None:
+def cz(control_qubit: QCDLModule, target_qubit: QCDLModule) -> None:
     """`Controlled-Z <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CZGate>`_
     gate.
 
@@ -757,7 +757,7 @@ def cz(control_qubit: QcdlModule, target_qubit: QcdlModule) -> None:
 # 2 Qubit Parameterized Gates
 
 
-def crx(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) -> None:
+def crx(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -> None:
     r"""`Controlled-RX <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CRXGate>`_
     gate.
 
@@ -787,7 +787,7 @@ def crx(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) -
     )
 
 
-def cry(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) -> None:
+def cry(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -> None:
     r"""`Controlled-RY <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CRYGate>`_
     gate.
 
@@ -817,7 +817,7 @@ def cry(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) -
     )
 
 
-def crz(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) -> None:
+def crz(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -> None:
     r"""`Controlled-RZ <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CRZGate>`_
     gate.
 
@@ -847,7 +847,7 @@ def crz(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) -
     )
 
 
-def cp(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) -> None:
+def cp(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -> None:
     r"""`Controlled-Phase <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CPhaseGate>`_
     gate.
 
@@ -878,8 +878,8 @@ def cp(control_qubit: QcdlModule, target_qubit: QcdlModule, theta: AngleType) ->
 
 
 def cu(
-    control_qubit: QcdlModule,
-    target_qubit: QcdlModule,
+    control_qubit: QCDLModule,
+    target_qubit: QCDLModule,
     theta: AngleType,
     phi: AngleType,
     lam: AngleType,
@@ -919,7 +919,7 @@ def cu(
     )
 
 
-def rxx(qubit1: QcdlModule, qubit2: QcdlModule, theta: AngleType) -> None:
+def rxx(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     r"""Two-qubit
     `XX-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RXXGate>`_
     gate.
@@ -947,7 +947,7 @@ def rxx(qubit1: QcdlModule, qubit2: QcdlModule, theta: AngleType) -> None:
     qubit1.procedure.add_statement(None, "rxx", [qubit1, qubit2, theta], None)
 
 
-def ryy(qubit1: QcdlModule, qubit2: QcdlModule, theta: AngleType) -> None:
+def ryy(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     r"""Two-qubit
     `YY-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RYYGate>`_
     gate.
@@ -975,7 +975,7 @@ def ryy(qubit1: QcdlModule, qubit2: QcdlModule, theta: AngleType) -> None:
     qubit1.procedure.add_statement(None, "ryy", [qubit1, qubit2, theta], None)
 
 
-def rzz(qubit1: QcdlModule, qubit2: QcdlModule, theta: AngleType) -> None:
+def rzz(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     r"""Two-qubit
     `ZZ-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RZZGate>`_
     gate.

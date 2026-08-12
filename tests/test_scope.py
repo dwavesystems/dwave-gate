@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 
 from dwave.gate.qcdl import QCDLUserError, Scope, print_qcdl, procedure, qcdl
-from dwave.gate.qcdl.qcdl_models import QcdlStatement
+from dwave.gate.qcdl.qcdl_models import QCDLStatement
 from dwave.gate.qcdl.utils import simplify_float
 
 
@@ -337,7 +337,7 @@ def test_one_to_all():
 
     input_qcdl = main().model_dump(exclude_unset=True)
     for stmt in input_qcdl["program"]["statements"]:
-        s = QcdlStatement.model_validate(stmt)
+        s = QCDLStatement.model_validate(stmt)
         if s.op == "one_to_all":
             assert s.qubit_name == "q0"
             assert s.kwargs["qubits"] == ["q1", "q2"]

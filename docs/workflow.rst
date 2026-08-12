@@ -169,7 +169,7 @@ transpilation collapses your QCDL.
 
 .. note::
     A :func:`~dwave.gate.qcdl.operations.barrier` instruction does not necessarily
-    imply a :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` (see the
+    imply a :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` (see the
     :ref:`qcdl_advanced_synchronization` section).
 
 .. [#]
@@ -375,12 +375,12 @@ Result Records
 --------------
 
 Results are a Python dictionary where keys are set by the
-:meth:`~dwave.gate.qcdl.QcdlModuleContainer.append_table_row` method and values are
+:meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row` method and values are
 tables formatted as a
 `Polars <https://docs.pola.rs/api/python/stable/reference/index.html>`_
 `DataFrame <https://docs.pola.rs/api/python/stable/reference/dataframe/index.html>`_.
 
-The :meth:`~dwave.gate.qcdl.QcdlModuleContainer.append_table_row` method retrieves
+The :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row` method retrieves
 the values of registers in runtime. When you invoke the method, register data
 is written to a set of tables that your application can retrieve. In addition to
 using this functionality in algorithms, you can use it for troubleshooting, as
@@ -388,7 +388,7 @@ though it were a cross between a print statement and a breakpoint.
 
 .. todo:: update for Ocean
 
-If your QCDL uses the :meth:`~dwave.gate.qcdl.QcdlModuleContainer.append_table_row`
+If your QCDL uses the :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row`
 method, the :class:`~dwave.gate.Result` output contains records that you may
 retrieve with :meth:`~Result.get_records` method.
 
@@ -668,9 +668,9 @@ complete a measurement on one qubit before another qubit uses that measurement
 as a condition.
 
 You can explicitly control such scheduling with the
-:meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` instruction. You may apply this
+:meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` instruction. You may apply this
 instruction to any number of qubits to indicate that all operations before the
-:meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` instruction must be completed
+:meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` instruction must be completed
 before any operations after the instruction are started.
 
 .. testcode::
@@ -691,12 +691,12 @@ completed.
 Synchronization Considerations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*   Compilation inserts implicit :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync`
+*   Compilation inserts implicit :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync`
     instructions before and after all multi-qubit operations such as gates,
     procedures, and control-flow operations (including shots).
-*   The :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` instruction is not
+*   The :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` instruction is not
     sensitive to the ordering of the qubits.
-*   An explicit :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` instruction in the
+*   An explicit :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` instruction in the
     program is treated as a :func:`~dwave.gate.qcdl.operations.barrier` instruction
     by the transpiler.
 *   Scheduling is performed at compile-time and there is no support for
@@ -710,13 +710,13 @@ Synchronization Considerations
 .. attention::
     The simulator does not model runtime concurrency; it simply executes
     instructions sequentially regardless of which qubit the instruction uses.
-    Therefore the :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` instruction does
+    Therefore the :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` instruction does
     not affect execution order of operations.
 
     Consider carefully the positioning of any
-    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` and cautiously validate when
+    :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` and cautiously validate when
     executing on a QPU (for example, by using a
-    :meth:`~dwave.gate.qcdl.QcdlModuleContainer.append_table_row` instruction).
+    :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row` instruction).
 
 .. _qcdl_advanced_conditionals:
 
@@ -791,11 +791,11 @@ Supported Condition Values
     *   -   ``None``
         -   You can separate the steps of evaluating the branch condition and
             branching by assigning the branch condition before the (e.g.,
-            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.If`) statement, with
+            :meth:`~dwave.gate.qcdl.QCDLModuleContainer.If`) statement, with
             that branch condition persisting if ``None`` is specified. The
             branch condition might be set, for example, by a preceding
-            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.all_to_all` or
-            :meth:`~dwave.gate.qcdl.QcdlModule.one_to_all` call, which
+            :meth:`~dwave.gate.qcdl.QCDLModuleContainer.all_to_all` or
+            :meth:`~dwave.gate.qcdl.QCDLModule.one_to_all` call, which
             places a signal from one qubit onto the branch condition of each
             recipient qubit.
         -   See the :ref:`qcdl_advanced_signals` section.
@@ -808,7 +808,7 @@ Guidelines for Using Conditionals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -   You can nest conditional statements arbitrarily deep.
--   Place the :meth:`~dwave.gate.qcdl.QcdlModuleContainer.If` statement and its true
+-   Place the :meth:`~dwave.gate.qcdl.QCDLModuleContainer.If` statement and its true
     and false branches in the same procedure.
 -   Use the :class:`~dwave.gate.qcdl.Scope` class to include an arbitrary number of
     qubits in a condition. If your condition value is an expression, take care
@@ -889,13 +889,13 @@ that condition operations on other qubits.
 Basic Signal
 ~~~~~~~~~~~~
 
-For any qubit, you can set the :attr:`~dwave.gate.qcdl.QcdlModule.signal` property
+For any qubit, you can set the :attr:`~dwave.gate.qcdl.QCDLModule.signal` property
 (the *signal*) to a Boolean value for use, in realtime, as a
 :ref:`branch condition <qcdl_advanced_conditionals>` by other qubits.
 
 The following example results in the bitstring being either :math:`11` or
 :math:`00` (assuming no noise). The
-:meth:`~dwave.gate.qcdl.QcdlModuleContainer.sync` operation prevents the
+:meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` operation prevents the
 ``receiver`` qubit conditioning off of the signal value before the ``sender``
 qubit sets it after its measurement. The :ref:`qcdl_advanced_conditionals`
 section describes the condition value used in the ``If`` statement.
@@ -920,12 +920,12 @@ section describes the condition value used in the ``If`` statement.
 
 .. note::
     If more than one qubit is branching off a signal, it is likely more
-    efficient to use the :meth:`~dwave.gate.qcdl.QcdlModule.one_to_all` method.
+    efficient to use the :meth:`~dwave.gate.qcdl.QCDLModule.one_to_all` method.
 
 ``one_to_all`` Signal
 ~~~~~~~~~~~~~~~~~~~~~
 
-The :meth:`~dwave.gate.qcdl.QcdlModule.one_to_all` method signals a Boolean value
+The :meth:`~dwave.gate.qcdl.QCDLModule.one_to_all` method signals a Boolean value
 from one qubit to a set of other qubits that can use it as a
 :ref:`branch condition <qcdl_advanced_conditionals>` to conditionally execute a
 branch of operations.
@@ -959,7 +959,7 @@ value used in the ``If`` statement.
 ``all_to_all`` Signal
 ~~~~~~~~~~~~~~~~~~~~~
 
-The more-general :meth:`~dwave.gate.qcdl.QcdlModuleContainer.all_to_all` method
+The more-general :meth:`~dwave.gate.qcdl.QCDLModuleContainer.all_to_all` method
 signals a Boolean value from all qubits to a set of participating qubits to use
 as a :ref:`branch condition <qcdl_advanced_conditionals>`.
 
@@ -1072,34 +1072,34 @@ QCDL programs support several control-flow mechanisms.\ [#]_
 
     *   -   Method
         -   Purpose
-    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Repeat`
+    *   -   :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Repeat`
         -   Repeats the body of the context manager for a specified number of
             iterations.
-    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.While`
+    *   -   :meth:`~dwave.gate.qcdl.QCDLModuleContainer.While`
         -   Repeats the body of the context manager as long as the condition is
             true.
-    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.DoWhile`
+    *   -   :meth:`~dwave.gate.qcdl.QCDLModuleContainer.DoWhile`
         -   Unconditionally executes a first iteration of the context manager
             and then, similar to the
-            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.While` method, repeats the
+            :meth:`~dwave.gate.qcdl.QCDLModuleContainer.While` method, repeats the
             body of the context manager as long as the condition is true. Useful
             if the condition is evaluated only within the loop.
-    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.For`
+    *   -   :meth:`~dwave.gate.qcdl.QCDLModuleContainer.For`
         -   Repeats the body of the context manager as long as the condition is
-            true, similar to the :meth:`~dwave.gate.qcdl.QcdlModuleContainer.While`
+            true, similar to the :meth:`~dwave.gate.qcdl.QCDLModuleContainer.While`
             method, but, similarly to a C-style loop, also provides some
             convenience mechanisms for initializing and updating a register.
-    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Break`
+    *   -   :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Break`
         -   Breaks out of a loop structure. Useful for preventing infinite
             loops.
-    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Continue`
+    *   -   :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Continue`
         -   Skips the remainder of the body of the context manager and jumps to
             the conditional.
-    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Label`/:meth:`~dwave.gate.qcdl.QcdlModuleContainer.Goto`
-        -   A :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Goto` instruction
+    *   -   :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Label`/:meth:`~dwave.gate.qcdl.QCDLModuleContainer.Goto`
+        -   A :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Goto` instruction
             unconditionally jumps to the location marked by the corresponding
-            :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Label` instruction.
-    *   -   :meth:`~dwave.gate.qcdl.QcdlModuleContainer.Return`
+            :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Label` instruction.
+    *   -   :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Return`
         -   Exits a procedure early.
 
 .. [#]
@@ -1132,7 +1132,7 @@ QCDL programs support several control-flow mechanisms.\ [#]_
             rotate(q0, q0, 0.1)
 
 The following is also an example for how a
-:meth:`~dwave.gate.qcdl.QcdlModuleContainer.Repeat` instruction could be
+:meth:`~dwave.gate.qcdl.QCDLModuleContainer.Repeat` instruction could be
 implemented.
 
 .. testcode::

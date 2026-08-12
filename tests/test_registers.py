@@ -22,7 +22,7 @@ import pytest
 
 from dwave.gate.qcdl import (
     FixedPointRegister,
-    QcdlModule,
+    QCDLModule,
     QCDLUserError,
     Register,
     arbitrary_function,
@@ -520,7 +520,7 @@ def test_register_is_container():
     @procedure
     def inner(q, register):
         q.rx(0.123)
-        # this test handles the case where a register is a QcdlModuleContainer
+        # this test handles the case where a register is a QCDLModuleContainer
         register += 1
 
     @qcdl(2)
@@ -553,11 +553,11 @@ def test_find_modules():
         modules = [q0]
 
         reg = Register(modules, name="reg")
-        assert next(QcdlModule.find_modules(reg)).qcdl_module_name == "q0"
-        assert next(QcdlModule.find_modules(q0)).qcdl_module_name == "q0"
-        assert next(QcdlModule.find_modules(q1)).qcdl_module_name == "q1"
+        assert next(QCDLModule.find_modules(reg)).qcdl_module_name == "q0"
+        assert next(QCDLModule.find_modules(q0)).qcdl_module_name == "q0"
+        assert next(QCDLModule.find_modules(q1)).qcdl_module_name == "q1"
         assert set(
-            [q.qcdl_module_name for q in QcdlModule.find_modules(reg, q1)]
+            [q.qcdl_module_name for q in QCDLModule.find_modules(reg, q1)]
         ) == set(["q0", "q1"])
 
     assert main()
@@ -565,7 +565,7 @@ def test_find_modules():
 
 def test_parent_proc_not_altered():
     class ModuleHider(object):
-        # this is not a QcdlModuleContainer and thus
+        # this is not a QCDLModuleContainer and thus
         # hides a module
         def __init__(self, register):
             self.register = register
@@ -574,7 +574,7 @@ def test_parent_proc_not_altered():
     def inner(q0, hider):
         q0.rx(0.123)
         # this test handles the case where something containing modules but
-        # is not a QcdlModuleContainer is passed
+        # is not a QCDLModuleContainer is passed
         hider.register += 1
 
     @qcdl(1)

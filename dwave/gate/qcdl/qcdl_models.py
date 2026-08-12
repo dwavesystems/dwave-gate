@@ -18,14 +18,14 @@ This module provides Pydantic-based models for validating, documenting, and
 serializing QCDL payloads.  The models add runtime validation, field-level
 documentation, and structured serialization/deserialization.
 
-:class:`QcdlStatement` also surfaces a full derived API
+:class:`QCDLStatement` also surfaces a full derived API
 (``modules``, ``qargs``, ``condition``, ``simple_desc``, etc.) directly
 on the model for statement-level logic.
 
 Round-tripping
 --------------
 
-:meth:`QcdlCircuit.to_model()` returns a :class:`Qcdl` directly.
+:meth:`QCDLCircuit.to_model()` returns a :class:`QCDLProgram` directly.
 To recover a plain :class:`dict` for transmission to the compiler::
 
     payload = model.model_dump()
@@ -35,7 +35,7 @@ Statement dict sparsity
 
 :meth:`Procedure.add_statement` only stores ``args``, ``kwargs``, and
 ``qubits`` in the statement dict when they are non-empty.  Use
-``model_dump(exclude_unset=True)`` on a :class:`QcdlStatement` to
+``model_dump(exclude_unset=True)`` on a :class:`QCDLStatement` to
 recover the same sparse representation::
 
     sparse = stmt_model.model_dump(exclude_unset=True)
@@ -70,7 +70,7 @@ def _get_module_from_arg(arg: Any) -> str | None:
     return None
 
 
-class QcdlModuleName(BaseModel):
+class QCDLModuleName(BaseModel):
     """A concrete qubit, coupler, or arbitrary-prefix module referenced in a
     QCDL statement.
 
@@ -91,14 +91,14 @@ class QcdlModuleName(BaseModel):
 
     Examples
     --------
-    >>> QcdlModuleName.model_validate("q2")
-    QcdlModuleName('q2')
-    >>> QcdlModuleName(kind="coupler", index=5).name
+    >>> QCDLModuleName.model_validate("q2")
+    QCDLModuleName('q2')
+    >>> QCDLModuleName(kind="coupler", index=5).name
     'c5'
-    >>> QcdlModuleName.model_validate("m0")
-    QcdlModuleName('m0')
-    >>> QcdlModuleName.model_validate("m")
-    QcdlModuleName('m')
+    >>> QCDLModuleName.model_validate("m0")
+    QCDLModuleName('m0')
+    >>> QCDLModuleName.model_validate("m")
+    QCDLModuleName('m')
     """
 
     model_config = ConfigDict(frozen=True)
@@ -127,7 +127,7 @@ class QcdlModuleName(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def _validate_kind(self) -> QcdlModuleName:
+    def _validate_kind(self) -> QCDLModuleName:
         if not self.kind.isidentifier():
             raise ValueError(f"kind {self.kind!r} is not a valid identifier")
         return self
@@ -165,10 +165,10 @@ class QcdlModuleName(BaseModel):
         return self.name
 
     def __repr__(self) -> str:
-        return f"QcdlModuleName({self.name!r})"
+        return f"QCDLModuleName({self.name!r})"
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, QcdlModuleName):
+        if isinstance(other, QCDLModuleName):
             return self.kind == other.kind and self.index == other.index
         if isinstance(other, str):
             return self.name == other
@@ -178,7 +178,7 @@ class QcdlModuleName(BaseModel):
         return hash(self.name)
 
 
-class QcdlStatement(BaseModel):
+class QCDLStatement(BaseModel):
     """Pydantic model for a single QCDL statement.
 
     Every declared field is optional (defaults are provided for all fields).
@@ -235,7 +235,7 @@ class QcdlStatement(BaseModel):
             raise ValueError(f"op {v!r} is not a valid identifier")
         return v
 
-    qubit: QcdlModuleName | None = Field(
+    qubit: QCDLModuleName | None = Field(
         default=None,
         description=(
             "To give the appearance of the operation being invoked on an"
@@ -251,7 +251,7 @@ class QcdlStatement(BaseModel):
         default_factory=dict,
         description="Keyword arguments to the operation (raw serialization field).",
     )
-    caller_qubits: list[QcdlModuleName] = Field(
+    caller_qubits: list[QCDLModuleName] = Field(
         default_factory=list,
         description=(
             "For procedure-call statements, the qubits passed to the called"
@@ -279,7 +279,7 @@ class QcdlStatement(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def qubits(self) -> list[QcdlModuleName]:
+    def qubits(self) -> list[QCDLModuleName]:
         """All modules (qubits and couplers) referenced by this statement.
 
         Derived from every source in insertion order, without duplicates:
@@ -292,10 +292,10 @@ class QcdlStatement(BaseModel):
         mutations via :meth:`reassign_arg` / :meth:`reassign_kwarg` are
         reflected immediately.
         """
-        _modules: list[QcdlModuleName] = []
+        _modules: list[QCDLModuleName] = []
 
-        def _add(q: str | QcdlModuleName) -> None:
-            m = q if isinstance(q, QcdlModuleName) else QcdlModuleName.model_validate(q)
+        def _add(q: str | QCDLModuleName) -> None:
+            m = q if isinstance(q, QCDLModuleName) else QCDLModuleName.model_validate(q)
             if m not in _modules:
                 _modules.append(m)
 
@@ -342,7 +342,7 @@ class QcdlStatement(BaseModel):
         return self.qubit is None
 
     @property
-    def modules(self) -> list[QcdlModuleName]:
+    def modules(self) -> list[QCDLModuleName]:
         """All modules referenced by this statement.
 
         Alias for :attr:`qubits`.  See that attribute for the derivation
@@ -359,7 +359,7 @@ class QcdlStatement(BaseModel):
     def qubit_names(self) -> list[str]:
         """Names of all qubits referenced by this statement, from all sources.
 
-        Unlike :attr:`qubits`, which returns :class:`QcdlModuleName` objects
+        Unlike :attr:`qubits`, which returns :class:`QCDLModuleName` objects
         for all modules (including couplers), this property returns plain
         string names for qubit modules only.
 
@@ -463,7 +463,7 @@ class QcdlStatement(BaseModel):
         ).strip()
 
 
-class QcdlSignature(BaseModel):
+class QCDLSignature(BaseModel):
     """Pydantic model for a procedure signature.
 
     All fields are required.  ``extra="forbid"`` rejects unrecognized
@@ -475,7 +475,7 @@ class QcdlSignature(BaseModel):
     qcdl_operator: str | None = Field(
         description=(
             "A non-unique human-readable name for a procedure.  Because"
-            " procedure names must be globally unique within a :class:`Qcdl`"
+            " procedure names must be globally unique within a :class:`QCDLProgram`"
             " payload, ``qcdl_operator`` provides a stable label that"
             " multiple distinct procedures may share.  For example, every"
             " ``cz`` implementation on each qubit pair will have a unique"
@@ -484,10 +484,10 @@ class QcdlSignature(BaseModel):
             " logically implements."
         ),
     )
-    qubits: list[QcdlModuleName] = Field(
+    qubits: list[QCDLModuleName] = Field(
         description="Qubits declared in the procedure specification.",
     )
-    qubits_used: list[QcdlModuleName] = Field(
+    qubits_used: list[QCDLModuleName] = Field(
         description=(
             "Qubits the procedure actually touches after transpilation."
             "  This may include more entries than ``qubits`` when the"
@@ -502,18 +502,18 @@ class QcdlSignature(BaseModel):
     )
 
 
-class QcdlProcedureDef(BaseModel):
+class QCDLProcedureDef(BaseModel):
     """Pydantic model for a compiled procedure definition.
 
-    Nesting :class:`QcdlStatement` and :class:`QcdlSignature`
+    Nesting :class:`QCDLStatement` and :class:`QCDLSignature`
     means that calling
-    ``QcdlProcedureDef.model_validate(proc_dict)`` recursively
+    ``QCDLProcedureDef.model_validate(proc_dict)`` recursively
     validates the entire sub-tree.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    statements: list[QcdlStatement] = Field(
+    statements: list[QCDLStatement] = Field(
         description="The ordered sequence of statements that make up this procedure.",
     )
     statement_hash: str | None = Field(
@@ -521,20 +521,20 @@ class QcdlProcedureDef(BaseModel):
         exclude=True,
         description=(
             "SHA-based fingerprint of all statements.  Used by"
-            " ``QcdlCircuit.register_procedure`` to detect whether a"
+            " ``QCDLCircuit.register_procedure`` to detect whether a"
             " procedure is being re-registered with a different body, which"
             " is an error.  Excluded from serialized output."
         ),
     )
-    signature: QcdlSignature = Field(
+    signature: QCDLSignature = Field(
         description="Qubit and argument specification for calling this procedure.",
     )
 
 
-class Qcdl(BaseModel):
+class QCDLProgram(BaseModel):
     """Pydantic model for the top-level QCDL compiler payload.
 
-    :meth:`QcdlCircuit.to_model()` returns an instance of this class directly.
+    :meth:`QCDLCircuit.to_model()` returns an instance of this class directly.
     Use :meth:`model_dump` to recover a plain :class:`dict` suitable for the
     compiler.
 
@@ -544,10 +544,10 @@ class Qcdl(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    program: QcdlProcedureDef = Field(
+    program: QCDLProcedureDef = Field(
         description="The main entry point of the program.",
     )
-    procedures: dict[str, QcdlProcedureDef] = Field(
+    procedures: dict[str, QCDLProcedureDef] = Field(
         description=(
             "Named reusable procedures.  Keys are unique procedure names"
             " that may be referenced as a statement ``op``."

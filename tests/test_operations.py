@@ -19,7 +19,7 @@ from pytest_mock import MockerFixture
 
 import dwave.gate.qcdl.implementations
 from dwave.gate.qcdl import (
-    QcdlModule,
+    QCDLModule,
     QCDLUserError,
     Register,
     Scope,
@@ -28,7 +28,7 @@ from dwave.gate.qcdl import (
     qcdl,
 )
 from dwave.gate.qcdl.operations import AngleType
-from dwave.gate.qcdl.qcdl_models import QcdlStatement
+from dwave.gate.qcdl.qcdl_models import QCDLStatement
 
 available_operations = [
     name
@@ -50,7 +50,7 @@ def test_operations(op_name):
         [
             1
             for parameter in sig.parameters.values()
-            if parameter.annotation == QcdlModule
+            if parameter.annotation == QCDLModule
         ]
     )
 
@@ -95,7 +95,7 @@ def test_operations(op_name):
     qcdl_dict = main().model_dump(exclude_unset=True)
 
     for stmt in qcdl_dict["program"]["statements"]:
-        statement = QcdlStatement.model_validate(stmt)
+        statement = QCDLStatement.model_validate(stmt)
         if statement.op == op_name:
             break
         if op_name in ["sy", "sydg"]:

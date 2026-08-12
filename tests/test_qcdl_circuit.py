@@ -26,8 +26,8 @@ import pickle
 import pytest
 
 from dwave.gate.qcdl import QCDLUserError, qcdl
-from dwave.gate.qcdl.qcdl_circuit import QcdlCircuit, _get_fspec
-from dwave.gate.qcdl.qcdl_models import Qcdl
+from dwave.gate.qcdl.qcdl_circuit import QCDLCircuit, _get_fspec
+from dwave.gate.qcdl.qcdl_models import QCDLProgram
 
 # ---------------------------------------------------------------------------
 # Shared test doubles
@@ -83,7 +83,7 @@ class CallTracker:
 def make_fake_machine(env, tracker: CallTracker | None = None):
     """Return a FakeMachine class and its associated CallTracker.
 
-    The machine promotes qubit/coupler names to QcdlModule objects via
+    The machine promotes qubit/coupler names to QCDLModule objects via
     proc.q(name) inside set_up_systems, matching real machine behaviour.
     Non-qubit kwargs (e.g. user-supplied floats) are left untouched.
     """
@@ -118,7 +118,7 @@ def make_fake_machine(env, tracker: CallTracker | None = None):
 # ---------------------------------------------------------------------------
 
 
-class TestQcdlQubitSourceModes:
+class TestQCDLQubitSourceModes:
     """@qcdl infers/creates qubits differently depending on its arguments."""
 
     def test_infer_qubit_names_from_signature(self):
@@ -134,7 +134,7 @@ class TestQcdlQubitSourceModes:
             q1.measure()
 
         result = main()
-        assert isinstance(result, Qcdl)
+        assert isinstance(result, QCDLProgram)
         assert set(received) == {"q0", "q1"}
 
     def test_non_qubit_args_not_auto_injected(self):
@@ -148,7 +148,7 @@ class TestQcdlQubitSourceModes:
             q0.measure()
 
         result = main(angle=1.5)
-        assert isinstance(result, Qcdl)
+        assert isinstance(result, QCDLProgram)
         assert received["angle"] == 1.5
 
     def test_coupler_name_inferred_from_signature(self):
@@ -161,7 +161,7 @@ class TestQcdlQubitSourceModes:
             q0.measure()
 
         result = main()
-        assert isinstance(result, Qcdl)
+        assert isinstance(result, QCDLProgram)
         assert "c0" in received
 
     def test_num_qubits_creates_exact_count(self):
@@ -175,7 +175,7 @@ class TestQcdlQubitSourceModes:
             q0.measure()
 
         result = main()
-        assert isinstance(result, Qcdl)
+        assert isinstance(result, QCDLProgram)
         assert set(received) == {"q0", "q1", "q2"}
 
     def test_environment_mode_uses_initialize_modules(self):
@@ -190,7 +190,7 @@ class TestQcdlQubitSourceModes:
             q0.measure()
 
         result = main()
-        assert isinstance(result, Qcdl)
+        assert isinstance(result, QCDLProgram)
         assert set(received) == {"q0", "q1"}
 
     def test_environment_exposes_all_modules_to_varkw_function(self):
@@ -205,7 +205,7 @@ class TestQcdlQubitSourceModes:
             kwargs["q0"].measure()
 
         result = main()
-        assert isinstance(result, Qcdl)
+        assert isinstance(result, QCDLProgram)
         assert set(received) == {"q0", "q1", "q2"}
 
     def test_to_qcdlv2_returns_string(self):
@@ -225,7 +225,7 @@ class TestQcdlQubitSourceModes:
 # ---------------------------------------------------------------------------
 
 
-class TestQcdlMachine:
+class TestQCDLMachine:
     """Tests for the machine= path through @qcdl."""
 
     def setup_method(self):
@@ -378,7 +378,7 @@ class TestQcdlMachine:
 # ---------------------------------------------------------------------------
 
 
-class TestQcdlKwargsFiltering:
+class TestQCDLKwargsFiltering:
     """Tests for how @qcdl decides which kwargs to pass to the circuit function.
 
     If f has no **kwargs, only keys matching f's explicit argument names are
@@ -437,7 +437,7 @@ class TestQcdlKwargsFiltering:
 
         # Passing an unexpected kwarg should not raise; it is simply dropped.
         result = main(unknown_param=99)
-        assert isinstance(result, Qcdl)
+        assert isinstance(result, QCDLProgram)
 
     def test_varkw_receives_user_kwargs_alongside_qubits(self):
         """With **kwargs, caller kwargs are forwarded alongside qubits."""
@@ -490,7 +490,7 @@ class TestQcdlKwargsFiltering:
 # ---------------------------------------------------------------------------
 
 
-class TestQcdlUserKwargsMerging:
+class TestQCDLUserKwargsMerging:
     """User-supplied kwargs are merged into module_kwargs before being passed."""
 
     def test_user_kwargs_reach_circuit_body(self):
@@ -543,15 +543,15 @@ class TestQcdlUserKwargsMerging:
 
         decorated = qcdl()(MyCircuit())
         result = decorated(my_kwarg="hello")
-        assert isinstance(result, Qcdl)
+        assert isinstance(result, QCDLProgram)
         assert received["my_kwarg"] == "hello"
 
 
-class TestQcdlCircuitStateAndOutputs:
-    """Tests for QcdlCircuit stateful internals and output resource handling."""
+class TestQCDLCircuitStateAndOutputs:
+    """Tests for QCDLCircuit stateful internals and output resource handling."""
 
     def test_output_resources(self):
-        qcdl_obj = QcdlCircuit()
+        qcdl_obj = QCDLCircuit()
 
         class Mock:
             pass
@@ -616,7 +616,7 @@ class TestQcdlCircuitStateAndOutputs:
         assert qcdl_json2.next_indices[idx_name] == num_first + num_second
 
 
-class TestQcdlDecoratorModes:
+class TestQCDLDecoratorModes:
     """Tests decorator mode equivalence across function and method callables."""
 
     def test_qcdl_decorator_equivalent_function_modes(self):
@@ -650,10 +650,10 @@ class TestQcdlDecoratorModes:
     def test_qcdl_decorator_class_method_mode(self):
         rand_num = 1234
 
-        class QcdlDec(object):
+        class QCDLDec(object):
             @qcdl()
             def sequence(self, q0, q1, q2, my_kwarg=None, **kwargs):
-                assert isinstance(self, QcdlDec)
+                assert isinstance(self, QCDLDec)
                 assert my_kwarg in [4, rand_num]
                 _qcdl_decorator_reference(q0, q1, q2, my_kwarg)
 
@@ -661,7 +661,7 @@ class TestQcdlDecoratorModes:
         def main_env(q0, q1, q2, my_kwarg=None, **kwargs):
             _qcdl_decorator_reference(q0, q1, q2, my_kwarg)
 
-        obj = QcdlDec()
+        obj = QCDLDec()
         qcdl_json = obj.sequence(my_kwarg=4)
         _check_serializable(qcdl_json)
         _assert_statement_count(qcdl_json)

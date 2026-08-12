@@ -13,11 +13,11 @@
 #    limitations under the License.
 
 from . import operations
-from .components import QcdlModule, QcdlModuleContainer, Scope, procedure
+from .components import QCDLModule, QCDLModuleContainer, Scope, procedure
 from .constants import LogicalOutcomeToInteger
 from .exceptions import QCDLInternalError, QCDLNotImplementedError, QCDLUserError
 from .qcdl_circuit import qcdl
-from .qcdl_models import Qcdl, QcdlProcedureDef, QcdlStatement
+from .qcdl_models import QCDLProgram, QCDLProcedureDef, QCDLStatement
 from .registers import FixedPointRegister, Register, arbitrary_function
 from .statement import Statement
 from .transformer import display_qcdl, print_qcdl
@@ -28,11 +28,11 @@ __all__ = [
     "QCDLInternalError",
     "QCDLNotImplementedError",
     "QCDLUserError",
-    "Qcdl",
-    "QcdlModule",
-    "QcdlModuleContainer",
-    "QcdlProcedureDef",
-    "QcdlStatement",
+    "QCDLProgram",
+    "QCDLModule",
+    "QCDLModuleContainer",
+    "QCDLProcedureDef",
+    "QCDLStatement",
     "Register",
     "Scope",
     "Statement",

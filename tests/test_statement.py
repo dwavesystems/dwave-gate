@@ -14,14 +14,14 @@
 
 import itertools
 
-from dwave.gate.qcdl import QcdlModule, qcdl
-from dwave.gate.qcdl.qcdl_models import QcdlStatement
+from dwave.gate.qcdl import QCDLModule, qcdl
+from dwave.gate.qcdl.qcdl_models import QCDLStatement
 from dwave.gate.qcdl.utils import is_qubit_name
 
 
 def make_statement(qubit, op, *op_args, **op_kwargs):
     @qcdl(2)
-    def main(q0: QcdlModule, q1: QcdlModule):
+    def main(q0: QCDLModule, q1: QCDLModule):
         qcdl_kwargs = dict(
             q0=q0,
             q1=q1,
@@ -34,7 +34,7 @@ def make_statement(qubit, op, *op_args, **op_kwargs):
         getattr(q, op)(*args, **kwargs)
 
     qcdl_json = main().model_dump(exclude_unset=True)
-    return QcdlStatement.model_validate(qcdl_json["program"]["statements"][0])
+    return QCDLStatement.model_validate(qcdl_json["program"]["statements"][0])
 
 
 def test_qubits_used():
@@ -75,8 +75,8 @@ def test_conditionals():
 
 
 def test_statement_model_validates_dict():
-    """QcdlStatement can be validated from a raw dict."""
-    stmt = QcdlStatement.model_validate({"op": "cx", "qubit": "q0", "args": ["q1"]})
+    """QCDLStatement can be validated from a raw dict."""
+    stmt = QCDLStatement.model_validate({"op": "cx", "qubit": "q0", "args": ["q1"]})
     assert stmt.op == "cx"
     assert stmt.qubit_name == "q0"
     assert any(m.name == "q0" for m in stmt.modules)

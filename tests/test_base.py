@@ -22,7 +22,7 @@ from dwave.gate.qcdl import print_qcdl, procedure, qcdl
 from dwave.gate.qcdl.base import Variable, VariableExpression
 
 
-def test_QcdlArguments():
+def test_QCDLArguments():
     @qcdl(2)
     def main(q0, q1, **kwargs):
         @procedure

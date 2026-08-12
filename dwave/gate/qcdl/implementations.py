@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .components import QcdlModule, Scope, procedure
+from .components import QCDLModule, Scope, procedure
 from .constants import LogicalOutcomeToInteger
 
 if TYPE_CHECKING:
@@ -26,10 +26,10 @@ if TYPE_CHECKING:
 
 
 def _get_receivers(
-    sender: QcdlModule,
+    sender: QCDLModule,
     register: Register,
-    receivers: list[QcdlModule] | None = None,
-) -> list[QcdlModule]:
+    receivers: list[QCDLModule] | None = None,
+) -> list[QCDLModule]:
     if receivers is None:
         receivers = [q for q in register.qcdl_modules if repr(q) != repr(sender)]
     else:
@@ -40,9 +40,9 @@ def _get_receivers(
 
 @procedure
 def mirror_bool_register(
-    sender: QcdlModule,
+    sender: QCDLModule,
     register: Register,
-    receivers: list[QcdlModule] | None = None,
+    receivers: list[QCDLModule] | None = None,
 ) -> None:
     """Mirror a Boolean register to registers associated with other qubits.
 
@@ -102,9 +102,9 @@ def mirror_bool_register(
 
 @procedure
 def mirror_measurement_register(
-    sender: QcdlModule,
+    sender: QCDLModule,
     register: Register,
-    receivers: list[QcdlModule] | None = None,
+    receivers: list[QCDLModule] | None = None,
 ) -> None:
     """Mirror a two-bit qubit measurement to registers associated with other
     qubits.
