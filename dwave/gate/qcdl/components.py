@@ -1767,7 +1767,7 @@ class QCDLModule(QCDLModuleContainer):
 
     @property
     def qcdl_modules(self) -> tuple[QcdlModule]:
-        """tuple[QCDLModule]: The :class:`~dwave.gate.qcdl.QCDLModule` this
+        """The :class:`~dwave.gate.qcdl.QCDLModule` this
         container holds.
 
         Examples:
@@ -1825,7 +1825,7 @@ class QCDLModule(QCDLModuleContainer):
 
     @property
     def signal(self) -> str:
-        """str: Signal that other qubits can condition a branch upon.
+        """Signal that other qubits can condition a branch upon.
 
         See the :ref:`qcdl_advanced_signals` section for a description and
         examples of signals and the :ref:`qcdl_advanced_conditionals` section
