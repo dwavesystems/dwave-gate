@@ -15,7 +15,7 @@
 """API for gates and measurements.
 
 Because the transpiler used by both the compiler and the simulator is
-implemented using `Qiskit <https://github.com/Qiskit/qiskit>`_, all
+implemented using `Qiskit <https://www.ibm.com/quantum/qiskit>`_, all
 `QuantumCircuit <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.QuantumCircuit>`_
 gates are supported.
 

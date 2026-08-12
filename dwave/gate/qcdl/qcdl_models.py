@@ -195,42 +195,6 @@ class QCDLStatement(BaseModel):
     :meth:`~dwave.gate.qcdl.components.Procedure.add_statement` method generates
     (fields that are not explicitly set are omitted).
 
-    The following derived properties and methods are available directly on
-    this model.
-
-    .. todo:: For the table below, I do not see an :attr:`qubit` attribute and `caller_qubits` has no docstring.
-
-    .. list-table::
-        :header-rows: 1
-
-        *   -   Property/Method
-            -   Description
-        *   -   :attr:`qubit_name`
-            -   Alias for :attr:`qubit`, returning its string name.
-        *   -   :attr:`is_procedure_call`
-            -   ``True`` when :attr:`qubit` is ``None``.
-        *   -   :attr:`modules`
-            -   All qubits/couplers referenced by the statement.
-        *   -   ``caller_qubits``
-            -   Qubits passed to the called procedure (empty for normal
-                statements); use :attr:`qubits` for full module access.
-        *   -   :attr:`qargs`
-            -   Integer qubit indices derived from :attr:`modules`.
-        *   -   :attr:`cargs`
-            -   Always ``None`` (Qiskit-style interface).
-        *   -   :attr:`condition`
-            -   Condition value for ``If``/``c_if``/``c_if_else``.
-        *   -   :meth:`simple_desc`
-            -   Short human-readable description.
-        *   -   :meth:`reassign_arg`
-            -   Replace a positional argument by index.
-        *   -   :meth:`reassign_kwarg`
-            -   Replace a keyword argument by name.
-
-    .. note:: ``args`` and ``kwargs`` are raw serialization fields that the
-        compiler receives.  The :attr:`qubits` property is a computed field
-        populated post-initialization and is included in serialization.
-        The :meth:`reassign_arg` method operates on the raw ``args`` list.
     """
 
     model_config = ConfigDict(extra="allow", validate_assignment=True)
@@ -555,10 +519,11 @@ class QCDLProcedureDef(BaseModel):
 class QCDLProgram(BaseModel):
     """`Pydantic <https://pydantic.dev/docs/>`_ model for a QCDL program.
 
-    .. important:: This class is intended for use by developers of QCDL.
+    .. important:: This class is intended for use by developers of QCDL, though
+        the interfaces are of broader usage.
 
-    Use the :meth:`~dwave.gate.qcdl.qcdl_circuit.QcdlCircuit.to_model()` method
-    to generate an instance of this class.
+    Use the :class:`~dwave.gate.qcdl.qcdl` decorator to generate an instance of
+    this class.
 
 
     The ``extra="allow"`` setting in ``model_config`` ensures that
