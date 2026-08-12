@@ -21,7 +21,7 @@ import inspect
 import logging
 from collections import defaultdict
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeAlias, overload
+from typing import Any, Callable, Literal, TypeAlias, overload, Protocol
 
 import numpy as np
 
@@ -32,13 +32,29 @@ from .qcdl_models import Qcdl, QcdlModuleName, QcdlProcedureDef
 from .transformer import print_qcdl
 from .utils import is_qubit_or_coupler_name
 
-if TYPE_CHECKING:
-    from aqumen_environment import Environment
-    from aqumen_environment.coupler_graph import CouplerGraph
-    from aqumen_environment.modules import Module
-    from aqumen_hardware_abstraction import Machine
-
 logger = logging.getLogger(__name__)
+
+
+class Environment(Protocol):
+    """Structural type for environments."""
+
+    def get_modules(self, include_couplers: bool) -> Iterable[Any]:
+        ...
+
+
+class Machine(Protocol):
+    """Structural type for machine adapters."""
+
+    environment: Environment
+
+    def get_system(self, name: str) -> QcdlModule:
+        ...
+
+    def set_up_systems(self, systems: dict[str, Any], procedure: Procedure) -> None:
+        ...
+
+    def clean_up_systems(self, systems: dict[str, Any]) -> None:
+        ...
 
 
 class QcdlCircuit(IndexerMixin):
@@ -72,8 +88,7 @@ class QcdlCircuit(IndexerMixin):
     ):
         """Create a QCDL Circuit object
 
-        An environment is only required for certain operations (e.g.,
-        the coupler_graph).
+        An environment is only required for certain operations.
 
         The most common usage for this class is shown in the @qcdl decorator.
 
@@ -126,14 +141,9 @@ class QcdlCircuit(IndexerMixin):
 
         return self._environment
 
-    @property
-    def coupler_graph(self) -> CouplerGraph:
-        return self.environment.coupler_graph
-
     def initialize_modules(
         self,
         main_name: str = "main",
-        modules: Sequence[Module] | None = None,
         **kwargs: Any,
     ) -> dict[str, QcdlModule]:
         """Initialize a dict of QcdlModules
@@ -141,8 +151,6 @@ class QcdlCircuit(IndexerMixin):
         Args:
             main_name (str, optional): Name for the main procedure.
                 Defaults to "main"
-            modules (Sequence[Module] | None, optional): Environment modules.
-                Defaults to using all in the environment.
 
         Raises:
             QCDLUserError: can only do this once
@@ -154,8 +162,7 @@ class QcdlCircuit(IndexerMixin):
         if self._main:
             raise QCDLUserError("Can not create 2 main procedures")
 
-        if modules is None:
-            modules = list(self.environment.get_modules(include_couplers=True))
+        modules = list(self.environment.get_modules(include_couplers=True))
 
         if len(modules) == 0:
             raise QCDLUserError("can not initialize a program with no modules")

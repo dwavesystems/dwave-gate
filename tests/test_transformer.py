@@ -23,7 +23,7 @@ from dwave.gate.qcdl.transformer import transform_qcdl
 
 
 def _check_serializable(data):
-    # Aqusim uses multiprocessing which requires that qcdls are pickleable.
+    # ensure that qcdls are pickleable
     for serializer in [pickle, json]:
         serialized = serializer.dumps(data)
         unserialized = serializer.loads(serialized)
