@@ -51,7 +51,21 @@ Decorators
 QCDL Development
 ================
 
+These classes are of interest mostly to developers of QCDL.
+
 .. automodule:: dwave.gate.qcdl
     :show-inheritance:
     :members: QCDLProgram, QCDLModule, QCDLModuleContainer, QCDLProcedureDef,
         QCDLStatement
+
+.. automodule:: dwave.gate.qcdl.qcdl_circuit
+    :show-inheritance:
+    :members: QCDLCircuit
+
+.. automodule:: dwave.gate.qcdl.components
+    :show-inheritance:
+    :members: Procedure, QCDLModuleName
+
+.. automodule:: dwave.gate.qcdl.qcdl_models
+    :show-inheritance:
+    :members: QCDLSignature

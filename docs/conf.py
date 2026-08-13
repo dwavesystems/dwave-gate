@@ -39,6 +39,7 @@ html_sidebars = {"**": ["search-field", "sidebar-nav-bs"]}  # remove ads
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'numpy': ('https://numpy.org/doc/stable/', None),
+                       'pydantic': ('https://pydantic.dev/docs/validation/latest', None),
                        'dwave': ('https://docs.dwavequantum.com/en/latest/', None),
                        }
 
