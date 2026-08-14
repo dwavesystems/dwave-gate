@@ -15,7 +15,7 @@
 from . import operations
 from .components import QCDLModule, QCDLModuleContainer, Scope, procedure
 from .constants import LogicalOutcomeToInteger
-from .exceptions import QCDLInternalError, QCDLNotImplementedError, QCDLUserError
+from .exceptions import QCDLInternalError, QCDLUserError
 from .qcdl_circuit import qcdl
 from .qcdl_models import QCDLProgram, QCDLProcedureDef, QCDLStatement
 from .registers import FixedPointRegister, Register, arbitrary_function
@@ -26,7 +26,6 @@ __all__ = [
     "FixedPointRegister",
     "LogicalOutcomeToInteger",
     "QCDLInternalError",
-    "QCDLNotImplementedError",
     "QCDLUserError",
     "QCDLProgram",
     "QCDLModule",
