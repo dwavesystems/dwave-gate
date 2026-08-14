@@ -54,7 +54,7 @@ that supports QCDL and submit the dictionary via ``sample_qcdl``:
     answer = orjson.loads(response.answer_data.read())
     result = Result(**answer)
 
-Measurements and sample counts are now accessible by calling 
+Access measurements and sample counts by calling 
 ``result.measurements`` or ``result.get_counts()`` respectively.
 
 .. end_gate_about
