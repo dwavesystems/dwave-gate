@@ -45,12 +45,17 @@ that supports QCDL and submit the dictionary via ``sample_qcdl``:
 
     import orjson
     from dwave.cloud import Client
+    from dwave.gate.results import Result
 
     client = Client.from_config()
     solver = client.get_solver(supported_problem_types__contains="qcdl")
 
     response = solver.sample_qcdl(qcdl_program, shots=3)
     answer = orjson.loads(response.answer_data.read())
+    result = Result(**answer)
+
+Measurements and sample counts are now accessible by calling 
+``result.measurements`` or ``result.get_counts()`` respectively.
 
 .. end_gate_about
 
