@@ -23,7 +23,3 @@ class QCDLInternalError(Exception):
 
 class QCDLRuntimeError(Exception):
     """Runtime issue with the circuit."""
-
-
-class QCDLNotImplementedError(NotImplementedError):
-    """Feature is not implemented."""
