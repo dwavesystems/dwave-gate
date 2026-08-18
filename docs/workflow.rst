@@ -593,7 +593,7 @@ Procedures are useful for:
 *   Organizing code for visualization purposes
 *   Constraining transpilation
 
-A procedure is marked with the ``@procedure`` decorator.
+A procedure is marked with the :class:`~dwave.gate.qcdl.procedure` decorator.
 
 .. testcode::
 
@@ -727,7 +727,7 @@ two discrete steps:
     a register. This is the *branch condition*.
 2.  Create a true branch statement, and optionally a false branch statement. If
     the branch condition evaluates to :math:`1`, your true branch is executed;
-    otherwise, the false branch is executed.
+    otherwise, the false branch (or the default idle) is executed.
 
 QCDL supports several ways of setting a branch condition and branching from an
 instruction.
@@ -787,8 +787,8 @@ Supported Condition Values
         -   See the :ref:`qcdl_advanced_signals` section for details.
     *   -   ``None``
         -   You can separate the steps of evaluating the branch condition and
-            branching by assigning the branch condition before the (e.g.,
-            :meth:`~dwave.gate.qcdl.QCDLModuleContainer.If`) statement, with
+            branching by assigning the branch condition before the statement
+            (e.g., :meth:`~dwave.gate.qcdl.QCDLModuleContainer.If`), with
             that branch condition persisting if ``None`` is specified. The
             branch condition might be set, for example, by a preceding
             :meth:`~dwave.gate.qcdl.QCDLModuleContainer.all_to_all` or
@@ -830,12 +830,12 @@ This example detects and resets a qubit if it has been erased.
     from dwave.gate.qcdl.operations import mced
 
     @qcdl(1)
-    def detect_erasure_example(q):
-        erased = q.Register(name="erased")
+    def detect_erasure_example(q0):
+        erased = q0.Register(name="erased")
         erased <<= 0
-        mced(q, register=erased)
-        with q.If(erased == 1):
-            q.reset()
+        mced(q0, register=erased)
+        with q0.If(erased == 1):
+            q0.reset()
 
 This example conditions on a classical register.
 
@@ -897,6 +897,8 @@ The following example results in the bitstring being either :math:`11` or
 qubit sets it after its measurement. The :ref:`qcdl_advanced_conditionals`
 section describes the condition value used in the ``If`` statement.
 
+.. todo:: Amos is updating the simulator for use of signal (see simulator ticket 503)
+
 .. testcode::
 
     from dwave.gate.qcdl import qcdl
@@ -909,9 +911,9 @@ section describes the condition value used in the ``If`` statement.
         h(q0)
         send_register = q0.Register()
         measure(q0, register=send_register)
-        sender.master(extf=send_register == 1)
+        sender.master(signal=send_register == 1)
         sender.sync(receiver)
-        with receiver.If(sender.extf):
+        with receiver.If(sender.signal):
             x(receiver)
         measure(receiver)
 
@@ -1157,8 +1159,8 @@ A register is associated with a qubit. When you create a
 :class:`~dwave.gate.qcdl.Scope` class, it is implemented as a collection of
 registers for the qubits in the scope. And when you assign that
 :class:`~dwave.gate.qcdl.registers.Register` to a
-:func:`dwave.gate.qcdl.operations.measure` or
-:func:`dwave.gate.qcdl.operations.mced` operation, only the register
+:func:`~dwave.gate.qcdl.operations.measure` or
+:func:`~dwave.gate.qcdl.operations.mced` operation, only the register
 associated with the measured qubit is updated (the measurement outcome is
 immediately written to that register).
 
@@ -1345,29 +1347,3 @@ Simulator Configuration
         -   bool
         -   False
 
-Logging
--------
-
-For troubleshooting when jobs are starting and completing, configure logging,
-which Python does not turn on by default. There are many configuration options
-for logging with various tradeoffs, the main one being signal-to-noise.
-
-D-Wave recommends a simple logging configuration that adds the following lines
-of code once near the beginning of the highest level ``.py`` or ``.ipynb``
-(for Jupyter notebooks) files. This code prints job IDs next to reported errors.
-
-.. testcode::
-
-    import logging
-
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    )
-
-The codes sets typical
-`log attributes <https://docs.python.org/3/library/logging.html#logrecord-attributes>`_.
-Typically, ``INFO`` level is sufficient but not too verbose for production use.
-You may consider using ``WARNING`` in standard output (``stdout``) and
-separately saving ``INFO`` level to a ``.log`` file.
