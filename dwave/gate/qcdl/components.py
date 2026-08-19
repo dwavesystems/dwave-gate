@@ -1887,20 +1887,17 @@ class QCDLModule(QCDLModuleContainer):
         send: RegisterExpression,
         **kwargs: Any,
     ) -> None:
-        """Send a bit from one qubit to a :class:`~dwave.gate.qcdl.Scope` of
-        other qubits.
+"""Send a bit from one qubit to other qubits.
 
         See the :ref:`qcdl_advanced_signals` section for a description and
         examples of signals.
 
         Args:
-            destinations: The qubits to send the message to, as a
-                :class:`~dwave.gate.qcdl.Scope`, a single
-                :class:`~dwave.gate.qcdl.QCDLModule`, or a sequence of either.
-                The bit is placed on each qubit's branch condition to be used in
-                a conditional statement. Statements are tagged with the
-                ``scope_id`` only when a :class:`~dwave.gate.qcdl.Scope` is
-                passed.
+            destinations: The qubits to send the message to. The bit is placed
+                on each qubit's branch condition to be used in a conditional
+                statement. Statements are tagged with the
+                ``scope_id`` if a :class:`~dwave.gate.qcdl.Scope` is
+                specified.
             send: The expression to compute the bit on the sender.
 
         Raises:
