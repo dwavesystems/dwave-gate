@@ -267,7 +267,7 @@ Supported Operations
 .. attention::
     Registers are not implicitly re-assigned with every shot. Instead, they
     carry the value they ended with from one shot to the next. Typically, for
-    most registers, you prefer  each shot to be independent, and so should
+    most registers, you prefer each shot to be independent, and so should
     re-assign your registers before using them.
 
 .. note::
