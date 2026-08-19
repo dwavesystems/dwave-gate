@@ -37,6 +37,26 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Documented import paths
+# ---------------------------------------------------------------------------
+
+
+def test_result_classes_are_importable_from_the_package_root():
+    """The guide refers to these as dwave.gate.Result / dwave.gate.YieldHandling."""
+    import dwave.gate
+
+    assert dwave.gate.Result is Result
+    assert dwave.gate.YieldHandling is YieldHandling
+    assert set(dwave.gate.__all__) == {"Result", "YieldHandling"}
+
+
+def test_re_export_leaves_the_defining_module_alone():
+    """Sphinx and pickle both key off __module__, so it must not move."""
+    assert Result.__module__ == "dwave.gate.results"
+    assert YieldHandling.__module__ == "dwave.gate.results"
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 

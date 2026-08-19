@@ -13,3 +13,13 @@
 #    limitations under the License.
 
 __version__ = "0.4.0"
+
+# The user guide refers to these as dwave.gate.Result and
+# dwave.gate.YieldHandling, so re-export them from the package root. They remain
+# importable from dwave.gate.results, which is where they are defined.
+from dwave.gate.results import Result, YieldHandling
+
+__all__ = [
+    "Result",
+    "YieldHandling",
+]
