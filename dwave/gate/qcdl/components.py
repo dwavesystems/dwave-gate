@@ -28,7 +28,7 @@ import re
 import types
 from collections.abc import Mapping, Sequence, Set
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, Iterator
+from typing import TYPE_CHECKING, Any, Callable, Iterator, NamedTuple
 
 import numpy as np
 
@@ -74,6 +74,21 @@ class StatementToHashEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
         except TypeError:
             return str(obj)
+
+
+class RegisterAllocation(NamedTuple):
+    """One entry in the register names a circuit has allocated.
+
+    Args:
+        dtype: ``"int"`` or ``"float"``.
+        procedure: Procedure that made the allocation. The name it was made
+            under is reported when a later declaration clashes, and the
+            identity tells a re-run of that same procedure apart from a
+            genuine re-declaration.
+    """
+
+    dtype: str
+    procedure: Procedure
 
 
 class Procedure(IndexerMixin):
@@ -133,10 +148,6 @@ class Procedure(IndexerMixin):
         # this is used as a stack -- add_statement will raise an error if any
         # qubits in the statement are not listed in the last item in this list.
         self._exclusive_modules: list[set[str]] = []
-
-        # register names allocated in this procedure, per module, so that
-        # re-declaring one can be reported rather than silently discarded
-        self._allocated_registers: dict[str, dict[str, str]] = {}
 
         self._procedure_ended = False
 
@@ -260,6 +271,17 @@ class Procedure(IndexerMixin):
         value never reaches the qubit. That is almost always a mistake, so it is
         reported here instead.
 
+        Register names are global to the circuit rather than local to a
+        procedure, so the record lives on the
+        :attr:`~dwave.gate.qcdl.qcdl_circuit.QCDLCircuit.allocated_registers`
+        attribute of the state, and a name taken in one procedure clashes with
+        the same name in another.
+
+        A procedure body is re-executed on every call while the program is
+        being built, but is emitted once, so a declaration reached through a
+        later run of the *same* procedure is not a re-declaration and is not
+        reported.
+
         Re-declaring the name is allowed when the caller asked for it, but only
         without an initial value: opting in to the re-declaration says the
         existing memory is wanted, whereas giving a value says the opposite,
@@ -289,33 +311,48 @@ class Procedure(IndexerMixin):
                 ``allow_existing`` is False or an initial value was given.
         """
         for module in modules:
-            allocated = self._allocated_registers.setdefault(
+            allocated = self.state.allocated_registers.setdefault(
                 module.qcdl_module_name, {}
             )
             previous = allocated.get(name)
+            if previous is not None and self._is_rerun_of(previous.procedure):
+                previous = None
             if previous is not None and not (
                 allow_existing and not initial_value_specified
             ):
                 if allow_existing:
                     raise QCDLUserError(
                         f"register {name!r} is already allocated on"
-                        f" {module.qcdl_module_name} with dtype {previous} in"
-                        f" procedure {self.name}, and the compiler keeps the"
-                        f" first allocation, so the initial value given here"
-                        f" would never reach the qubit. Re-declaring the name is"
-                        f" allowed, but giving it a value is not: drop the"
-                        f" initial value."
+                        f" {module.qcdl_module_name} with dtype"
+                        f" {previous.dtype} in procedure"
+                        f" {previous.procedure.name}, and the compiler keeps"
+                        f" the first allocation, so the initial value given"
+                        f" here would never reach the qubit. Re-declaring the"
+                        f" name is allowed, but giving it a value is not: drop"
+                        f" the initial value."
                     )
                 raise QCDLUserError(
                     f"register {name!r} is already allocated on"
-                    f" {module.qcdl_module_name} with dtype {previous} in"
-                    f" procedure {self.name}; the compiler keeps the first"
+                    f" {module.qcdl_module_name} with dtype {previous.dtype} in"
+                    f" procedure {previous.procedure.name}; register names are"
+                    f" global to the circuit and the compiler keeps the first"
                     f" allocation, so this one would be discarded. Reuse the"
                     f" existing register, pick another name, or redeclare it"
                     f" deliberately with alias=True or ignore_reallocation=True"
                     f" and no initial value."
                 )
-            allocated[name] = dtype
+            allocated[name] = RegisterAllocation(dtype, self)
+
+    def _is_rerun_of(self, other: Procedure) -> bool:
+        """Whether ``other`` is an earlier run of the procedure ``self`` is.
+
+        Calling a procedure runs its body again, so a register it declares is
+        seen once per call even though the procedure is emitted once. Those
+        runs are separate :class:`.Procedure` instances sharing a name, and the
+        name is what the rest of the circuit deduplicates on, so matching on it
+        here agrees with what ends up in the program.
+        """
+        return other is not self and other.proc_name == self.proc_name
 
     @property
     def expression_queue(self) -> list | None:

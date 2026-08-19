@@ -768,8 +768,8 @@ def test_duplicate_array_name_raises():
         main()
 
 
-def test_register_names_are_tracked_per_procedure():
-    """A procedure has its own statements, so it may reuse a name."""
+def test_register_names_are_global_across_procedures():
+    """A procedure does not get its own namespace; the memory is the qubit's."""
 
     @procedure
     def inner(qa):
@@ -780,6 +780,80 @@ def test_register_names_are_tracked_per_procedure():
     def main(q0):
         q0.Register(name="local")
         inner(q0)
+
+    with pytest.raises(QCDLUserError) as cm:
+        main()
+    message = str(cm.value)
+    assert "'local' is already allocated on q0" in message
+    # the clash is with a register declared in another procedure, so the
+    # message has to say which one rather than naming the current procedure
+    assert "in procedure main" in message
+
+
+def test_a_clash_reports_the_procedure_that_allocated_first():
+    @procedure
+    def inner(qa):
+        qa.Register(name="shared")
+        qa.rx(0.123)
+
+    @qcdl(1)
+    def main(q0):
+        inner(q0)
+        q0.Register(name="shared")
+
+    with pytest.raises(QCDLUserError, match="in procedure inner_q0"):
+        main()
+
+
+def test_calling_a_procedure_twice_is_not_a_duplicate():
+    """Each call re-runs the body, but the procedure is emitted once."""
+
+    @procedure
+    def inner(qa):
+        qa.Register(3, name="local")
+        qa.rx(0.123)
+
+    @qcdl(1)
+    def main(q0):
+        inner(q0)
+        inner(q0)
+
+    program = main()
+    allocations = [
+        s for s in program.procedures["inner_q0"].statements
+        if s.op == "allocate_memory"
+    ]
+    assert [a.kwargs["initial_value"] for a in allocations] == [3]
+
+
+def test_a_procedure_still_may_not_declare_a_name_twice_itself():
+    """The re-run allowance must not blind the check inside one body."""
+
+    @procedure
+    def inner(qa):
+        qa.Register(1, name="local")
+        qa.Register(2, name="local")
+
+    @qcdl(1)
+    def main(q0):
+        inner(q0)
+
+    with pytest.raises(QCDLUserError, match="'local' is already allocated"):
+        main()
+
+
+def test_two_procedures_may_use_a_name_on_different_qubits():
+    """Names are global to the circuit but still per qubit."""
+
+    @procedure
+    def inner(qa):
+        qa.Register(name="local")
+        qa.rx(0.123)
+
+    @qcdl(2)
+    def main(q0, q1):
+        inner(q0)
+        inner(q1)
 
     assert main()
 
