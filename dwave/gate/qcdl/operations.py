@@ -88,6 +88,34 @@ def initialize(*qubits: QCDLModule) -> None:
     qubits[0].initialize(*qubits[1:])
 
 
+def reset(qubit: QCDLModule) -> None:
+    r"""Reset a single qubit to :math:`|0\rangle`.
+
+    Unlike :func:`initialize`, which loops until every qubit in the program is
+    reset, this operation acts on one qubit and has deterministic duration, so
+    it can be used inside a conditional branch.
+
+    Args:
+        qubit: Qubit to reset.
+
+    Examples:
+
+        .. testcode::
+
+            from dwave.gate.qcdl import qcdl
+            from dwave.gate.qcdl.operations import measure, reset, x
+
+            @qcdl(1)
+            def reset_gate(q0):
+                x(q0)
+                reset(q0)
+                measure(q0)
+
+            qcdl_program = reset_gate()
+    """
+    qubit.procedure.add_statement(qubit.qcdl_module_name, "reset", None, None)
+
+
 def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
     """Place a barrier on qubits.
 
@@ -282,6 +310,33 @@ def sx(qubit: QCDLModule) -> None:
             qcdl_program = sx_gate()
     """
     qubit.procedure.add_statement(None, "sx", [qubit], None)
+
+
+def sxdg(qubit: QCDLModule) -> None:
+    r"""`Square-root of X adjoint <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SXdgGate>`_
+    (:math:`\sqrt X^\dagger`) gate.
+
+    The inverse of the :func:`.sx` gate.
+
+    Args:
+        qubit: Qubit on which to apply the gate.
+
+    Examples:
+
+        .. testcode::
+
+            from dwave.gate.qcdl import qcdl
+            from dwave.gate.qcdl.operations import measure, sx, sxdg
+
+            @qcdl(1)
+            def sxdg_gate(q0):
+                sx(q0)
+                sxdg(q0)        # returns the qubit to its initial state
+                measure(q0)
+
+            qcdl_program = sxdg_gate()
+    """
+    qubit.procedure.add_statement(None, "sxdg", [qubit], None)
 
 
 def y(qubit: QCDLModule) -> None:

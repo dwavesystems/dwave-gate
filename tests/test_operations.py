@@ -116,6 +116,31 @@ def test_operations(op_name):
         assert "register" in statement.kwargs
 
 
+def test_reset_is_an_importable_operation():
+    """``q0.reset()`` works only through __getattr__, so it has no signature."""
+    assert callable(operations.reset)
+    assert operations.reset.__doc__
+    assert list(inspect.signature(operations.reset).parameters) == ["qubit"]
+
+
+def test_reset_matches_the_statement_getattr_produces():
+    """The operation must be an alias for what the guide teaches, not a variant."""
+
+    @qcdl(1)
+    def with_operation(q0):
+        operations.x(q0)
+        operations.reset(q0)
+        operations.measure(q0)
+
+    @qcdl(1)
+    def with_getattr(q0):
+        operations.x(q0)
+        q0.reset()
+        operations.measure(q0)
+
+    assert with_operation().model_dump() == with_getattr().model_dump()
+
+
 @pytest.mark.parametrize("mirror", [True, False])
 def test_measure_register(mirror, mocker: MockerFixture):
     @qcdl(10)
