@@ -251,6 +251,7 @@ class Procedure(IndexerMixin):
         name: str,
         dtype: str,
         allow_existing: bool = False,
+        initial_value_specified: bool = False,
     ) -> None:
         """Record a register allocation, rejecting a silent re-declaration.
 
@@ -258,6 +259,11 @@ class Procedure(IndexerMixin):
         declaration of the same name on the same module is a no-op: its initial
         value never reaches the qubit. That is almost always a mistake, so it is
         reported here instead.
+
+        Re-declaring the name is allowed when the caller asked for it, but an
+        explicit initial value is still rejected: opting in to the
+        re-declaration says the existing memory is wanted, whereas giving a
+        value says the opposite, and the compiler would ignore it.
 
         This method is mostly intended for use by developers of QCDL; the
         :class:`~dwave.gate.qcdl.registers.Register` and
@@ -269,28 +275,42 @@ class Procedure(IndexerMixin):
             name: Name of the register.
             dtype: ``"int"`` or ``"float"``.
             allow_existing: If True, an existing allocation of ``name`` is
-                accepted. Set by the ``alias`` and ``ignore_reallocation``
-                arguments of a register.
+                accepted as long as no initial value was given. Set by the
+                ``alias`` and ``ignore_reallocation`` arguments of a register.
+            initial_value_specified: Whether the caller gave an initial value
+                for this register.
 
         Raises:
             :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If ``name``
-                is already allocated on one of ``modules`` and
-                ``allow_existing`` is False.
+                is already allocated on one of ``modules`` and either
+                ``allow_existing`` is False or an initial value was given.
         """
         for module in modules:
             allocated = self._allocated_registers.setdefault(
                 module.qcdl_module_name, {}
             )
             previous = allocated.get(name)
-            if previous is not None and not allow_existing:
+            if previous is not None and not (
+                allow_existing and not initial_value_specified
+            ):
+                if allow_existing:
+                    raise QCDLUserError(
+                        f"register {name!r} is already allocated on"
+                        f" {module.qcdl_module_name} with dtype {previous} in"
+                        f" procedure {self.name}, and the compiler keeps the"
+                        f" first allocation, so the initial value given here"
+                        f" would never reach the qubit. Re-declaring the name is"
+                        f" allowed, but giving it a value is not: drop the"
+                        f" initial value."
+                    )
                 raise QCDLUserError(
                     f"register {name!r} is already allocated on"
                     f" {module.qcdl_module_name} with dtype {previous} in"
                     f" procedure {self.name}; the compiler keeps the first"
                     f" allocation, so this one would be discarded. Reuse the"
-                    f" existing register, pick another name, pass alias=True to"
-                    f" reuse its memory, or pass ignore_reallocation=True to"
-                    f" allow the redeclaration."
+                    f" existing register, pick another name, or redeclare it"
+                    f" deliberately with alias=True or ignore_reallocation=True"
+                    f" and no initial value."
                 )
             allocated[name] = dtype
 
