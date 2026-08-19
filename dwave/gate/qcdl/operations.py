@@ -257,9 +257,9 @@ def initialize(*qubits: QCDLModule) -> None:
 def reset(qubit: QCDLModule) -> None:
     r"""Reset a single qubit to :math:`|0\rangle`.
 
-    Unlike :func:`initialize`, which loops until every qubit in the program is
-    reset, this operation acts on one qubit and has deterministic duration, so
-    it can be used inside a conditional branch.
+    Unlike :func:`initialize`, which ensures every qubit in the program is
+    reset, this operation acts on one qubit. It has deterministic duration, so
+    you can use it inside a conditional branch.
 
     Args:
         qubit: Qubit to reset.
