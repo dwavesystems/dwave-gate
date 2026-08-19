@@ -652,16 +652,53 @@ class YieldHandling(enum.StrEnum):
         else:
             return YieldHandling[name]
 
+    @staticmethod
+    def _is_erasure(key: Any) -> bool:
+        """Whether a counts key records an erasure.
+
+        Only the string key formats can hold a splat: the
+        :func:`.count_measurements` function produces integer keys only for
+        memory that is entirely 0s and 1s.
+        """
+        return isinstance(key, str) and "*" in key
+
     def apply(
         self, distribution: dict[Any, int]
     ) -> tuple[dict[Any, float | int], float]:
+        """Apply this yield handling to a counts dict.
+
+        Args:
+            distribution: Counts, as returned by the
+                :func:`.count_measurements` function or the
+                :meth:`.Result.get_counts` method. Keys may be in any of the
+                formats that function produces.
+
+        Raises:
+            :exception:`ValueError`: If the distribution is empty, or if the
+                yield is too low for
+                :attr:`.renormalize_distribution_or_raise`.
+            :exception:`ZeroDivisionError`: If nothing survives post selection
+                and the distribution has to be renormalized.
+
+        Returns:
+            The handled distribution and the observed yield.
+        """
+        if not distribution:
+            raise ValueError("can not apply yield handling to an empty distribution")
+
         num_executed_shots: int = sum(distribution.values())
-        post_selected = {k: v for k, v in distribution.items() if "*" not in k}
+        post_selected = {
+            k: v for k, v in distribution.items() if not self._is_erasure(k)
+        }
         if not post_selected:
             # Put one key in the dict at least. Use a previously existing key as
             # a template so that the formatting is correct.
-            template_key: str = next(iter(distribution))
-            zeros_key = template_key.replace("1", "0").replace("*", "0")
+            template_key: Any = next(iter(distribution))
+            zeros_key = (
+                template_key.replace("1", "0").replace("*", "0")
+                if isinstance(template_key, str)
+                else 0
+            )
             post_selected[zeros_key] = 0
 
         num_post_selected_shots: int = sum(post_selected.values())

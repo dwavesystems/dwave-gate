@@ -517,3 +517,47 @@ def test_yield_handling():
 
     with pytest.raises(ValueError):
         YieldHandling.renormalize_distribution_or_raise.apply(yield_5pct)
+
+
+@pytest.mark.parametrize("key_format", ["bin", "hex", None, "{0:>03b}"])
+def test_yield_handling_accepts_every_count_key_format(key_format):
+    """count_measurements and YieldHandling have to compose.
+
+    ``key_format=None`` produces integer keys, which cannot hold a splat but
+    used to raise ``TypeError`` on the ``"*" not in key`` test.
+    """
+    distribution = count_measurements([[0, 1, 1]] * 4, key_format=key_format)
+
+    handled, observed_yield = YieldHandling.only_post_selected_counts.apply(
+        distribution
+    )
+    assert handled == distribution
+    assert observed_yield == 1.0
+
+
+def test_yield_handling_with_integer_keys_renormalizes():
+    distribution = count_measurements([[0, 1]] * 4, key_format=None)
+
+    assert YieldHandling.renormalize_distribution.apply(distribution) == (
+        {1: 4.0},
+        1.0,
+    )
+
+
+def test_yield_handling_zeros_key_for_non_string_keys():
+    """The all-erasures fallback needs a key of the caller's own format."""
+    handled, observed_yield = YieldHandling.only_post_selected_counts.apply({"0*": 10})
+    assert handled == {"00": 0}
+    assert observed_yield == 0
+
+    # an integer-keyed distribution can not contain erasures, so the fallback is
+    # only reachable by handing apply() a key it did not produce
+    handled, observed_yield = YieldHandling.ignore_splats.apply({7: 10})
+    assert handled == {7: 10}
+    assert observed_yield == 1.0
+
+
+def test_yield_handling_rejects_an_empty_distribution():
+    """post_select can empty a counts dict; StopIteration is not a useful error."""
+    with pytest.raises(ValueError, match="empty distribution"):
+        YieldHandling.only_post_selected_counts.apply({})
