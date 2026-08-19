@@ -347,6 +347,84 @@ def test_one_to_all():
             assert s.args[0] == reg_name
 
 
+def _one_to_all_statement(destinations_from):
+    """Build a one_to_all and return its statement.
+
+    ``destinations_from`` turns the listener Scope into whatever form of
+    destination the test wants to pass.
+    """
+
+    @qcdl(3)
+    def main(q0, q1, q2):
+        send_register = q0.Register(name="reg123")
+        sc = Scope(q1, q2)
+        q0.one_to_all(destinations_from(sc, q1), send_register == 1)
+
+    statements = [
+        QCDLStatement.model_validate(stmt)
+        for stmt in main().model_dump(exclude_unset=True)["program"]["statements"]
+    ]
+    return next(s for s in statements if s.op == "one_to_all")
+
+
+@pytest.mark.parametrize(
+    "destinations_from,expected",
+    [
+        (lambda sc, q1: sc, ["q1", "q2"]),
+        (lambda sc, q1: sc.qcdl_modules, ["q1", "q2"]),
+        (lambda sc, q1: tuple(sc.qcdl_modules), ["q1", "q2"]),
+        (lambda sc, q1: list(reversed(sc.qcdl_modules)), ["q2", "q1"]),
+        (lambda sc, q1: q1, ["q1"]),
+        (lambda sc, q1: [q1, sc], ["q1", "q2"]),
+        (lambda sc, q1: [q1, q1], ["q1"]),
+    ],
+    ids=["scope", "list", "tuple", "reversed", "module", "mixed", "repeated"],
+)
+def test_one_to_all_destination_forms(destinations_from, expected):
+    """The guide passes ``scope.qcdl_modules``, which used to raise."""
+    assert _one_to_all_statement(destinations_from).kwargs["qubits"] == expected
+
+
+def test_one_to_all_scope_id_comes_from_a_scope_only():
+    """A bare sequence has no identity, so it contributes no scope_id."""
+    from_scope = _one_to_all_statement(lambda sc, q1: sc)
+    from_list = _one_to_all_statement(lambda sc, q1: sc.qcdl_modules)
+
+    assert from_scope.kwargs["scope_id"] is not None
+    assert from_list.kwargs["scope_id"] is None
+
+
+@pytest.mark.parametrize("destinations", [5, "q1", None, 3.14])
+def test_one_to_all_rejects_a_non_module(destinations):
+    @qcdl(2)
+    def main(q0, q1):
+        send_register = q0.Register(name="reg123")
+        q0.one_to_all(destinations, send_register == 1)
+
+    with pytest.raises(QCDLUserError, match="must be a Scope, a QCDLModule"):
+        main()
+
+
+def test_one_to_all_rejects_a_non_module_in_a_sequence():
+    @qcdl(2)
+    def main(q0, q1):
+        send_register = q0.Register(name="reg123")
+        q0.one_to_all([q1, 7], send_register == 1)
+
+    with pytest.raises(QCDLUserError, match="every item in destinations"):
+        main()
+
+
+def test_one_to_all_rejects_an_empty_sequence():
+    @qcdl(2)
+    def main(q0, q1):
+        send_register = q0.Register(name="reg123")
+        q0.one_to_all([], send_register == 1)
+
+    with pytest.raises(QCDLUserError, match="does not hold any qubits"):
+        main()
+
+
 def test_break_outside_loop():
     @qcdl(1)
     def main(q0):
