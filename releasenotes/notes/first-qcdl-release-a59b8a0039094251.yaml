@@ -9,13 +9,13 @@ features:
     Add the QCDL module (``dwave.gate.qcdl``), which includes the ``@qcdl``
     decorator and ``QCDLCircuit`` for building programs, a library of gates and
     measurement operations, real-time control flow (``If``/``Else``, ``While``,
-    ``DoWhile``, ``For``, ``Repeat``), and classical registers (``Register``,
+    ``DoWhile``, ``For``, ``Repeat``, etc), and classical registers (``Register``,
     ``FixedPointRegister``).
   - |
     Add ``dwave.gate.results.Result``, a Pydantic model that decodes a solver's
     answer data, exposing measurements and records, and providing
     ``get_memory``, ``get_counts``, and ``run_time`` for retrieving per-shot
-    outcomes, sample counts, and run-times.
+    outcomes, sample counts, and run times.
   - |
     Add ``dwave.gate.results.YieldHandling``, an enumeration of strategies
     (``only_post_selected_counts``, ``renormalize_distribution``, and
