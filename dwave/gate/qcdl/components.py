@@ -260,10 +260,12 @@ class Procedure(IndexerMixin):
         value never reaches the qubit. That is almost always a mistake, so it is
         reported here instead.
 
-        Re-declaring the name is allowed when the caller asked for it, but an
-        explicit initial value is still rejected: opting in to the
-        re-declaration says the existing memory is wanted, whereas giving a
-        value says the opposite, and the compiler would ignore it.
+        Re-declaring the name is allowed when the caller asked for it, but only
+        without an initial value: opting in to the re-declaration says the
+        existing memory is wanted, whereas giving a value says the opposite,
+        and the compiler would ignore it. This applies only once the name is
+        allocated; a first allocation always takes its value, whatever the
+        caller opted in to.
 
         This method is mostly intended for use by developers of QCDL; the
         :class:`~dwave.gate.qcdl.registers.Register` and
@@ -277,6 +279,7 @@ class Procedure(IndexerMixin):
             allow_existing: If True, an existing allocation of ``name`` is
                 accepted as long as no initial value was given. Set by the
                 ``alias`` and ``ignore_reallocation`` arguments of a register.
+                It has no effect when ``name`` is not already allocated.
             initial_value_specified: Whether the caller gave an initial value
                 for this register.
 

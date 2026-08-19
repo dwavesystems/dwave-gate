@@ -656,6 +656,22 @@ def test_alias_rejects_an_initial_value():
         main()
 
 
+def test_alias_rejects_an_initial_value_on_a_fresh_name_too():
+    """This is where alias and ignore_reallocation part ways.
+
+    An alias never allocates, so its value is discarded whether or not the
+    name is already taken, whereas ignore_reallocation is a no-op only for a
+    name that is already allocated and so may carry a value otherwise.
+    """
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(3, name="fresh", alias=True)
+
+    with pytest.raises(QCDLUserError, match="is an alias"):
+        main()
+
+
 def test_duplicate_array_name_with_ignore_reallocation_still_raises():
     """An Array always carries contents, so it can never opt in."""
 
