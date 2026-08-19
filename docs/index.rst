@@ -21,7 +21,5 @@ About dwave-gate
 Usage Information
 =================
 
-.. todo:: add the intersphinx prefix to enable these links for self builds
-
 *   :ref:`index_concepts` for terminology
 *   :ref:`qpu_gate_model_intro`
