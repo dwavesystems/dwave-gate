@@ -134,6 +134,10 @@ class Procedure(IndexerMixin):
         # qubits in the statement are not listed in the last item in this list.
         self._exclusive_modules: list[set[str]] = []
 
+        # register names allocated in this procedure, per module, so that
+        # re-declaring one can be reported rather than silently discarded
+        self._allocated_registers: dict[str, dict[str, str]] = {}
+
         self._procedure_ended = False
 
     def to_model(self) -> QCDLProcedureDef:
@@ -240,6 +244,55 @@ class Procedure(IndexerMixin):
         module = QCDLModuleName.model_validate(module_name)
         if module not in self.modules_used:
             self.modules_used.append(module)
+
+    def register_memory_allocation(
+        self,
+        modules: Sequence[QCDLModule],
+        name: str,
+        dtype: str,
+        allow_existing: bool = False,
+    ) -> None:
+        """Record a register allocation, rejecting a silent re-declaration.
+
+        The compiler keeps the *first* allocation of a name, so a second
+        declaration of the same name on the same module is a no-op: its initial
+        value never reaches the qubit. That is almost always a mistake, so it is
+        reported here instead.
+
+        This method is mostly intended for use by developers of QCDL; the
+        :class:`~dwave.gate.qcdl.registers.Register` and
+        :class:`~dwave.gate.qcdl.registers.FixedPointRegister` classes call it
+        for you.
+
+        Args:
+            modules: Modules the register is allocated on.
+            name: Name of the register.
+            dtype: ``"int"`` or ``"float"``.
+            allow_existing: If True, an existing allocation of ``name`` is
+                accepted. Set by the ``alias`` and ``ignore_reallocation``
+                arguments of a register.
+
+        Raises:
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If ``name``
+                is already allocated on one of ``modules`` and
+                ``allow_existing`` is False.
+        """
+        for module in modules:
+            allocated = self._allocated_registers.setdefault(
+                module.qcdl_module_name, {}
+            )
+            previous = allocated.get(name)
+            if previous is not None and not allow_existing:
+                raise QCDLUserError(
+                    f"register {name!r} is already allocated on"
+                    f" {module.qcdl_module_name} with dtype {previous} in"
+                    f" procedure {self.name}; the compiler keeps the first"
+                    f" allocation, so this one would be discarded. Reuse the"
+                    f" existing register, pick another name, pass alias=True to"
+                    f" reuse its memory, or pass ignore_reallocation=True to"
+                    f" allow the redeclaration."
+                )
+            allocated[name] = dtype
 
     @property
     def expression_queue(self) -> list | None:
@@ -1230,7 +1283,9 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
                     sc = Scope(q0, q1)
                     r1 = sc.Register(name="r1")
                     h(q0)
-                    measure(q0, register=q0.Register(name="r1"))
+                    # alias=True reuses the memory r1 already allocated, so the
+                    # outcome is stored on q0 only rather than mirrored
+                    measure(q0, register=q0.Register(name="r1", alias=True))
                     sc.all_to_all(send=r1==1, reduce_op="&")
                     with sc.If(None):
                         x(q1)
@@ -1664,6 +1719,54 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
         return shape, table_row
 
 
+def _as_modules(qubits: Any, argument: str) -> tuple[list[QCDLModule], int | None]:
+    """Normalize a group of qubits into modules and a scope id.
+
+    Accepts a :class:`.Scope`, a single :class:`.QCDLModule`, or a sequence of
+    either, so that a caller does not have to know which of those an API wants.
+
+    Args:
+        qubits: The group of qubits.
+        argument: Name of the parameter being normalized, for error messages.
+
+    Raises:
+        :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If no qubits
+            could be found in ``qubits``.
+
+    Returns:
+        The modules, deduplicated and in order, and the ``scope_id`` if the
+        group carried one.
+    """
+    if isinstance(qubits, QCDLModuleContainer):
+        modules = list(qubits.qcdl_modules)
+        if not modules:
+            raise QCDLUserError(f"{argument} {qubits} does not hold any qubits")
+        return modules, qubits.scope_id
+
+    if isinstance(qubits, str) or not isinstance(qubits, Sequence):
+        raise QCDLUserError(
+            f"{argument} must be a Scope, a QCDLModule, or a sequence of them,"
+            f" not {type(qubits).__name__} ({qubits!r})"
+        )
+
+    # deduplicate by name while preserving order
+    by_name: dict[str, QCDLModule] = {}
+    for item in qubits:
+        if not isinstance(item, QCDLModuleContainer):
+            raise QCDLUserError(
+                f"every item in {argument} must be a Scope or a QCDLModule, not"
+                f" {type(item).__name__} ({item!r})"
+            )
+        for module in item.qcdl_modules:
+            by_name[module.qcdl_module_name] = module
+
+    if not by_name:
+        raise QCDLUserError(f"{argument} does not hold any qubits")
+
+    # a bare sequence has no identity of its own, so it carries no scope_id
+    return list(by_name.values()), None
+
+
 class QCDLModule(QCDLModuleContainer):
     """Wrapper around a :class:`.Procedure` instance.
 
@@ -1834,7 +1937,10 @@ class QCDLModule(QCDLModuleContainer):
         return f"{self.qcdl_module_name}.signal"
 
     def one_to_all(
-        self, destinations: Scope, send: RegisterExpression, **kwargs: Any
+        self,
+        destinations: Scope | QCDLModule | Sequence[QCDLModule],
+        send: RegisterExpression,
+        **kwargs: Any,
     ) -> None:
         """Send a bit from one qubit to a :class:`~dwave.gate.qcdl.Scope` of
         other qubits.
@@ -1843,19 +1949,25 @@ class QCDLModule(QCDLModuleContainer):
         examples of signals.
 
         Args:
-            destinations: The scope of all qubits to send the message to. The
-                bit is placed on each qubit's branch condition to be used in a
-                conditional statement.
+            destinations: The qubits to send the message to, as a
+                :class:`~dwave.gate.qcdl.Scope`, a single
+                :class:`~dwave.gate.qcdl.QCDLModule`, or a sequence of either.
+                The bit is placed on each qubit's branch condition to be used in
+                a conditional statement. Statements are tagged with the
+                ``scope_id`` only when a :class:`~dwave.gate.qcdl.Scope` is
+                passed.
             send: The expression to compute the bit on the sender.
 
         Raises:
-            :exception:`ValueError`: If the module has more than one qubit.
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If
+                ``destinations`` does not hold any qubits.
         """
+        modules, scope_id = _as_modules(destinations, "destinations")
         self._multi_qubit_statement(
             "one_to_all",
             send=send,
-            qubits=destinations.qcdl_modules,
-            scope_id=destinations.scope_id,
+            qubits=modules,
+            scope_id=scope_id,
             **kwargs,
         )
 

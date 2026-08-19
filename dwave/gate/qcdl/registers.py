@@ -257,6 +257,15 @@ class RegisterInitializerMixin:
             name, initial_value=initial_value, length=length, dtype=dtype, signed=signed
         )
 
+        # An alias deliberately names memory that already exists, and
+        # ignore_reallocation is the documented opt out.
+        modules[0].procedure.register_memory_allocation(
+            modules,
+            name,
+            dtype,
+            allow_existing=alias is True or ignore_reallocation,
+        )
+
         if alias is not True:
             # use alias=True if some other code called allocate_memory for this
             # register

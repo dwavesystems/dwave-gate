@@ -668,6 +668,140 @@ class TestQCDLDecoratorModes:
         assert main_env(my_kwarg=rand_num) == obj.sequence(my_kwarg=rand_num)
 
 
+class TestQCDLNumQubitsValidation:
+    """num_qubits has to be able to produce qubits."""
+
+    @pytest.mark.parametrize("num_qubits", [0, -1, -10])
+    def test_num_qubits_below_one_raises(self, num_qubits):
+        with pytest.raises(QCDLUserError, match="must be at least 1"):
+            qcdl(num_qubits)
+
+    @pytest.mark.parametrize("num_qubits", [2.0, 2.5, "2", True, [2]])
+    def test_num_qubits_must_be_an_integer(self, num_qubits):
+        with pytest.raises(QCDLUserError, match="must be an integer"):
+            qcdl(num_qubits)
+
+    def test_decorator_used_without_calling_it_raises(self):
+        """A bare @qcdl passes the function in as num_qubits."""
+
+        def main(q0):
+            pass
+
+        with pytest.raises(QCDLUserError, match="must be called"):
+            qcdl(main)
+
+    def test_num_qubits_of_one_is_allowed(self):
+        @qcdl(1)
+        def main(q0):
+            q0.measure()
+
+        assert [str(q) for q in main().program.signature.qubits_used] == ["q0"]
+
+
+class TestQCDLSignatureValidation:
+    """The signature of the decorated function has to match the qubits made.
+
+    Qubits are injected by keyword, so a signature that does not name them all
+    either loses a qubit or leaves a parameter unbound. Both were silent.
+    """
+
+    def test_generated_qubit_with_no_parameter_raises(self):
+        @qcdl(3)
+        def main(q0, q1):
+            q0.h()
+
+        with pytest.raises(QCDLUserError, match="no parameter for q2"):
+            main()
+
+    def test_every_generated_qubit_named_is_accepted(self):
+        @qcdl(3)
+        def main(q0, q1, q2, my_angle=0):
+            q0.h()
+
+        assert [str(q) for q in main(my_angle=0.5).program.signature.qubits_used] == [
+            "q0"
+        ]
+
+    def test_var_keyword_signature_absorbs_every_qubit(self):
+        @qcdl(3)
+        def main(**kwargs):
+            assert set(kwargs) == {"q0", "q1", "q2"}
+            kwargs["q0"].h()
+
+        main()
+
+    def test_environment_may_supply_more_qubits_than_the_signature(self):
+        """The environment supplies its whole set, so dropping is expected."""
+        env = FakeEnv(["q0", "q1", "q2"])
+
+        @qcdl(environment=env)
+        def main(q0):
+            q0.measure()
+
+        assert isinstance(main(), QCDLProgram)
+
+    def test_parameter_not_named_qN_explains_the_rule(self):
+        @qcdl(1)
+        def main(alpha):
+            pass
+
+        with pytest.raises(TypeError) as excinfo:
+            main()
+
+        message = str(excinfo.value)
+        # keep python's own wording, then say why nothing was passed
+        assert "missing 1 required positional argument: 'alpha'" in message
+        assert "q0, q1, ..." in message
+        assert "'alpha' does not match" in message
+
+    def test_qubit_parameter_beyond_num_qubits_explains_the_rule(self):
+        @qcdl(2)
+        def main(q0, q1, q2):
+            pass
+
+        with pytest.raises(TypeError) as excinfo:
+            main()
+
+        message = str(excinfo.value)
+        assert "missing 1 required positional argument: 'q2'" in message
+        assert "supplied q0, q1" in message
+        assert "num_qubits" in message
+
+    def test_several_unfilled_parameters_are_reported_together(self):
+        @qcdl(1)
+        def main(q0, alpha, beta):
+            pass
+
+        with pytest.raises(
+            TypeError, match="missing 2 required positional arguments: 'alpha', 'beta'"
+        ):
+            main()
+
+    def test_unfilled_parameter_may_be_passed_by_the_caller(self):
+        @qcdl(1)
+        def main(q0, alpha):
+            q0.comment(str(alpha))
+            q0.measure()
+
+        assert isinstance(main(alpha=3), QCDLProgram)
+
+    def test_keyword_only_parameter_without_a_default_is_reported(self):
+        @qcdl(1)
+        def main(q0, *, alpha):
+            pass
+
+        with pytest.raises(TypeError, match="missing 1 required positional argument"):
+            main()
+
+    def test_inferred_mode_never_drops_or_starves_a_parameter(self):
+        @qcdl()
+        def main(q0, q5, alpha=1):
+            q0.measure()
+            q5.measure()
+
+        assert [str(q) for q in main().program.signature.qubits_used] == ["q0", "q5"]
+
+
 def test_fspec():
     def my_meth1(q0, q1, q2=321):
         pass

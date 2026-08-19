@@ -44,8 +44,12 @@ DEFAULT_TAG = ""
 def get_default_register(qubits: Iterable[str]) -> RegisterType:
     """The register used if none is provided.
 
-    This register will include all qubits in the circuit, regardless of which
-    have measurements. This is usually not what is desired.
+    This register includes all qubits in the circuit, regardless of which have
+    measurements, so unmeasured qubits are padded into the bitstring. This is
+    usually not what is desired, which is why
+    :meth:`.Result.get_memory` and :meth:`.Result.get_counts` default to
+    :meth:`.Result.get_measurements_register` instead and fall back to this
+    only when no qubit has measurements.
 
     Sorts qubits to have the highest index first, e.g., ``[q2, q1, q0]``
 
@@ -483,7 +487,11 @@ class Result(BaseModel):
             tag: Which data set to load. Defaults to
                 :attr:`dwave.gate.results.Result.default_tag`.
             register: List of qubit names to include in the register; determines
-                the inner dimension of the returned value.
+                the inner dimension of the returned value. Defaults to
+                :meth:`.get_measurements_register`, so qubits that were not
+                measured are left out rather than padded with
+                ``unmeasured_value``. Pass
+                :func:`.get_default_register` to include them.
             unmeasured_value: What to put in the register if a requested qubit
                 wasn't measured.
             shots: Overrides the shots in the result object.
@@ -495,6 +503,11 @@ class Result(BaseModel):
             tag = self.default_tag
         if self.measurements is None:
             raise RuntimeError("measurements are not available for this result")
+        if register is None:
+            # A qubit with no measurements has no bit to contribute, and padding
+            # one in makes the bitstring look like an outcome. Fall back to every
+            # qubit only when nothing was measured at all.
+            register = cast(RegisterType, self.get_measurements_register(tag)) or None
         return format_memory(
             self.measurements[tag],
             register=register,
@@ -517,7 +530,8 @@ class Result(BaseModel):
         Args:
             tag: Which data set to load. Defaults to
                 :attr:`dwave.gate.results.Result.default_tag`.
-            register: Forwarded to get_memory.
+            register: Forwarded to :meth:`.get_memory`, which defaults to
+                :meth:`.get_measurements_register`.
             post_select: If the counts dict should include splats or not.
             unmeasured_value: What to put in the register if a requested qubit
                 wasn't measured.

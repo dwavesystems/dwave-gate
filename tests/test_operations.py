@@ -33,7 +33,7 @@ from dwave.gate.qcdl.qcdl_models import QCDLStatement
 available_operations = [
     name
     for name, obj in inspect.getmembers(operations, inspect.isfunction)
-    if obj.__module__ == operations.__name__ and not name.startswith("__")
+    if obj.__module__ == operations.__name__ and not name.startswith("_")
 ]
 
 
@@ -114,6 +114,152 @@ def test_operations(op_name):
     )
     if num_registers:
         assert "register" in statement.kwargs
+
+
+def _count_annotated(op_name, annotation):
+    parameters = inspect.signature(getattr(operations, op_name)).parameters.values()
+    return sum(1 for parameter in parameters if parameter.annotation == annotation)
+
+
+two_qubit_operations = [
+    name
+    for name in available_operations
+    if _count_annotated(name, QCDLModule) == 2
+]
+
+
+def test_module_only_exports_operations():
+    """``import *`` should bring in operations, not our imports."""
+    namespace = {}
+    exec("from dwave.gate.qcdl.operations import *", namespace)
+    exported = set(namespace) - {"__builtins__"}
+
+    assert exported == set(operations.__all__)
+    assert set(available_operations) <= exported
+    for leaked in ("np", "implementations", "inspect", "functools", "Sequence"):
+        assert leaked not in exported
+
+
+def test_all_lists_every_operation():
+    assert sorted(operations.__all__) == sorted(available_operations + ["AngleType"])
+
+
+def test_reset_is_an_importable_operation():
+    """``q0.reset()`` works only through __getattr__, so it has no signature."""
+    assert callable(operations.reset)
+    assert operations.reset.__doc__
+    assert list(inspect.signature(operations.reset).parameters) == ["qubit"]
+
+
+def test_reset_matches_the_statement_getattr_produces():
+    """The operation must be an alias for what the guide teaches, not a variant."""
+
+    @qcdl(1)
+    def with_operation(q0):
+        operations.x(q0)
+        operations.reset(q0)
+        operations.measure(q0)
+
+    @qcdl(1)
+    def with_getattr(q0):
+        operations.x(q0)
+        q0.reset()
+        operations.measure(q0)
+
+    assert with_operation().model_dump() == with_getattr().model_dump()
+
+
+@pytest.mark.parametrize("op_name", available_operations)
+def test_operations_reject_a_non_qubit(op_name):
+    """Without this the failure is an AttributeError naming ``procedure``."""
+    f = getattr(operations, op_name)
+    num_qubits = _count_annotated(op_name, QCDLModule)
+    num_angles = _count_annotated(op_name, AngleType)
+    needs_register = op_name in ("measure", "mced")
+
+    @qcdl(2)
+    def main(q0, q1):
+        args = [5] + [q1] * (num_qubits - 1) + [0.1] * num_angles
+        kwargs = dict(register=q0.Register(name="reg")) if needs_register else {}
+        f(*args, **kwargs)
+
+    with pytest.raises(QCDLUserError, match="must be a qubit"):
+        main()
+
+
+@pytest.mark.parametrize("value", [5, "q0", None, 3.14, [1]])
+def test_non_qubit_error_names_the_parameter_and_the_type(value):
+    @qcdl(1)
+    def main(q0):
+        operations.h(value)
+
+    with pytest.raises(QCDLUserError) as cm:
+        main()
+    message = str(cm.value)
+    assert "h() parameter 'qubit'" in message
+    assert type(value).__name__ in message
+
+
+@pytest.mark.parametrize("op_name", two_qubit_operations)
+def test_two_qubit_operations_need_distinct_qubits(op_name):
+    """``cx(q0, q0)`` used to build cleanly and fail only at the service."""
+    f = getattr(operations, op_name)
+    num_angles = _count_annotated(op_name, AngleType)
+
+    @qcdl(2)
+    def main(q0, q1):
+        f(q0, q0, *[0.1] * num_angles)
+
+    with pytest.raises(QCDLUserError, match="needs distinct qubits"):
+        main()
+
+
+@pytest.mark.parametrize("op_name", two_qubit_operations)
+def test_two_qubit_operations_accept_distinct_qubits(op_name):
+    f = getattr(operations, op_name)
+    num_angles = _count_annotated(op_name, AngleType)
+
+    @qcdl(2)
+    def main(q0, q1):
+        f(q0, q1, *[0.1] * num_angles)
+
+    assert main().program.statements[0].op in (op_name, "ry")
+
+
+def test_repeated_qubit_is_allowed_where_it_is_harmless():
+    """``barrier``/``initialize`` take a set of qubits, so repeats are benign."""
+
+    @qcdl(2)
+    def main(q0, q1):
+        operations.initialize(q0, q1, q0)
+        operations.barrier(q0, q0)
+        operations.measure(q0)
+
+    assert [s.op for s in main().program.statements] == [
+        "initialize",
+        "barrier",
+        "measure",
+    ]
+
+
+def test_validation_does_not_change_the_arity_error():
+    """A wrong number of arguments still reports against the real signature."""
+
+    @qcdl(1)
+    def main(q0):
+        operations.cx(q0)
+
+    with pytest.raises(TypeError, match="target_qubit"):
+        main()
+
+
+def test_operations_keep_their_metadata():
+    """The validation wrapper must not hide the signature or docs from sphinx."""
+    for name in available_operations:
+        f = getattr(operations, name)
+        assert f.__name__ == name
+        assert f.__doc__, name
+        assert f.__module__ == operations.__name__
 
 
 @pytest.mark.parametrize("mirror", [True, False])

@@ -25,6 +25,7 @@ from dwave.gate.qcdl import (
     QCDLModule,
     QCDLUserError,
     Register,
+    Scope,
     arbitrary_function,
     procedure,
     qcdl,
@@ -559,6 +560,124 @@ def test_find_modules():
         assert set(
             [q.qcdl_module_name for q in QCDLModule.find_modules(reg, q1)]
         ) == set(["q0", "q1"])
+
+    assert main()
+
+
+def test_duplicate_register_name_raises():
+    """The compiler keeps the first allocation, so the second value is lost."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(1, name="dup")
+        q0.Register(2, name="dup")
+
+    with pytest.raises(QCDLUserError) as cm:
+        main()
+    assert "'dup' is already allocated on q0" in str(cm.value)
+
+
+def test_duplicate_register_name_reports_the_dtype_it_has():
+    @qcdl(1)
+    def main(q0):
+        q0.Register(name="clash")
+        q0.FixedPointRegister(name="clash")
+
+    with pytest.raises(QCDLUserError, match="with dtype int"):
+        main()
+
+
+def test_duplicate_register_name_allowed_by_ignore_reallocation():
+    @qcdl(1)
+    def main(q0):
+        q0.Register(1, name="dup")
+        q0.Register(2, name="dup", ignore_reallocation=True)
+        q0.measure()
+
+    allocations = [
+        s for s in main().program.statements if s.op == "allocate_memory"
+    ]
+    assert [a.kwargs["initial_value"] for a in allocations] == [1, 2]
+
+
+def test_aliasing_an_allocated_register_is_not_a_duplicate():
+    """alias=True deliberately names memory that already exists."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.FixedPointRegister(initial_value=1, name="fr")
+        integer_view = q0.Register(name="fr", alias=True)
+        integer_view += integer_view & 4
+
+    allocations = [
+        s for s in main().program.statements if s.op == "allocate_memory"
+    ]
+    assert len(allocations) == 1
+
+
+def test_alias_of_another_register_is_still_tracked():
+    """A string alias allocates a new name, so redeclaring it is a duplicate."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(name="original")
+        q0.Register(name="punned", alias="original")
+        q0.Register(name="punned")
+
+    with pytest.raises(QCDLUserError, match="'punned' is already allocated"):
+        main()
+
+
+def test_a_scope_register_may_be_narrowed_with_an_alias():
+    """The documented way to write to one qubit's copy of a shared register."""
+
+    @qcdl(2)
+    def main(q0, q1):
+        scope = Scope(q0, q1)
+        scope.Register(name="bit")
+        q0.measure(register=q0.Register(name="bit", alias=True))
+
+    allocations = [
+        s for s in main().program.statements if s.op == "allocate_memory"
+    ]
+    assert len(allocations) == 1
+    assert [str(q) for q in allocations[0].modules] == ["q0", "q1"]
+
+
+def test_same_register_name_on_different_qubits_is_fine():
+    @qcdl(2)
+    def main(q0, q1):
+        q0.Register(1, name="r0")
+        q1.Register(2, name="r0")
+
+    allocations = [
+        s for s in main().program.statements if s.op == "allocate_memory"
+    ]
+    assert [a.kwargs["initial_value"] for a in allocations] == [1, 2]
+
+
+def test_duplicate_array_name_raises():
+    @qcdl(1)
+    def main(q0):
+        Array(q0, [1, 2], name="arr")
+        Array(q0, [3, 4], name="arr")
+
+    with pytest.raises(QCDLUserError, match="'arr' is already allocated"):
+        main()
+
+
+def test_register_names_are_tracked_per_procedure():
+    """A procedure has its own statements, so it may reuse a name."""
+
+    @procedure
+    def inner(qa):
+        qa.Register(name="local")
+        qa.rx(0.123)
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(name="local")
+        inner(q0)
 
     assert main()
 
