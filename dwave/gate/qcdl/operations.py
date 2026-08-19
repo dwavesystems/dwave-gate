@@ -98,6 +98,7 @@ __all__ = [
     "sdg",
     "swap",
     "sx",
+    "sxdg",
     "sy",
     "sydg",
     "t",
@@ -463,6 +464,34 @@ def sx(qubit: QCDLModule) -> None:
             qcdl_program = sx_gate()
     """
     qubit.procedure.add_statement(None, "sx", [qubit], None)
+
+
+@_validate_qubit_args()
+def sxdg(qubit: QCDLModule) -> None:
+    r"""`Square-root of X adjoint <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SXdgGate>`_
+    (:math:`\sqrt X^\dagger`) gate.
+
+    The inverse of the :func:`.sx` gate.
+
+    Args:
+        qubit: Qubit on which to apply the gate.
+
+    Examples:
+
+        .. testcode::
+
+            from dwave.gate.qcdl import qcdl
+            from dwave.gate.qcdl.operations import measure, sx, sxdg
+
+            @qcdl(1)
+            def sxdg_gate(q0):
+                sx(q0)
+                sxdg(q0)        # returns the qubit to its initial state
+                measure(q0)
+
+            qcdl_program = sxdg_gate()
+    """
+    qubit.procedure.add_statement(None, "sxdg", [qubit], None)
 
 
 @_validate_qubit_args()
