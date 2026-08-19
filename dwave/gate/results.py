@@ -44,8 +44,12 @@ DEFAULT_TAG = ""
 def get_default_register(qubits: Iterable[str]) -> RegisterType:
     """The register used if none is provided.
 
-    This register will include all qubits in the circuit, regardless of which
-    have measurements. This is usually not what is desired.
+    This register includes all qubits in the circuit, regardless of which have
+    measurements, so unmeasured qubits are padded into the bitstring. This is
+    usually not what is desired, which is why
+    :meth:`.Result.get_memory` and :meth:`.Result.get_counts` default to
+    :meth:`.Result.get_measurements_register` instead and fall back to this
+    only when no qubit has measurements.
 
     Sorts qubits to have the highest index first, e.g., ``[q2, q1, q0]``
 
@@ -483,7 +487,11 @@ class Result(BaseModel):
             tag: Which data set to load. Defaults to
                 :attr:`dwave.gate.results.Result.default_tag`.
             register: List of qubit names to include in the register; determines
-                the inner dimension of the returned value.
+                the inner dimension of the returned value. Defaults to
+                :meth:`.get_measurements_register`, so qubits that were not
+                measured are left out rather than padded with
+                ``unmeasured_value``. Pass
+                :func:`.get_default_register` to include them.
             unmeasured_value: What to put in the register if a requested qubit
                 wasn't measured.
             shots: Overrides the shots in the result object.
@@ -495,6 +503,11 @@ class Result(BaseModel):
             tag = self.default_tag
         if self.measurements is None:
             raise RuntimeError("measurements are not available for this result")
+        if register is None:
+            # A qubit with no measurements has no bit to contribute, and padding
+            # one in makes the bitstring look like an outcome. Fall back to every
+            # qubit only when nothing was measured at all.
+            register = cast(RegisterType, self.get_measurements_register(tag)) or None
         return format_memory(
             self.measurements[tag],
             register=register,
@@ -517,7 +530,8 @@ class Result(BaseModel):
         Args:
             tag: Which data set to load. Defaults to
                 :attr:`dwave.gate.results.Result.default_tag`.
-            register: Forwarded to get_memory.
+            register: Forwarded to :meth:`.get_memory`, which defaults to
+                :meth:`.get_measurements_register`.
             post_select: If the counts dict should include splats or not.
             unmeasured_value: What to put in the register if a requested qubit
                 wasn't measured.
@@ -638,16 +652,53 @@ class YieldHandling(enum.StrEnum):
         else:
             return YieldHandling[name]
 
+    @staticmethod
+    def _is_erasure(key: Any) -> bool:
+        """Whether a counts key records an erasure.
+
+        Only the string key formats can hold a splat: the
+        :func:`.count_measurements` function produces integer keys only for
+        memory that is entirely 0s and 1s.
+        """
+        return isinstance(key, str) and "*" in key
+
     def apply(
         self, distribution: dict[Any, int]
     ) -> tuple[dict[Any, float | int], float]:
+        """Apply this yield handling to a counts dict.
+
+        Args:
+            distribution: Counts, as returned by the
+                :func:`.count_measurements` function or the
+                :meth:`.Result.get_counts` method. Keys may be in any of the
+                formats that function produces.
+
+        Raises:
+            :exception:`ValueError`: If the distribution is empty, or if the
+                yield is too low for
+                :attr:`.renormalize_distribution_or_raise`.
+            :exception:`ZeroDivisionError`: If nothing survives post selection
+                and the distribution has to be renormalized.
+
+        Returns:
+            The handled distribution and the observed yield.
+        """
+        if not distribution:
+            raise ValueError("can not apply yield handling to an empty distribution")
+
         num_executed_shots: int = sum(distribution.values())
-        post_selected = {k: v for k, v in distribution.items() if "*" not in k}
+        post_selected = {
+            k: v for k, v in distribution.items() if not self._is_erasure(k)
+        }
         if not post_selected:
             # Put one key in the dict at least. Use a previously existing key as
             # a template so that the formatting is correct.
-            template_key: str = next(iter(distribution))
-            zeros_key = template_key.replace("1", "0").replace("*", "0")
+            template_key: Any = next(iter(distribution))
+            zeros_key = (
+                template_key.replace("1", "0").replace("*", "0")
+                if isinstance(template_key, str)
+                else 0
+            )
             post_selected[zeros_key] = 0
 
         num_post_selected_shots: int = sum(post_selected.values())
