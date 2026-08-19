@@ -415,6 +415,59 @@ def test_none_in_register(nones, shots=10):
     counts = count_measurements(memory)
     assert counts == {expected: shots}
 
+# ---------------------------------------------------------------------------
+# The register Result uses when none is given
+# ---------------------------------------------------------------------------
+
+
+def _result_with(measurements, shots=10) -> Result:
+    return Result.model_validate(
+        {"num_shots": shots, "measurements": {"": measurements}}
+    )
+
+
+def test_get_counts_uses_the_measured_register():
+    """An unmeasured qubit has no bit, so it must not be padded into the key."""
+    result = _result_with([[], [1] * 3, [0] * 3], shots=3)
+
+    assert result.get_measurements_register() == ["q2", "q1"]
+    assert result.get_counts() == [{"01": 3}]
+
+
+def test_get_memory_uses_the_measured_register():
+    result = _result_with([[], [1] * 3, [0] * 3], shots=3)
+
+    assert result.get_memory().shape == (1, 3, 2)
+
+
+def test_default_register_is_still_reachable():
+    """Padding is available for callers that want every qubit."""
+    result = _result_with([[], [1] * 3, [0] * 3], shots=3)
+    register = get_default_register(["q0", "q1", "q2"])
+
+    assert result.get_counts(register=register) == [{"01_": 3}]
+
+
+def test_an_explicit_register_still_wins():
+    result = _result_with([[1] * 3, [0] * 3], shots=3)
+
+    assert result.get_counts(register=["q0"]) == [{"1": 3}]
+
+
+def test_get_counts_when_every_qubit_was_measured():
+    result = _result_with([[0, 1, 0, 1], [0, 1, 0, 1]], shots=4)
+
+    assert result.get_counts() == [{"00": 2, "11": 2}]
+    assert result.get_memory().shape == (1, 4, 2)
+
+
+def test_get_counts_when_nothing_was_measured():
+    result = _result_with([[], []], shots=3)
+
+    assert result.get_measurements_register() == []
+    assert result.get_counts() == []
+
+
 def test_encode_decode_measurements():
     size = 1000
     arr = np.random.randint(-1, 1, size=size)
