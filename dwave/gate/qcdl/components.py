@@ -1887,7 +1887,7 @@ class QCDLModule(QCDLModuleContainer):
         send: RegisterExpression,
         **kwargs: Any,
     ) -> None:
-"""Send a bit from one qubit to other qubits.
+        """Send a bit from one qubit to other qubits.
 
         See the :ref:`qcdl_advanced_signals` section for a description and
         examples of signals.
