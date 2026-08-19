@@ -255,6 +255,33 @@ def test_repeated_qubit_is_allowed_where_it_is_harmless(op_name):
     assert [s.op for s in main().program.statements] == [op_name]
 
 
+@pytest.mark.parametrize("op_name", variadic_qubit_operations)
+def test_variadic_operations_need_a_qubit(op_name):
+    """``*qubits`` binds to nothing, so python raises no arity error for it.
+
+    The empty call used to reach the operation and fail with an ``IndexError``.
+    """
+    f = getattr(operations, op_name)
+
+    @qcdl(1)
+    def main(q0):
+        f()
+
+    with pytest.raises(QCDLUserError, match="needs at least one qubit"):
+        main()
+
+
+@pytest.mark.parametrize("op_name", variadic_qubit_operations)
+def test_variadic_operations_accept_a_single_qubit(op_name):
+    f = getattr(operations, op_name)
+
+    @qcdl(1)
+    def main(q0):
+        f(q0)
+
+    assert [s.op for s in main().program.statements] == [op_name]
+
+
 def test_variadic_and_two_qubit_operations_are_disjoint_and_complete():
     """Every multi-qubit operation falls under exactly one half of the rule."""
     assert set(two_qubit_operations).isdisjoint(variadic_qubit_operations)

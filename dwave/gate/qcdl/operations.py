@@ -136,6 +136,11 @@ def _validate_qubit_args(operation: _Operation) -> _Operation:
     may not be the same module, whereas a ``*qubits`` parameter is a set of
     qubits to act on, where a repeat is harmless.
 
+    A ``*qubits`` parameter also binds happily to nothing at all, so python
+    raises no arity error for it and the empty call fails later with an
+    ``IndexError``; an operation with one is therefore also checked for having
+    been given a qubit.
+
     Args:
         operation: The operation to wrap.
 
@@ -172,14 +177,19 @@ def _validate_qubit_args(operation: _Operation) -> _Operation:
                 for index, qubit in enumerate(bound.arguments.get(variadic, ()))
             ]
 
-        _check_qubit_args(operation.__name__, qubits, distinct=distinct)
+        _check_qubit_args(
+            operation.__name__, qubits, distinct=distinct, required=variadic is not None
+        )
         return operation(*args, **kwargs)
 
     return wrapper  # type: ignore[return-value]
 
 
 def _check_qubit_args(
-    op: str, qubits: list[tuple[str, Any]], distinct: bool = False
+    op: str,
+    qubits: list[tuple[str, Any]],
+    distinct: bool = False,
+    required: bool = False,
 ) -> None:
     """Validate the qubit arguments collected for operation ``op``.
 
@@ -187,11 +197,18 @@ def _check_qubit_args(
         op: Name of the operation, used in error messages.
         qubits: Pairs of parameter name and the value passed for it.
         distinct: If True, require every qubit to be a different module.
+        required: If True, require at least one qubit.
 
     Raises:
-        :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If an argument
-            is not a qubit, or if ``distinct`` and a qubit is repeated.
+        :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If no qubit is
+            given and ``required``, if an argument is not a qubit, or if
+            ``distinct`` and a qubit is repeated.
     """
+    if required and not qubits:
+        raise QCDLUserError(
+            f"{op}() needs at least one qubit to act on, but none were given"
+        )
+
     for name, value in qubits:
         if not _is_qubit(value):
             raise QCDLUserError(
@@ -229,8 +246,8 @@ def initialize(*qubits: QCDLModule) -> None:
         all programs.
 
     Args:
-        *qubits (QCDLModule): Qubits to initialize. It is not an error to do
-            so, but unused qubits should not be included.
+        *qubits (QCDLModule): Qubits to initialize, at least one. It is not an
+            error to do so, but unused qubits should not be included.
 
     """
     qubits[0].initialize(*qubits[1:])
@@ -278,7 +295,7 @@ def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
         to control the order that the compiler schedules operations.
 
     Args:
-        *qubits (QCDLModule): The qubits to put a barrier on.
+        *qubits (QCDLModule): The qubits to put a barrier on, at least one.
         label (str, optional): An annotation.
 
     Examples:
