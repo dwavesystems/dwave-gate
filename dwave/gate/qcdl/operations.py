@@ -124,58 +124,58 @@ def _is_qubit(value: Any) -> bool:
     return getattr(value, "_is_qcdl_module", False) is True
 
 
-def _validate_qubit_args(distinct: bool = False) -> Callable[[_Operation], _Operation]:
+def _validate_qubit_args(operation: _Operation) -> _Operation:
     """Check the qubit arguments of an operation before it is recorded.
 
     Without this, a non-qubit argument surfaces much later as an
     ``AttributeError`` naming an internal attribute, and a two-qubit gate given
     the same qubit twice builds cleanly and is only rejected by the service.
 
+    Whether the qubits have to be distinct follows from the signature: each
+    named qubit parameter is a separate role in the operation, so two of them
+    may not be the same module, whereas a ``*qubits`` parameter is a set of
+    qubits to act on, where a repeat is harmless.
+
     Args:
-        distinct: If True, the operation's qubits must all be different
-            modules, as they must be for a two-qubit gate.
+        operation: The operation to wrap.
 
     Returns:
-        A decorator for an operation in this module.
+        The operation, wrapped in its argument check.
     """
+    signature = inspect.signature(operation)
+    names: list[str] = []
+    variadic: str | None = None
+    for name, parameter in signature.parameters.items():
+        if parameter.annotation is not QCDLModule:
+            continue
+        if parameter.kind is parameter.VAR_POSITIONAL:
+            variadic = name
+        else:
+            names.append(name)
 
-    def decorate(operation: _Operation) -> _Operation:
-        signature = inspect.signature(operation)
-        names: list[str] = []
-        variadic: str | None = None
-        for name, parameter in signature.parameters.items():
-            if parameter.annotation is not QCDLModule:
-                continue
-            if parameter.kind is parameter.VAR_POSITIONAL:
-                variadic = name
-            else:
-                names.append(name)
+    distinct = len(names) > 1
 
-        @functools.wraps(operation)
-        def wrapper(*args: Any, **kwargs: Any) -> None:
-            try:
-                bound = signature.bind(*args, **kwargs)
-            except TypeError:
-                # let python report the arity error against the real signature
-                return operation(*args, **kwargs)
-
-            qubits = [
-                (name, bound.arguments[name])
-                for name in names
-                if name in bound.arguments
-            ]
-            if variadic is not None:
-                qubits += [
-                    (f"{variadic}[{index}]", qubit)
-                    for index, qubit in enumerate(bound.arguments.get(variadic, ()))
-                ]
-
-            _check_qubit_args(operation.__name__, qubits, distinct=distinct)
+    @functools.wraps(operation)
+    def wrapper(*args: Any, **kwargs: Any) -> None:
+        try:
+            bound = signature.bind(*args, **kwargs)
+        except TypeError:
+            # let python report the arity error against the real signature
             return operation(*args, **kwargs)
 
-        return wrapper  # type: ignore[return-value]
+        qubits = [
+            (name, bound.arguments[name]) for name in names if name in bound.arguments
+        ]
+        if variadic is not None:
+            qubits += [
+                (f"{variadic}[{index}]", qubit)
+                for index, qubit in enumerate(bound.arguments.get(variadic, ()))
+            ]
 
-    return decorate
+        _check_qubit_args(operation.__name__, qubits, distinct=distinct)
+        return operation(*args, **kwargs)
+
+    return wrapper  # type: ignore[return-value]
 
 
 def _check_qubit_args(
@@ -217,7 +217,7 @@ def _check_qubit_args(
 # Operations
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def initialize(*qubits: QCDLModule) -> None:
     """Initialize qubits.
 
@@ -236,7 +236,7 @@ def initialize(*qubits: QCDLModule) -> None:
     qubits[0].initialize(*qubits[1:])
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def reset(qubit: QCDLModule) -> None:
     r"""Reset a single qubit to :math:`|0\rangle`.
 
@@ -265,7 +265,7 @@ def reset(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(qubit.qcdl_module_name, "reset", None, None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
     """Place a barrier on qubits.
 
@@ -318,7 +318,7 @@ def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
     qubits[0].barrier(*qubits[1:], **kwargs)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def measure(
     qubit: QCDLModule,
     log: bool = True,
@@ -375,7 +375,7 @@ def measure(
         implementations.mirror_measurement_register(sender=qubit, register=register)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def mced(qubit: QCDLModule, register: Register, mirror: bool = True) -> None:
     """Perform a non-destructive mid-circuit erasure detection (MCED).
 
@@ -416,7 +416,7 @@ def mced(qubit: QCDLModule, register: Register, mirror: bool = True) -> None:
 # 1 Qubit Non-Parameterized Gates
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def x(qubit: QCDLModule) -> None:
     """`X <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.XGate>`_
     gate.
@@ -441,7 +441,7 @@ def x(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "x", [qubit], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def sx(qubit: QCDLModule) -> None:
     r"""`Square-root of X <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SXGate>`_
     (:math:`\sqrt X`) gate.
@@ -466,7 +466,7 @@ def sx(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "sx", [qubit], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def sxdg(qubit: QCDLModule) -> None:
     r"""`Square-root of X adjoint <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SXdgGate>`_
     (:math:`\sqrt X^\dagger`) gate.
@@ -494,7 +494,7 @@ def sxdg(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "sxdg", [qubit], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def y(qubit: QCDLModule) -> None:
     """`Y <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.YGate>`_
     gate.
@@ -519,7 +519,7 @@ def y(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "y", [qubit], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def sy(qubit: QCDLModule) -> None:
     r"""SQRT of Y gate.
     TODO it's not a qiskit gate
@@ -544,7 +544,7 @@ def sy(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "ry", [qubit, np.pi / 2], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def sydg(qubit: QCDLModule) -> None:
     r"""SQRT of Y_adjoint gate.
     TODO it's not a qiskit gate
@@ -569,7 +569,7 @@ def sydg(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "ry", [qubit, -np.pi / 2], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def z(qubit: QCDLModule) -> None:
     """`Z <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.ZGate>`_
     gate.
@@ -594,7 +594,7 @@ def z(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "z", [qubit], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def s(qubit: QCDLModule) -> None:
     """`S <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SGate>`_
     gate.
@@ -619,7 +619,7 @@ def s(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "s", [qubit], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def sdg(qubit: QCDLModule) -> None:
     r"""`S-adjoint <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SdgGate>`_
     (:math:`S^\dagger`) gate.
@@ -645,7 +645,7 @@ def sdg(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "sdg", [qubit], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def t(qubit: QCDLModule) -> None:
     r"""`T <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.TGate>`_
     (:math:`\sqrt[4]{Z}`) gate.
@@ -670,7 +670,7 @@ def t(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "t", [qubit], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def tdg(qubit: QCDLModule) -> None:
     r"""`T-adjoint <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.TdgGate>`_
     (:math:`T^\dagger`) gate.
@@ -695,7 +695,7 @@ def tdg(qubit: QCDLModule) -> None:
     qubit.procedure.add_statement(None, "tdg", [qubit], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def h(qubit: QCDLModule) -> None:
     """`Hadamard <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.HGate>`_
     gate.
@@ -723,7 +723,7 @@ def h(qubit: QCDLModule) -> None:
 # 1 Qubit Parameterized Gates
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def rx(qubit: QCDLModule, phi: AngleType) -> None:
     r"""Single-qubit
     `X-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RXGate>`_
@@ -751,7 +751,7 @@ def rx(qubit: QCDLModule, phi: AngleType) -> None:
     qubit.procedure.add_statement(None, "rx", [qubit, phi], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def ry(qubit: QCDLModule, phi: AngleType) -> None:
     r"""Single-qubit
     `Y-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RYGate>`_
@@ -779,7 +779,7 @@ def ry(qubit: QCDLModule, phi: AngleType) -> None:
     qubit.procedure.add_statement(None, "ry", [qubit, phi], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def rz(qubit: QCDLModule, phi: AngleType) -> None:
     r"""Single-qubit
     `Z-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RZGate>`_
@@ -807,7 +807,7 @@ def rz(qubit: QCDLModule, phi: AngleType) -> None:
     qubit.procedure.add_statement(None, "rz", [qubit, phi], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def p(qubit: QCDLModule, theta: AngleType) -> None:
     r"""`Phase <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.PhaseGate>`_
     gate.
@@ -834,7 +834,7 @@ def p(qubit: QCDLModule, theta: AngleType) -> None:
     qubit.procedure.add_statement(None, "p", [qubit, theta], None)
 
 
-@_validate_qubit_args()
+@_validate_qubit_args
 def u(qubit: QCDLModule, theta: AngleType, phi: AngleType, lam: AngleType) -> None:
     r"""Single-qubit
     `generic U <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.UGate>`_
@@ -866,7 +866,7 @@ def u(qubit: QCDLModule, theta: AngleType, phi: AngleType, lam: AngleType) -> No
 # 2 Qubit Non-Parameterized Gates
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def swap(qubit1: QCDLModule, qubit2: QCDLModule) -> None:
     """`Swap <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.SwapGate>`_
     gate.
@@ -895,7 +895,7 @@ def swap(qubit1: QCDLModule, qubit2: QCDLModule) -> None:
     qubit1.procedure.add_statement(None, "swap", [qubit1, qubit2], None)
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def cx(control_qubit: QCDLModule, target_qubit: QCDLModule) -> None:
     """`Controlled-X <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CXGate>`_
     gate.
@@ -924,7 +924,7 @@ def cx(control_qubit: QCDLModule, target_qubit: QCDLModule) -> None:
     )
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def cy(control_qubit: QCDLModule, target_qubit: QCDLModule) -> None:
     """`Controlled-Y <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CYGate>`_
     gate.
@@ -953,7 +953,7 @@ def cy(control_qubit: QCDLModule, target_qubit: QCDLModule) -> None:
     )
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def cz(control_qubit: QCDLModule, target_qubit: QCDLModule) -> None:
     """`Controlled-Z <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CZGate>`_
     gate.
@@ -985,7 +985,7 @@ def cz(control_qubit: QCDLModule, target_qubit: QCDLModule) -> None:
 # 2 Qubit Parameterized Gates
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def crx(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -> None:
     r"""`Controlled-RX <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CRXGate>`_
     gate.
@@ -1016,7 +1016,7 @@ def crx(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -
     )
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def cry(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -> None:
     r"""`Controlled-RY <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CRYGate>`_
     gate.
@@ -1047,7 +1047,7 @@ def cry(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -
     )
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def crz(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -> None:
     r"""`Controlled-RZ <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CRZGate>`_
     gate.
@@ -1078,7 +1078,7 @@ def crz(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -
     )
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def cp(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) -> None:
     r"""`Controlled-Phase <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CPhaseGate>`_
     gate.
@@ -1109,7 +1109,7 @@ def cp(control_qubit: QCDLModule, target_qubit: QCDLModule, theta: AngleType) ->
     )
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def cu(
     control_qubit: QCDLModule,
     target_qubit: QCDLModule,
@@ -1152,7 +1152,7 @@ def cu(
     )
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def rxx(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     r"""Two-qubit
     `XX-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RXXGate>`_
@@ -1181,7 +1181,7 @@ def rxx(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     qubit1.procedure.add_statement(None, "rxx", [qubit1, qubit2, theta], None)
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def ryy(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     r"""Two-qubit
     `YY-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RYYGate>`_
@@ -1210,7 +1210,7 @@ def ryy(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     qubit1.procedure.add_statement(None, "ryy", [qubit1, qubit2, theta], None)
 
 
-@_validate_qubit_args(distinct=True)
+@_validate_qubit_args
 def rzz(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     r"""Two-qubit
     `ZZ-axis rotation <https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.RZZGate>`_
