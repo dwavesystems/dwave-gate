@@ -244,6 +244,13 @@ class RegisterInitializerMixin:
         if isinstance(initial_value, np.ndarray):
             initial_value = initial_value.tolist()
 
+        # None means the caller gave no initial value. That distinction matters
+        # because a value that would never reach the qubit has to be reported
+        # rather than silently dropped.
+        initial_value_specified = initial_value is not None
+        if not initial_value_specified:
+            initial_value = 0.0 if str(dtype) == "float" else 0
+
         if length is None:
             length = len(initial_value) if isinstance(initial_value, Sequence) else 1
 
@@ -255,6 +262,24 @@ class RegisterInitializerMixin:
         dtype = str(dtype)
         validate_memory_allocation(
             name, initial_value=initial_value, length=length, dtype=dtype, signed=signed
+        )
+
+        if alias is True and initial_value_specified:
+            raise QCDLUserError(
+                f"register {name!r} is an alias, so no memory is allocated for"
+                f" it and the initial value given here would never reach the"
+                f" qubit; drop the initial value, or drop alias=True to"
+                f" allocate new memory"
+            )
+
+        # An alias deliberately names memory that already exists, and
+        # ignore_reallocation is the documented opt out.
+        modules[0].procedure.register_memory_allocation(
+            modules,
+            name,
+            dtype,
+            allow_existing=alias is True or ignore_reallocation,
+            initial_value_specified=initial_value_specified,
         )
 
         if alias is not True:
@@ -655,16 +680,24 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
             one or more qubits. Typically, you create a register from a
             :class:`~dwave.gate.qcdl.Scope` object, which handles this parameter
             for you.
-        initial_value: Initial value. Defaults to 0.
+        initial_value: Initial value. Defaults to 0. Only the first allocation
+            of a name takes effect, so a value given for a name that is already
+            allocated is rejected rather than silently discarded; see
+            ``ignore_reallocation``. An ``alias`` never allocates, so it never
+            takes a value at all.
         name: Name for this register; useful for troubleshooting. If None, a
             name is generated. See the ``alias`` parameter for type punning.
         master_kwargs: Propagate this to the master instruction.  This parameter
             is intended for use by developers of QCDL.
         alias: Set to True if you are aliasing an existing register, and for
             type punning reuse that register's name in the ``name`` parameter.
-            Aliased registers are not reinitialized.
-        ignore_reallocation: If True, the compiler does not reallocate if
-            already allocated (and does not raise an exception).
+            Aliased registers are not reinitialized, so you may not give an
+            ``initial_value``.
+        ignore_reallocation: If True, and the name is already allocated, the
+            compiler does not reallocate it (and does not raise an exception).
+            In that case you may not give an ``initial_value``, since it would
+            never reach the qubit. A name that is not yet allocated is
+            allocated as usual and may carry a value.
         scope_id: Identity of the :class:`~dwave.gate.qcdl.Scope` this register
             is derived from. The
             :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Register` method sets
@@ -727,7 +760,7 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
     def __init__(
         self,
         modules: Sequence[QCDLModule],
-        initial_value: int = 0,
+        initial_value: int | None = None,
         name: str | None = None,
         master_kwargs: dict[str, Any] | None = None,
         alias: bool | str = False,
@@ -772,16 +805,24 @@ class FixedPointRegister(
             one or more qubits. Typically, you create a register from a
             :class:`~dwave.gate.qcdl.Scope` object, which handles this parameter
             for you.
-        initial_value: Initial value. Defaults to 0.0.
+        initial_value: Initial value. Defaults to 0.0. Only the first
+            allocation of a name takes effect, so a value given for a name that
+            is already allocated is rejected rather than silently discarded;
+            see ``ignore_reallocation``. An ``alias`` never allocates, so it
+            never takes a value at all.
         name: Name for this register; useful for troubleshooting. If None, a
             name is generated. See the ``alias`` parameter for type punning.
         master_kwargs: Propagate this to the master instruction. This parameter
             is intended for use by developers of QCDL.
         alias: Set to True if you are aliasing an existing register, and for
             type punning reuse that register's name in the ``name`` parameter.
-            Aliased registers are not reinitialized.
-        ignore_reallocation: If True, the compiler does not reallocate if
-            already allocated (and does not raise an exception).
+            Aliased registers are not reinitialized, so you may not give an
+            ``initial_value``.
+        ignore_reallocation: If True, and the name is already allocated, the
+            compiler does not reallocate it (and does not raise an exception).
+            In that case you may not give an ``initial_value``, since it would
+            never reach the qubit. A name that is not yet allocated is
+            allocated as usual and may carry a value.
         scope_id: Identity of the :class:`~dwave.gate.qcdl.Scope` this register
             is derived from. The
             :meth:`~dwave.gate.qcdl.QCDLModuleContainer.FixedPointRegister`
@@ -825,7 +866,7 @@ class FixedPointRegister(
     def __init__(
         self,
         modules: Sequence[QCDLModule],
-        initial_value: float = 0.0,
+        initial_value: float | None = None,
         name: str | None = None,
         master_kwargs: dict[str, Any] | None = None,
         alias: bool | str = False,
