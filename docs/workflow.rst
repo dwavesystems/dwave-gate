@@ -986,8 +986,9 @@ condition value used in the ``If`` statement here and in subsequent examples.
         # all qubits have a copy of the same register:
         send_register = sc.Register(name=name)
 
-        # set the register on q0 to 0 or 1
-        measure(q0, register=q0.Register(name=name))
+        # set the register on q0 to 0 or 1; alias=True reuses the memory
+        # send_register already allocated instead of redeclaring it
+        measure(q0, register=q0.Register(name=name, alias=True))
 
         # if any of the copies of the register are equal to 1, then all
         # will receive a condition of True.

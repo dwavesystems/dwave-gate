@@ -134,6 +134,10 @@ class Procedure(IndexerMixin):
         # qubits in the statement are not listed in the last item in this list.
         self._exclusive_modules: list[set[str]] = []
 
+        # register names allocated in this procedure, per module, so that
+        # re-declaring one can be reported rather than silently discarded
+        self._allocated_registers: dict[str, dict[str, str]] = {}
+
         self._procedure_ended = False
 
     def to_model(self) -> QCDLProcedureDef:
@@ -240,6 +244,75 @@ class Procedure(IndexerMixin):
         module = QCDLModuleName.model_validate(module_name)
         if module not in self.modules_used:
             self.modules_used.append(module)
+
+    def register_memory_allocation(
+        self,
+        modules: Sequence[QCDLModule],
+        name: str,
+        dtype: str,
+        allow_existing: bool = False,
+        initial_value_specified: bool = False,
+    ) -> None:
+        """Record a register allocation, rejecting a silent re-declaration.
+
+        The compiler keeps the *first* allocation of a name, so a second
+        declaration of the same name on the same module is a no-op: its initial
+        value never reaches the qubit. That is almost always a mistake, so it is
+        reported here instead.
+
+        Re-declaring the name is allowed when the caller asked for it, but an
+        explicit initial value is still rejected: opting in to the
+        re-declaration says the existing memory is wanted, whereas giving a
+        value says the opposite, and the compiler would ignore it.
+
+        This method is mostly intended for use by developers of QCDL; the
+        :class:`~dwave.gate.qcdl.registers.Register` and
+        :class:`~dwave.gate.qcdl.registers.FixedPointRegister` classes call it
+        for you.
+
+        Args:
+            modules: Modules the register is allocated on.
+            name: Name of the register.
+            dtype: ``"int"`` or ``"float"``.
+            allow_existing: If True, an existing allocation of ``name`` is
+                accepted as long as no initial value was given. Set by the
+                ``alias`` and ``ignore_reallocation`` arguments of a register.
+            initial_value_specified: Whether the caller gave an initial value
+                for this register.
+
+        Raises:
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If ``name``
+                is already allocated on one of ``modules`` and either
+                ``allow_existing`` is False or an initial value was given.
+        """
+        for module in modules:
+            allocated = self._allocated_registers.setdefault(
+                module.qcdl_module_name, {}
+            )
+            previous = allocated.get(name)
+            if previous is not None and not (
+                allow_existing and not initial_value_specified
+            ):
+                if allow_existing:
+                    raise QCDLUserError(
+                        f"register {name!r} is already allocated on"
+                        f" {module.qcdl_module_name} with dtype {previous} in"
+                        f" procedure {self.name}, and the compiler keeps the"
+                        f" first allocation, so the initial value given here"
+                        f" would never reach the qubit. Re-declaring the name is"
+                        f" allowed, but giving it a value is not: drop the"
+                        f" initial value."
+                    )
+                raise QCDLUserError(
+                    f"register {name!r} is already allocated on"
+                    f" {module.qcdl_module_name} with dtype {previous} in"
+                    f" procedure {self.name}; the compiler keeps the first"
+                    f" allocation, so this one would be discarded. Reuse the"
+                    f" existing register, pick another name, or redeclare it"
+                    f" deliberately with alias=True or ignore_reallocation=True"
+                    f" and no initial value."
+                )
+            allocated[name] = dtype
 
     @property
     def expression_queue(self) -> list | None:
@@ -1230,7 +1303,9 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
                     sc = Scope(q0, q1)
                     r1 = sc.Register(name="r1")
                     h(q0)
-                    measure(q0, register=q0.Register(name="r1"))
+                    # alias=True reuses the memory r1 already allocated, so the
+                    # outcome is stored on q0 only rather than mirrored
+                    measure(q0, register=q0.Register(name="r1", alias=True))
                     sc.all_to_all(send=r1==1, reduce_op="&")
                     with sc.If(None):
                         x(q1)
