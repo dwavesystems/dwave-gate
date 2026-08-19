@@ -1,10 +1,13 @@
 .. _gate_workflow:
 
-========================
-Using Gate-Model Systems
-========================
+================
+Using dwave-gate
+================
 
-.. todo:: some intro content
+The |cloud| quantum cloud service provides access to a simulator that enables
+you to test gate-model circuits intended to be executed on a dual-rail quantum
+processing unit (QPU). You describe your circuits using the ``dwave-gate``
+package's quantum circuit description language (QCDL), described here.
 
 .. _QuantumCircuit: https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.QuantumCircuit
 
@@ -14,17 +17,10 @@ Using Gate-Model Systems
 QCDL: Basic
 ===========
 
-You use quantum circuit description language (QCDL) to write programs that run
-operations on D-Wave's gate-model quantum processing units (QPUs) and
-simulators.
-
 QCDL is an embedded
 `Domain Specific Language  <https://en.wikipedia.org/wiki/Domain-specific_language>`_
 (DSL) that uses Python as the host language. If you have some experience coding
 in Python, you can understand the structure of QCDL programs.
-
-The Ocean SDK supports generating these programs, as illustrated in the
-following examples.
 
 
 .. _qcdl_basic_entrypoint:
@@ -32,7 +28,7 @@ following examples.
 Program Entry Point
 -------------------
 
-You use the ``@qcdl``
+You use the :class:`~dwave.gate.qcdl.qcdl`
 `Python decorator <https://peps.python.org/pep-0318/>`_\ [#]_ to
 mark the `entry point <https://en.wikipedia.org/wiki/Entry_point>`_ to your
 QCDL circuit. This decorator converts an otherwise standard Python function into
@@ -60,10 +56,10 @@ In the code above, the ``@qcdl`` decorator specifies that the entry point
 accepts two qubits, the arguments ``q0`` and ``q1`` of ``main()``. The decorated
 function ``main()`` returns a
 `Pydantic model <https://pydantic.dev/docs/validation/dev/concepts/models/>`_
-that you can submit to a compiler or simulator in the |cloud|_ service, as described
-in the :ref:`qcdl_submitting_programs` section.
+that you can submit to a compiler or simulator in the |cloud|_ service, as
+described in the :ref:`qcdl_submitting_programs` section.
 
-The :func:`~dwave.gate.qcdl.print_qcdl` function can visualize this dict structure
+The :func:`~dwave.gate.qcdl.print_qcdl` function can visualize this structure
 as readable text, and if run in a `Jupyter <https://jupyter.org/>`_ notebook,
 as a display object.
 
@@ -75,8 +71,12 @@ as a display object.
 
 The code above displays the following QCDL program.
 
+.. testcode::
+    :hide:
+
+    print(print_qcdl(qcdl_program))
+
 .. testoutput::
-    :skipif: True
     :options: +NORMALIZE_WHITESPACE
 
     begin quantum
@@ -86,8 +86,8 @@ The code above displays the following QCDL program.
         measure([q1], q1, log=True)
     end quantum
 
-If :func:`~dwave.gate.qcdl.print_qcdl` displays poorly, you can instead output a
-string by ``print_qcdl(qcdl_program, to_Display=False)``.
+If :func:`~dwave.gate.qcdl.print_qcdl` displays poorly, you can output a
+string by setting the function's ``to_Display=False`` parameter.
 
 .. [#]
     Python decorators are described in the
@@ -119,8 +119,8 @@ QuantumCircuit_ (e.g., :func:`~dwave.gate.qcdl.operations.h`,
         h(q0)
         cz(control_qubit=q0, target_qubit=q1)
 
-In this example, ``cz(control_qubit=q0, target_qubit=q1)`` is similar to a
-Qiskit the method call ``cz(q0, q1)``.
+In this example, ``cz(control_qubit=q0, target_qubit=q1)`` is similar to the
+Qiskit method call ``cz(q0, q1)``.
 
 .. note::
     For gates that take angles as an argument, ``dwave-gate`` lists qubits
@@ -142,13 +142,13 @@ Qiskit the method call ``cz(q0, q1)``.
 Barrier
 ~~~~~~~
 
-When you submit your QCDL to the |cloud|_ service, a transpiler rewrites the
-circuit to use the QPU's supported basis gates and topology, as described in the
-:ref:`qcdl_basic_transpilation` section. For most algorithms, any implementation
-is acceptable but if you are studying fidelity or yield characterization, you
-can prevent the transpiler from combining certain gates. The
-:func:`~dwave.gate.qcdl.operations.barrier` instruction signals to the transpiler to
-not combine gates across your barrier.\ [#]_
+When you submit your QCDL to a QPU in the |cloud|_ service, a transpiler
+rewrites the circuit to use the QPU's supported basis gates and topology, as
+described in the :ref:`qcdl_basic_transpilation` section. For most algorithms,
+any implementation is acceptable but if you are studying fidelity or yield
+characterization, you can prevent the transpiler from combining certain gates.
+The :func:`~dwave.gate.qcdl.operations.barrier` instruction signals to the
+transpiler to not combine gates across your barrier.\ [#]_
 
 For example, if you do not set :func:`~dwave.gate.qcdl.operations.barrier`
 instructions on a
@@ -265,10 +265,10 @@ Supported Operations
         r2 <<= 2 * r1                       # set r2 to 2*r1 = 4
 
 .. attention::
-    Registers are not implicitly re-assigned with every shot. Instead, they'll
-    carry the value they ended with from one shot to the next. Since for most
-    registers users want each shot to be independent, they should re-assign
-    their registers before using them.
+    Registers are not implicitly re-assigned with every shot. Instead, they
+    carry the value they ended with from one shot to the next. Typically, for
+    most registers, you prefer each shot to be independent, and so should
+    re-assign your registers before using them.
 
 .. note::
     *   A register is associated with a qubit. For QCDL programs with some
@@ -286,7 +286,7 @@ Measurements
 ------------
 
 A logical :func:`~dwave.gate.qcdl.operations.measure` operation on a dual-rail
-system produces one of three outcomes:
+gate-model quantum computer produces one of three outcomes:
 
 *   :math:`0, 1` represent logical projective measurements.
 *   ``*`` (which has numerical representation :math:`-1`), sometimes informally
@@ -318,7 +318,7 @@ Measurement outcomes are handled in three different ways:
     is defined on multiple qubits, only the register copy on the qubit measured
     is assigned. This data could be returned with ``append_table_row`` (see the
     :ref:`qcdl_basic_result_records` section).
-3.  Each qubit implicitly remembers its most recent measurement outcome and
+3.  Each qubit implicitly stores its most recent measurement outcome and
     this value may be used in conditional statements.
 
 .. testcode::
@@ -458,7 +458,7 @@ ignoring erasures, and others.
     half_splats = {"00": 100, "0*": 100}
     assert YieldHandling.only_post_selected_counts.apply(half_splats) == ({"00": 100}, 0.5)
 
-A significant feature of the D-wave simulator is that it flags detected errors
+A significant feature of the D-Wave simulator is that it flags detected errors
 by returning ``*`` as a third measurement outcome in addition to :math:`0` and
 :math:`1`, as described in the :ref:`qcdl_basic_measurements` section. Qiskit
 does not handle these values so you must remove individual shots containing a
@@ -488,7 +488,7 @@ Alternatively, a ``YieldHandling`` option may be passed to ``get_counts``.
 
 .. [#]
     If an application you use, for example, in computing statistical errors,
-    is not robust to results containing few shots than requested, you can use
+    is not robust to results containing fewer shots than requested, you can use
     the :class:`~dwave.gate.YieldHandling` class as a workaround *temporarily and
     with caution*.
 
@@ -497,8 +497,9 @@ Alternatively, a ``YieldHandling`` option may be passed to ``get_counts``.
 Initialize and Reset
 --------------------
 
-At the beginning of every shot, The QPU initializes all of the qubits used by
-your circuit. You can also explicitly use this operation in your QCDL.
+At the beginning of every shot, the QPU initializes all of the qubits used by
+your circuit. You can also explicitly use the
+:func:`~dwave.gate.qcdl.operations.initialize` operation in your QCDL.
 
 .. testcode::
 
@@ -548,20 +549,16 @@ simulation to not transpile (see the :ref:`qcdl_submitting_programs` section).
     *   -   Basis Gates
         -   Description
         -   Availability
-        -   Notes
     *   -   :func:`~dwave.gate.qcdl.operations.sx`,
             :func:`~dwave.gate.qcdl.operations.x`
         -   Single qubit rotation around the X-axis by π/2 and π respectively.
         -   All operational qubits.
-        -
     *   -   :func:`~dwave.gate.qcdl.operations.rz`
         -   Single qubit, parameterizable rotation around the Z-axis.
         -   All operational qubits.
-        -
     *   -   :func:`~dwave.gate.qcdl.operations.cz`
         -   Two qubit rotation by π/2 around the ZZ-axis.
         -   Connected, operational qubits.
-        -
 
 Transpiler Constraints and Considerations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -596,7 +593,7 @@ Procedures are useful for:
 *   Organizing code for visualization purposes
 *   Constraining transpilation
 
-A procedure is marked with the ``@procedure`` decorator.
+A procedure is marked with the :class:`~dwave.gate.qcdl.procedure` decorator.
 
 .. testcode::
 
@@ -730,7 +727,7 @@ two discrete steps:
     a register. This is the *branch condition*.
 2.  Create a true branch statement, and optionally a false branch statement. If
     the branch condition evaluates to :math:`1`, your true branch is executed;
-    otherwise, the false branch is executed.
+    otherwise, the false branch (or the default idle) is executed.
 
 QCDL supports several ways of setting a branch condition and branching from an
 instruction.
@@ -790,8 +787,8 @@ Supported Condition Values
         -   See the :ref:`qcdl_advanced_signals` section for details.
     *   -   ``None``
         -   You can separate the steps of evaluating the branch condition and
-            branching by assigning the branch condition before the (e.g.,
-            :meth:`~dwave.gate.qcdl.QCDLModuleContainer.If`) statement, with
+            branching by assigning the branch condition before the statement
+            (e.g., :meth:`~dwave.gate.qcdl.QCDLModuleContainer.If`), with
             that branch condition persisting if ``None`` is specified. The
             branch condition might be set, for example, by a preceding
             :meth:`~dwave.gate.qcdl.QCDLModuleContainer.all_to_all` or
@@ -833,12 +830,12 @@ This example detects and resets a qubit if it has been erased.
     from dwave.gate.qcdl.operations import mced
 
     @qcdl(1)
-    def detect_erasure_example(q):
-        erased = q.Register(name="erased")
+    def detect_erasure_example(q0):
+        erased = q0.Register(name="erased")
         erased <<= 0
-        mced(q, register=erased)
-        with q.If(erased == 1):
-            q.reset()
+        mced(q0, register=erased)
+        with q0.If(erased == 1):
+            q0.reset()
 
 This example conditions on a classical register.
 
@@ -900,6 +897,8 @@ The following example results in the bitstring being either :math:`11` or
 qubit sets it after its measurement. The :ref:`qcdl_advanced_conditionals`
 section describes the condition value used in the ``If`` statement.
 
+.. todo:: Amos is updating the simulator for use of signal (see simulator ticket 503)
+
 .. testcode::
 
     from dwave.gate.qcdl import qcdl
@@ -912,9 +911,9 @@ section describes the condition value used in the ``If`` statement.
         h(q0)
         send_register = q0.Register()
         measure(q0, register=send_register)
-        sender.master(extf=send_register == 1)
+        sender.master(signal=send_register == 1)
         sender.sync(receiver)
-        with receiver.If(sender.extf):
+        with receiver.If(sender.signal):
             x(receiver)
         measure(receiver)
 
@@ -1160,8 +1159,8 @@ A register is associated with a qubit. When you create a
 :class:`~dwave.gate.qcdl.Scope` class, it is implemented as a collection of
 registers for the qubits in the scope. And when you assign that
 :class:`~dwave.gate.qcdl.registers.Register` to a
-:func:`dwave.gate.qcdl.operations.measure` or
-:func:`dwave.gate.qcdl.operations.mced` operation, only the register
+:func:`~dwave.gate.qcdl.operations.measure` or
+:func:`~dwave.gate.qcdl.operations.mced` operation, only the register
 associated with the measured qubit is updated (the measurement outcome is
 immediately written to that register).
 
@@ -1348,29 +1347,3 @@ Simulator Configuration
         -   bool
         -   False
 
-Logging
--------
-
-For troubleshooting when jobs are starting and completing, configure logging,
-which Python does not turn on by default. There are many configuration options
-for logging with various tradeoffs, the main one being signal-to-noise.
-
-D-Wave recommends a simple logging configuration that adds the following lines
-of code once near the beginning of the highest level ``.py`` or ``.ipynb``
-(for Jupyter notebooks) files. This code prints job IDs next to reported errors.
-
-.. testcode::
-
-    import logging
-
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    )
-
-The codes sets typical
-`log attributes <https://docs.python.org/3/library/logging.html#logrecord-attributes>`_.
-Typically, ``INFO`` level is sufficient but not too verbose for production use.
-You may consider using ``WARNING`` in standard output (``stdout``) and
-separately saving ``INFO`` level to a ``.log`` file.
