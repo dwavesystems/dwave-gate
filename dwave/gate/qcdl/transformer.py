@@ -324,7 +324,7 @@ def display_qcdl(qcdl: QCDLProgram | Mapping[str, Any], **kwargs: Any) -> None:
     Examples:
 
         .. testcode::
-            :skipif: True
+            :skipif: True       # Not tested because not in JN
 
             from dwave.gate.qcdl import display_qcdl, qcdl
 
@@ -340,14 +340,14 @@ def display_qcdl(qcdl: QCDLProgram | Mapping[str, Any], **kwargs: Any) -> None:
 
         The code above displays the following QCDL program.
 
-            .. testoutput::
-                :skipif: True
-                :options: +NORMALIZE_WHITESPACE
+        .. testoutput::
+            :skipif: True       # Not tested because not in JN
+            :options: +NORMALIZE_WHITESPACE
 
-                begin quantum
-                    q0.h()
-                    q0.measure()
-                end quantum
+            begin quantum
+                q0.h()
+                q0.measure()
+            end quantum
     """
     qcdl_str = print_qcdl(qcdl, to_Display=False, **kwargs)
     display(Code(qcdl_str, language="python"))

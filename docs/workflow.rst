@@ -75,8 +75,12 @@ as a display object.
 
 The code above displays the following QCDL program.
 
+.. testcode::
+    :hide:
+
+    print(print_qcdl(qcdl_program))
+
 .. testoutput::
-    :skipif: True
     :options: +NORMALIZE_WHITESPACE
 
     begin quantum
@@ -452,7 +456,6 @@ result distributions. It supports options for renormalizing distributions,
 ignoring erasures, and others.
 
 .. testcode::
-    :skipif: True
 
     from dwave.gate.results import YieldHandling
     half_splats = {"00": 100, "0*": 100}
