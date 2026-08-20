@@ -1664,6 +1664,54 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
         return shape, table_row
 
 
+def _as_modules(qubits: Any, argument: str) -> tuple[list[QCDLModule], int | None]:
+    """Normalize a group of qubits into modules and a scope id.
+
+    Accepts a :class:`.Scope`, a single :class:`.QCDLModule`, or a sequence of
+    either, so that a caller does not have to know which of those an API wants.
+
+    Args:
+        qubits: The group of qubits.
+        argument: Name of the parameter being normalized, for error messages.
+
+    Raises:
+        :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If no qubits
+            could be found in ``qubits``.
+
+    Returns:
+        The modules, deduplicated and in order, and the ``scope_id`` if the
+        group carried one.
+    """
+    if isinstance(qubits, QCDLModuleContainer):
+        modules = list(qubits.qcdl_modules)
+        if not modules:
+            raise QCDLUserError(f"{argument} {qubits} does not hold any qubits")
+        return modules, qubits.scope_id
+
+    if isinstance(qubits, str) or not isinstance(qubits, Sequence):
+        raise QCDLUserError(
+            f"{argument} must be a Scope, a QCDLModule, or a sequence of them,"
+            f" not {type(qubits).__name__} ({qubits!r})"
+        )
+
+    # deduplicate by name while preserving order
+    by_name: dict[str, QCDLModule] = {}
+    for item in qubits:
+        if not isinstance(item, QCDLModuleContainer):
+            raise QCDLUserError(
+                f"every item in {argument} must be a Scope or a QCDLModule, not"
+                f" {type(item).__name__} ({item!r})"
+            )
+        for module in item.qcdl_modules:
+            by_name[module.qcdl_module_name] = module
+
+    if not by_name:
+        raise QCDLUserError(f"{argument} does not hold any qubits")
+
+    # a bare sequence has no identity of its own, so it carries no scope_id
+    return list(by_name.values()), None
+
+
 class QCDLModule(QCDLModuleContainer):
     """Wrapper around a :class:`.Procedure` instance.
 
@@ -1834,28 +1882,34 @@ class QCDLModule(QCDLModuleContainer):
         return f"{self.qcdl_module_name}.signal"
 
     def one_to_all(
-        self, destinations: Scope, send: RegisterExpression, **kwargs: Any
+        self,
+        destinations: Scope | QCDLModule | Sequence[QCDLModule],
+        send: RegisterExpression,
+        **kwargs: Any,
     ) -> None:
-        """Send a bit from one qubit to a :class:`~dwave.gate.qcdl.Scope` of
-        other qubits.
+        """Send a bit from one qubit to other qubits.
 
         See the :ref:`qcdl_advanced_signals` section for a description and
         examples of signals.
 
         Args:
-            destinations: The scope of all qubits to send the message to. The
-                bit is placed on each qubit's branch condition to be used in a
-                conditional statement.
+            destinations: The qubits to send the message to. The bit is placed
+                on each qubit's branch condition to be used in a conditional
+                statement. Statements are tagged with the
+                ``scope_id`` if a :class:`~dwave.gate.qcdl.Scope` is
+                specified.
             send: The expression to compute the bit on the sender.
 
         Raises:
-            :exception:`ValueError`: If the module has more than one qubit.
+            :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If
+                ``destinations`` does not hold any qubits.
         """
+        modules, scope_id = _as_modules(destinations, "destinations")
         self._multi_qubit_statement(
             "one_to_all",
             send=send,
-            qubits=destinations.qcdl_modules,
-            scope_id=destinations.scope_id,
+            qubits=modules,
+            scope_id=scope_id,
             **kwargs,
         )
 
