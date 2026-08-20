@@ -1,0 +1,28 @@
+---
+prelude: >
+    First release of ``dwave-gate`` with quantum circuit description language
+    (QCDL) support. QCDL is an embedded domain-specific language, using Python
+    as its host language, for generating quantum circuit programs via the
+    ``@qcdl`` decorator.
+features:
+  - |
+    Add the QCDL module (``dwave.gate.qcdl``), which includes the ``@qcdl``
+    decorator and ``QCDLCircuit`` for building programs, a library of gates and
+    measurement operations, real-time control flow (``If``/``Else``, ``While``,
+    ``DoWhile``, ``For``, ``Repeat``, etc), and classical registers (``Register``,
+    ``FixedPointRegister``).
+  - |
+    Add ``dwave.gate.results.Result``, a Pydantic model that decodes a solver's
+    answer data, exposing measurements and records, and providing
+    ``get_memory``, ``get_counts``, and ``run_time`` for retrieving per-shot
+    outcomes, sample counts, and run times.
+  - |
+    Add ``dwave.gate.results.YieldHandling``, an enumeration of strategies
+    (``only_post_selected_counts``, ``renormalize_distribution``, and
+    ``renormalize_distribution_or_raise``) for handling shots with end-of-line
+    measurement errors (splats) when building counts.
+  - |
+    Add ``dwave.gate.utils.tunable_noise_model_helpers``, providing
+    ``create_oneq_gate_noise`` and ``create_twoq_gate_noise`` helpers for
+    building tunable single- and two-qubit gate noise models.
+
