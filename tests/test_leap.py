@@ -137,3 +137,12 @@ class TestLeapQCDLSimulator:
                 simulator.client, 'close', wraps=simulator.client.close) as client_close:
             simulator.close()
         client_close.assert_called_once()
+
+    @unittest.mock.patch('dwave.gate.qcdl.leap.Client', mock_client_factory)
+    def test_context_mgr(self):
+        simulator = LeapQCDLSimulator()
+        with unittest.mock.patch.object(
+                simulator.client, 'close', wraps=simulator.client.close) as client_close:
+            with simulator:
+                pass
+        client_close.assert_called_once()

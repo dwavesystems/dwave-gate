@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Any
+from typing import Any, Self
 
 import orjson
 from dwave.cloud.client import Client
@@ -157,6 +157,18 @@ class LeapQCDLSimulator:
         """
         self.client.close()
         self._executor.shutdown(wait=True)
+
+    # note: quickly reimplement `dimod.Scoped` interface here to avoid dimod dependency
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Release system resources allocated and raise any exception triggered
+        within the runtime context.
+        """
+        self.close()
+        # raise exceptions from the runtime context as they're not handled here
+        return None
 
     def run(self, qcdl: QCDLProgram | Mapping[str, Any], **params) -> Future[Result]:
         """Run the :term:`QCDL` program using the selected Leap simulator,
