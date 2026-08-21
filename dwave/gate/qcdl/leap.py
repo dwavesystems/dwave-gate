@@ -53,7 +53,7 @@ class LeapQCDLSimulator:
 
         .. code-block:: python
 
-            from dwave.gate.leap import LeapQCDLSimulator
+            from dwave.gate.qcdl.leap import LeapQCDLSimulator
 
             simulator = LeapQCDLSimulator()
             future = simulator.run(qcdl_program, shots=100)
