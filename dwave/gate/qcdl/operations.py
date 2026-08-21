@@ -106,7 +106,6 @@ def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
     Examples:
 
         .. testcode::
-            :skipif: True   # TODO: figure out why this test fails
 
             from dwave.gate.qcdl import print_qcdl, qcdl
             from dwave.gate.qcdl.operations import barrier, measure, x
@@ -121,17 +120,22 @@ def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
             qcdl_program = use_barrier()
             print_qcdl(qcdl_program)
 
+        .. testcode::
+            :hide:
+
+            print(print_qcdl(qcdl_program))
+
+
         The code above prints the following QCDL.
 
         .. testoutput::
-            :skipif: True   # TODO: figure out why this test fails
             :options: +NORMALIZE_WHITESPACE
 
             begin quantum
-                x(q0)
+                x([q0], q0)
                 q0.barrier(label="Separate two X gates")
-                x(q0)
-                measure(q0, log=True)
+                x([q0], q0)
+                measure([q0], q0, log=True)
             end quantum
     """
     kwargs = {}
@@ -310,7 +314,7 @@ def y(qubit: QCDLModule) -> None:
 
 def sy(qubit: QCDLModule) -> None:
     r"""SQRT of Y gate.
-    TODO it's not a qiskit gate
+    .. todo:: it's not a qiskit gate (comment from @qci-amos)
 
     Args:
         qubit: Qubit on which to apply the gate.
@@ -334,7 +338,7 @@ def sy(qubit: QCDLModule) -> None:
 
 def sydg(qubit: QCDLModule) -> None:
     r"""SQRT of Y_adjoint gate.
-    TODO it's not a qiskit gate
+    .. todo:: it's not a qiskit gate (comment from @qci-amos)
 
     Args:
         qubit: Qubit on which to apply the gate.
