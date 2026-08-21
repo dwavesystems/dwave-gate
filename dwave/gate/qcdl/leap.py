@@ -31,6 +31,37 @@ __all__ = ['LeapQCDLSimulator']
 
 class LeapQCDLSimulator:
     r"""Submits QCDL programs to the Dual-Rail simulator in the Leap service.
+
+    Examples:
+        Construct a simple QCDL program:
+
+        .. code-block:: python
+
+            from dwave.gate.qcdl import qcdl
+            from dwave.gate.qcdl.operations import cx, h, measure
+
+            @qcdl(num_qubits=2)
+            def main(q0, q1):
+                h(q0)        # Hadamard gate on q0
+                cx(q0, q1)   # CNOT with q0 as control, q1 as target
+                measure(q0)
+                measure(q1)
+
+            qcdl_program = main()
+
+        Submit it to the Leap QCDL simulator:
+
+        .. code-block:: python
+
+            from dwave.gate.leap import LeapQCDLSimulator
+
+            simulator = LeapQCDLSimulator()
+            future = simulator.run(qcdl_program, shots=100)
+            result = future.result()
+
+        Access measurements and sample counts by calling
+        ``result.measurements`` or ``result.get_counts()`` respectively.
+
     """
 
     @property
@@ -73,12 +104,24 @@ class LeapQCDLSimulator:
             return parameters
 
     def __init__(self, **config):
-        """Initialize the simulator client instance.
+        r"""Initialize the simulator client instance.
 
         Args:
             **config:
                 :class:`~dwave.cloud.client.Client` configuration options,
-                including the :term:`solver` selection.
+                including the :term:`solver` selection. See
+                :ref:`cloud_configuration` section for details.\ [#]_
+
+        .. [#]
+            :ref:`dwave-cloud-client <index_cloud>`'s
+            :meth:`~dwave.cloud.client.Client.get_solvers` method filters solvers
+            you have access to by solver properties, as ``category="software-gate"``
+            and ``supported_problem_type="qcdl"``.
+
+            The default specification for filtering and ordering solvers by features
+            is available as :attr:`.default_solver` property. Explicitly specifying
+            a solver in a configuration file, an environment variable, or keyword
+            arguments overrides this specification.
 
         """
         # default to short-lived session to prevent resets on slow uploads
