@@ -26,7 +26,9 @@ classifiers = [
 dynamic = ["version"]
 dependencies = [
     "addict",
+    "dwave-cloud-client>=0.14.7,<0.15",
     "numpy>=2,<3",
+    "orjson>=3.11,<4",
     "pydantic>=2,<3",
     "polars>=1.35",
 ]
@@ -40,11 +42,13 @@ Repository = "https://github.com/dwavesystems/dwave-gate.git"
 
 [dependency-groups]
 dev = [
-    "numpy==2.4.6",  # latest that support Python 3.11 as of July 2026
-    "pydantic==2.13.4",  # latest as of July 2026
     "addict==2.4.0",
-    "reno==4.1.0",
+    "dwave-cloud-client==0.14.7",
+    "numpy==2.4.6",     # latest that support Python 3.11 as of July 2026
+    "orjson==3.12",     # latest that supports 3.10--3.15 as of August 2026
     "polars==1.43.1",
+    "pydantic==2.13.4", # latest as of July 2026
+    "reno==4.1.0",
 ]
 docs = [
     # matches dwave-ocean-sdk as of July 2026
