@@ -40,6 +40,38 @@ class LeapQCDLSimulator:
                     category='software-gate',
                     order_by='-properties.version')
 
+    @property
+    def properties(self) -> dict[str, Any]:
+        """Solver properties as returned by a :term:`SAPI` query.
+
+        Solver properties are dependent on the selected solver and subject to
+        change; for example, new features may add properties.
+        """
+        try:
+            return self._properties
+        except AttributeError:
+            self._properties = properties = self.solver.properties.copy()
+            return properties
+
+    @property
+    def parameters(self) -> dict[str, list[str]]:
+        """Supported parameters.
+
+        Keys of the returned dict are keyword parameters as returned by a
+        :term:`SAPI` query.
+
+        Solver parameters are dependent on the selected solver and subject to
+        change; for example, new features may add parameters.
+        """
+        try:
+            return self._parameters
+        except AttributeError:
+            parameters = {param: ['parameters']
+                          for param in self.properties['parameters']}
+            parameters.update(label=[])
+            self._parameters = parameters
+            return parameters
+
     def __init__(self, **config):
         """Initialize the simulator client instance.
 
@@ -61,6 +93,12 @@ class LeapQCDLSimulator:
 
         self.client = Client.from_config(**config)
         self.solver = self.client.get_solver()
+
+        # check user-specified solver conforms to our requirements
+        if self.properties.get('category') != 'software-gate':
+            raise ValueError("selected solver is not a gate-model simulator.")
+        if 'qcdl' not in self.solver.supported_problem_types:
+            raise ValueError("selected solver does not support the 'qcdl' problem type.")
 
         self._executor = ThreadPoolExecutor()
 
