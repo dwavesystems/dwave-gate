@@ -318,26 +318,20 @@ class Procedure(IndexerMixin):
             if previous is not None and not (
                 allow_existing and not initial_value_specified
             ):
+                where = (
+                    f"register {name!r} is already allocated on"
+                    f" {module.qcdl_module_name} with dtype {previous.dtype}"
+                    f" in procedure {previous.procedure.name}"
+                )
                 if allow_existing:
                     raise QCDLUserError(
-                        f"register {name!r} is already allocated on"
-                        f" {module.qcdl_module_name} with dtype"
-                        f" {previous.dtype} in procedure"
-                        f" {previous.procedure.name}, and the compiler keeps"
-                        f" the first allocation, so the initial value given"
-                        f" here would never reach the qubit. Re-declaring the"
-                        f" name is allowed, but giving it a value is not: drop"
-                        f" the initial value."
+                        f"{where}, so this initial value would never reach the"
+                        f" qubit; drop the initial value"
                     )
                 raise QCDLUserError(
-                    f"register {name!r} is already allocated on"
-                    f" {module.qcdl_module_name} with dtype {previous.dtype} in"
-                    f" procedure {previous.procedure.name}; register names are"
-                    f" global to the circuit and the compiler keeps the first"
-                    f" allocation, so this one would be discarded. Reuse the"
-                    f" existing register, pick another name, or redeclare it"
-                    f" deliberately with alias=True or ignore_reallocation=True"
-                    f" and no initial value."
+                    f"{where}, so this declaration would be discarded; reuse"
+                    f" that register, pick another name, or pass alias=True or"
+                    f" ignore_reallocation=True with no initial value"
                 )
             allocated[name] = RegisterAllocation(dtype, self)
 
