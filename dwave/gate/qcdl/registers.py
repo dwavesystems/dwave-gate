@@ -266,10 +266,8 @@ class RegisterInitializerMixin:
 
         if alias is True and initial_value_specified:
             raise QCDLUserError(
-                f"register {name!r} is an alias, so no memory is allocated for"
-                f" it and the initial value given here would never reach the"
-                f" qubit; drop the initial value, or drop alias=True to"
-                f" allocate new memory"
+                f"register {name!r} is an alias, so this initial value would"
+                f" never reach the qubit; drop the initial value"
             )
 
         # An alias deliberately names memory that already exists, and
