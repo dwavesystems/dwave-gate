@@ -1,0 +1,31 @@
+---
+features:
+  - |
+    Re-export ``Result`` and ``YieldHandling`` from the package root, so that
+    ``dwave.gate.Result`` and ``dwave.gate.YieldHandling``, as the user guide
+    refers to them, now resolve. Both remain importable from
+    ``dwave.gate.results``, which is still where they are defined.
+upgrade:
+  - |
+    The ``Result.get_memory`` and ``Result.get_counts`` methods now default to
+    the measured register rather than to every qubit in the circuit, so
+    bitstrings no longer include a padded ``unmeasured_value`` for a qubit that
+    was never measured. Pass ``register=get_default_register(...)`` explicitly to
+    keep the previous, padded register.
+fixes:
+  - |
+    The ``Result.get_memory`` and ``Result.get_counts`` methods no longer pad
+    unmeasured qubits into the bitstring by default, where such a qubit was
+    previously read as an outcome. They default to
+    ``Result.get_measurements_register`` and fall back to every qubit only when
+    nothing was measured at all.
+  - |
+    The ``YieldHandling.apply`` method now accepts every key format that the
+    ``count_measurements`` function produces. Testing keys for a splat raised
+    ``TypeError`` on the integer keys produced for ``key_format=None``, and the
+    all-erasures fallback key is now built only for string keys, which are the
+    only ones that can hold a splat.
+  - |
+    The ``YieldHandling.apply`` method now raises ``ValueError`` for an empty
+    distribution, rather than the ``StopIteration`` that its fallback key raised
+    for a counts dict that post selection had emptied.
