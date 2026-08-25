@@ -577,89 +577,69 @@ def _validate_num_qubits(num_qubits: Any) -> None:
         )
 
 
-def _unfilled_parameters(
-    f: Any, args: Sequence[Any], kwarg_names: Iterable[str]
-) -> list[str]:
-    """Required parameters of ``f`` that this call would leave unbound.
+def _qubit_source(num_qubits: int | None, from_environment: bool) -> str:
+    """Describe what generated the qubits, for error messages."""
+    if from_environment:
+        return "the environment"
+    return "@qcdl()" if num_qubits is None else f"@qcdl({num_qubits})"
+
+
+def _validate_call(
+    f: Any,
+    args: Sequence[Any],
+    passed_names: set[str],
+    qubits: Iterable[str],
+    source: str,
+    allow_dropped_qubits: bool,
+) -> None:
+    """Check that a call to the decorated function binds qubits and parameters.
+
+    Qubits reach the decorated function by *name*, so a parameter that is not a
+    ``q<N>`` receives nothing and a generated qubit the signature does not name
+    goes nowhere. Python's own message for the first names only the parameter,
+    with no hint that qubits are involved, and the second is silent.
 
     Args:
         f: The decorated function.
         args: Positional arguments the caller supplied.
-        kwarg_names: Names of the keyword arguments the call will supply.
+        passed_names: Names of the keyword arguments the call will supply.
+        qubits: Names of the generated qubits.
+        source: What generated the qubits, for the error message.
+        allow_dropped_qubits: If True, a qubit no parameter names is not an
+            error. An environment always supplies its whole set of qubits.
 
-    Returns:
-        Parameter names with no value and no default, in declaration order.
+    Raises:
+        :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If a generated
+            qubit has no parameter to be passed to.
+        TypeError: If the call would leave a parameter of ``f`` unbound.
     """
+    f_name = getattr(f, "__name__", "the decorated function")
+    supplied = ", ".join(qubits) or "none"
+
+    # an unfilled parameter first: when a parameter is misnamed its qubit is
+    # also dropped, and the name is the more useful half to report
     try:
-        parameters = inspect.signature(f).parameters.values()
-    except (TypeError, ValueError):
+        # only the names matter to bind, so the values can be placeholders
+        inspect.signature(f).bind(*args, **dict.fromkeys(passed_names))
+    except TypeError as exc:
+        raise TypeError(
+            f"{f_name}() {exc}. The qcdl decorator injects qubits as keyword"
+            f" arguments named q<N> (q0, q1, ...), and {source} supplied"
+            f" {supplied}; rename the parameter q0, q1, ..., raise num_qubits,"
+            f" give the parameter a default, or pass it a value"
+        ) from None
+    except ValueError:
         # a callable we can not introspect; let python report the call itself
-        return []
+        return
 
-    positional_kinds = (
-        inspect.Parameter.POSITIONAL_ONLY,
-        inspect.Parameter.POSITIONAL_OR_KEYWORD,
-    )
-    positional = [p for p in parameters if p.kind in positional_kinds]
-    consumed = {p.name for p in positional[: len(args)]}
-    consumed.update(kwarg_names)
-
-    return [
-        p.name
-        for p in parameters
-        if p.default is inspect.Parameter.empty
-        and p.kind in positional_kinds + (inspect.Parameter.KEYWORD_ONLY,)
-        and p.name not in consumed
-    ]
-
-
-def _unfilled_parameters_error(
-    f_name: str,
-    missing: Sequence[str],
-    supplied: Iterable[str],
-    num_qubits: int | None,
-    from_environment: bool,
-) -> TypeError:
-    """Build the error for an entry point whose parameters were not all filled.
-
-    The decorator injects qubits by *name*, so a mistyped or differently named
-    parameter silently receives nothing. Python's own message for that names
-    only the parameter, which gives no hint that qubits are involved.
-    """
-    plural = "" if len(missing) == 1 else "s"
-    message = (
-        f"{f_name}() missing {len(missing)} required positional argument"
-        f"{plural}: {', '.join(repr(name) for name in missing)}."
-    )
-
-    if from_environment:
-        source = "the environment"
-    elif num_qubits is not None:
-        source = f"@qcdl({num_qubits})"
-    else:
-        source = "@qcdl()"
-
-    supplied_names = sorted(supplied, key=lambda name: (len(name), name))
-    message += (
-        f" The qcdl decorator injects qubits as keyword arguments named q<N>"
-        f" (q0, q1, ...), and {source} supplied"
-        f" {', '.join(supplied_names) if supplied_names else 'none'}."
-    )
-
-    if any(is_qubit_or_coupler_name(name) for name in missing):
-        message += (
-            " Raise num_qubits to cover the missing qubits, or drop the"
-            " parameters for them."
+    dropped = [q for q in qubits if q not in passed_names]
+    if dropped and not allow_dropped_qubits:
+        raise QCDLUserError(
+            f"{source} generates {supplied} but {f_name}() has no parameter for"
+            f" {', '.join(dropped)}, so {'they' if len(dropped) > 1 else 'it'}"
+            f" would be dropped from the program; declare a parameter for every"
+            f" generated qubit, lower num_qubits, or accept **kwargs"
         )
-    else:
-        matches = "does not match" if len(missing) == 1 else "do not match"
-        message += (
-            f" Parameter{plural} {', '.join(repr(name) for name in missing)}"
-            f" {matches} that pattern, so no qubit was injected: rename to"
-            f" q0, q1, ..., add a default value, or pass a value explicitly."
-        )
-
-    return TypeError(message)
 
 
 QCDLV2: TypeAlias = str
@@ -848,52 +828,31 @@ def qcdl(
             # kwargs may include modules/systems the user has already created
             merged_kwargs = module_kwargs | kwargs
 
-            # Qubits reach the decorated function by name, so a parameter whose
-            # name is not a q<N> gets nothing. Report that (and any qubit this
-            # signature has no room for) before running the function, so the
-            # failure names the rule instead of an unbound parameter.
-            filled = (
-                set(merged_kwargs)
-                if f_keywords
-                else set(merged_kwargs) & set(f_args)
+            # names f will be given: without **kwargs, only ones it declares
+            passed_names = (
+                set(merged_kwargs) if f_keywords else set(merged_kwargs) & set(f_args)
             )
-            missing = _unfilled_parameters(f, args, filled)
-            if missing:
-                raise _unfilled_parameters_error(
-                    getattr(f, "__name__", "circuit"),
-                    missing,
-                    module_kwargs,
-                    num_qubits,
-                    from_environment=bool(_env),
-                )
 
-            if num_qubits is not None and not _env and not f_keywords:
-                dropped = [q for q in module_kwargs if q not in f_args]
-                if dropped:
-                    raise QCDLUserError(
-                        f"@qcdl({num_qubits}) generates"
-                        f" {', '.join(module_kwargs)} but"
-                        f" {getattr(f, '__name__', 'the decorated function')}()"
-                        f" has no parameter for {', '.join(dropped)}, so"
-                        f" {'they' if len(dropped) > 1 else 'it'} would be"
-                        f" dropped from the program; declare a parameter for"
-                        f" every generated qubit, lower num_qubits, or accept"
-                        f" **kwargs"
-                    )
+            # report a qubit with nowhere to go, or a parameter with nothing to
+            # fill it, before running the function or setting up any systems
+            _validate_call(
+                f,
+                args,
+                passed_names,
+                module_kwargs,
+                source=_qubit_source(num_qubits, from_environment=bool(_env)),
+                allow_dropped_qubits=bool(_env),
+            )
 
             if machine:
                 # let the machine configure the procedure and any other setup it
                 # wants
                 machine.set_up_systems(merged_kwargs, qcdl_circuit.main)
 
-            if not f_keywords:
-                # if there's no f_keywords, then only include keyword args that
-                # match f's arguments
-                passed_kwargs = {
-                    key: val for key, val in merged_kwargs.items() if key in f_args
-                }
-            else:
-                passed_kwargs = merged_kwargs
+            # after set_up_systems, which promotes the values in place
+            passed_kwargs = {
+                key: val for key, val in merged_kwargs.items() if key in passed_names
+            }
 
             try:
                 f(*args, **passed_kwargs)
