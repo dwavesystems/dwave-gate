@@ -679,7 +679,7 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
             :class:`~dwave.gate.qcdl.Scope` object, which handles this parameter
             for you.
         initial_value: Initial value. Defaults to 0. Only the first allocation
-            of a name takes effect, so a value given for a name that is already
+            of a name takes effect, so a value given for a ``name`` that is already
             allocated is rejected rather than silently discarded; see
             ``ignore_reallocation``. An ``alias`` never allocates, so it never
             takes a value at all.
