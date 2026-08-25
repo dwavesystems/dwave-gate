@@ -266,6 +266,11 @@ class Procedure(IndexerMixin):
     ) -> None:
         """Record a register allocation, rejecting a silent re-declaration.
 
+        This method is mostly intended for use by developers of QCDL; the
+        :class:`~dwave.gate.qcdl.registers.Register` and
+        :class:`~dwave.gate.qcdl.registers.FixedPointRegister` classes call it
+        for you.
+
         The compiler keeps the *first* allocation of a name, so a second
         declaration of the same name on the same module is a no-op: its initial
         value never reaches the qubit. That is almost always a mistake, so it is
@@ -288,11 +293,6 @@ class Procedure(IndexerMixin):
         and the compiler would ignore it. This applies only once the name is
         allocated; a first allocation always takes its value, whatever the
         caller opted in to.
-
-        This method is mostly intended for use by developers of QCDL; the
-        :class:`~dwave.gate.qcdl.registers.Register` and
-        :class:`~dwave.gate.qcdl.registers.FixedPointRegister` classes call it
-        for you.
 
         Args:
             modules: Modules the register is allocated on.
