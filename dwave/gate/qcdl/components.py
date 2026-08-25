@@ -272,28 +272,25 @@ class Procedure(IndexerMixin):
         for you.
 
         Register allocation and initialization happens at compile time, not run
-        time. The compiler keeps the *first* allocation of a name, so a second
-        declaration of the same name on the same module is a no-op: its initial
-        value would not be used. That is almost always a mistake, so it is
-        reported here instead.
+        time, and hence are global to the circuit rather than local to a
+        procedure. Consequently, the compiler keeps the *first* allocation of a
+        name it finds when traversing the procedures, so a second declaration of
+        the same name on the same module is a no-op: its initial value would not
+        be used. That is almost always a mistake, so it is reported here
+        instead.
 
-        Register names are global to the circuit rather than local to a
-        procedure, so the record lives on the
-        :attr:`~dwave.gate.qcdl.qcdl_circuit.QCDLCircuit.allocated_registers`
-        attribute of the state, and a name taken in one procedure clashes with
-        the same name in another.
+        A procedure body is re-executed on every call while the program is being
+        built, but is emitted once in the QCDLProgram, so a declaration reached
+        through a later run of the *same* procedure is not a re-declaration and
+        is not reported.
 
-        A procedure body is re-executed on every call while the program is
-        being built, but is emitted once, so a declaration reached through a
-        later run of the *same* procedure is not a re-declaration and is not
-        reported.
-
-        Re-declaring the name is allowed when the caller asked for it, but only
-        without an initial value: opting in to the re-declaration says the
-        existing memory is wanted, whereas giving a value says the opposite,
-        and the compiler would ignore it. This applies only once the name is
-        allocated; a first allocation always takes its value, whatever the
-        caller opted in to.
+        Re-declaring the name is allowed when the caller asked for it. This can
+        be used to obtain new :class:`~dwave.gate.qcdl.registers.Register` or
+        :class:`~dwave.gate.qcdl.registers.FixedPointRegister` instances which
+        are useful for creating additional expressions on the previously
+        allocated memory. To avoid re-declarations that would attempt to
+        reallocate memory, this use case is opt-in using allow_existing and if
+        initial_value_specified is False.
 
         Args:
             modules: Modules the register is allocated on.
