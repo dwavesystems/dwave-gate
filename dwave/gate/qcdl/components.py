@@ -271,9 +271,10 @@ class Procedure(IndexerMixin):
         :class:`~dwave.gate.qcdl.registers.FixedPointRegister` classes call it
         for you.
 
-        The compiler keeps the *first* allocation of a name, so a second
+        Register allocation and initialization happens at compile time, not run
+        time. The compiler keeps the *first* allocation of a name, so a second
         declaration of the same name on the same module is a no-op: its initial
-        value never reaches the qubit. That is almost always a mistake, so it is
+        value would not be used. That is almost always a mistake, so it is
         reported here instead.
 
         Register names are global to the circuit rather than local to a
