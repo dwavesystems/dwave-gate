@@ -77,14 +77,14 @@ class StatementToHashEncoder(json.JSONEncoder):
 
 
 class RegisterAllocation(NamedTuple):
-    """One entry in the register names a circuit has allocated.
+    """One register a circuit has allocated, held under its module and name.
 
     Args:
         dtype: ``"int"`` or ``"float"``.
-        procedure: Procedure that made the allocation. The name it was made
-            under is reported when a later declaration clashes, and the
-            identity tells a re-run of that same procedure apart from a
-            genuine re-declaration.
+        procedure: Procedure that made the allocation. Its name is reported
+            when a later declaration of the same register name clashes, and
+            comparing it against the declaring procedure separates a re-run of
+            that same procedure from a genuine re-declaration.
     """
 
     dtype: str
@@ -344,7 +344,7 @@ class Procedure(IndexerMixin):
             allocated[name] = RegisterAllocation(dtype, self)
 
     def _is_rerun_of(self, other: Procedure) -> bool:
-        """Whether ``other`` is an earlier run of the procedure ``self`` is.
+        """Whether ``other`` is an earlier run of the procedure that ``self`` is.
 
         Calling a procedure runs its body again, so a register it declares is
         seen once per call even though the procedure is emitted once. Those
