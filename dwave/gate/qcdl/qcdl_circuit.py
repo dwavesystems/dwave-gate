@@ -494,8 +494,7 @@ class QCDLCircuit(IndexerMixin):
         procedure is the same memory as that name in another, and only the
         first allocation of it takes effect. The
         :meth:`~dwave.gate.qcdl.components.Procedure.register_memory_allocation`
-        method maintains this, and reports a second allocation rather than
-        letting it be discarded.
+        method maintains this, and raises an exception on a second allocation.
         """
         return self._allocated_registers
 
