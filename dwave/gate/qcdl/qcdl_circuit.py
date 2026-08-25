@@ -636,9 +636,9 @@ def _validate_call(
     if dropped and not allow_dropped_qubits:
         raise QCDLUserError(
             f"{source} generates {supplied} but {f_name}() has no parameter for"
-            f" {', '.join(dropped)}, so {'they' if len(dropped) > 1 else 'it'}"
-            f" would be dropped from the program; declare a parameter for every"
-            f" generated qubit, lower num_qubits, or accept **kwargs"
+            f" {', '.join(dropped)}, which would be dropped from the program;"
+            f" declare a parameter for every generated qubit, lower num_qubits,"
+            f" or accept **kwargs"
         )
 
 
