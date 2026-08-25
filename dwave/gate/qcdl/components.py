@@ -1335,9 +1335,9 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
                     r1 = sc.Register(name="r1")
                     h(q0)
                     # alias=True reuses the memory r1 already allocated, so this
-                    # illustrates a way to store this outcome only on q0 rather
-                    # than mirrored to all the qubits in the Scope where r1 was
-                    # originally allocated.
+                    # example illustrates a way to store this outcome only on q0
+                    # rather than mirrored to all the qubits in the Scope where
+                    # r1 was originally allocated.
                     measure(q0, register=q0.Register(name="r1", alias=True))
                     sc.all_to_all(send=r1==1, reduce_op="&")
                     with sc.If(None):
