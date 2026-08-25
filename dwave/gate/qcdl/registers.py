@@ -691,11 +691,8 @@ class Register(IntegerOpsMixin, AssignmentOpsMixin, RegisterInitializerMixin, Ta
             type punning reuse that register's name in the ``name`` parameter.
             Aliased registers are not reinitialized, so you may not give an
             ``initial_value``.
-        ignore_reallocation: If True, and the name is already allocated, the
+        ignore_reallocation: If True, and the ``name`` is already allocated, the
             compiler does not reallocate it (and does not raise an exception).
-            In that case you may not give an ``initial_value``, since it would
-            never reach the qubit. A name that is not yet allocated is
-            allocated as usual and may carry a value.
         scope_id: Identity of the :class:`~dwave.gate.qcdl.Scope` this register
             is derived from. The
             :meth:`~dwave.gate.qcdl.QCDLModuleContainer.Register` method sets
@@ -804,10 +801,8 @@ class FixedPointRegister(
             :class:`~dwave.gate.qcdl.Scope` object, which handles this parameter
             for you.
         initial_value: Initial value. Defaults to 0.0. Only the first
-            allocation of a name takes effect, so a value given for a name that
-            is already allocated is rejected rather than silently discarded;
-            see ``ignore_reallocation``. An ``alias`` never allocates, so it
-            never takes a value at all.
+            allocation of a ``name`` takes effect, so a value given for a name that
+            is already allocated is rejected; see ``ignore_reallocation``
         name: Name for this register; useful for troubleshooting. If None, a
             name is generated. See the ``alias`` parameter for type punning.
         master_kwargs: Propagate this to the master instruction. This parameter
@@ -818,9 +813,6 @@ class FixedPointRegister(
             ``initial_value``.
         ignore_reallocation: If True, and the name is already allocated, the
             compiler does not reallocate it (and does not raise an exception).
-            In that case you may not give an ``initial_value``, since it would
-            never reach the qubit. A name that is not yet allocated is
-            allocated as usual and may carry a value.
         scope_id: Identity of the :class:`~dwave.gate.qcdl.Scope` this register
             is derived from. The
             :meth:`~dwave.gate.qcdl.QCDLModuleContainer.FixedPointRegister`
