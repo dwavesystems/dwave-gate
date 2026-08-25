@@ -447,9 +447,11 @@ class Procedure(IndexerMixin):
             qubit=QCDLModuleName.model_validate(qubit) if qubit is not None else None,
             args=list(args) if args else [],
             kwargs=dict(kwargs) if kwargs else {},
-            caller_qubits=[QCDLModuleName.model_validate(q) for q in caller_qubits]
-            if caller_qubits
-            else [],
+            caller_qubits=(
+                [QCDLModuleName.model_validate(q) for q in caller_qubits]
+                if caller_qubits
+                else []
+            ),
         )
 
         if not stmt.qubits:
@@ -1881,7 +1883,7 @@ class QCDLModule(QCDLModuleContainer):
         return QCDLModule(m.qcdl_module_name, proc)
 
     @property
-    def qcdl_modules(self) -> tuple[QcdlModule]:
+    def qcdl_modules(self) -> tuple[QCDLModule]:
         """The :class:`~dwave.gate.qcdl.QCDLModule` this
         container holds.
 

@@ -38,8 +38,7 @@ logger = logging.getLogger(__name__)
 class Environment(Protocol):
     """Structural type for environments."""
 
-    def get_modules(self, include_couplers: bool) -> Iterable[Any]:
-        ...
+    def get_modules(self, include_couplers: bool) -> Iterable[Any]: ...
 
 
 class Machine(Protocol):
@@ -47,14 +46,11 @@ class Machine(Protocol):
 
     environment: Environment
 
-    def get_system(self, name: str) -> QCDLModule:
-        ...
+    def get_system(self, name: str) -> QCDLModule: ...
 
-    def set_up_systems(self, systems: dict[str, Any], procedure: Procedure) -> None:
-        ...
+    def set_up_systems(self, systems: dict[str, Any], procedure: Procedure) -> None: ...
 
-    def clean_up_systems(self, systems: dict[str, Any]) -> None:
-        ...
+    def clean_up_systems(self, systems: dict[str, Any]) -> None: ...
 
 
 class QCDLCircuit(IndexerMixin):
@@ -194,7 +190,7 @@ class QCDLCircuit(IndexerMixin):
 
         These objects are not necessarily ready to be used as-is in a circuit,
         needing to be rewrapped based on the procedure. Use the
-        :meth:`~dwave.gate.qcdl.QcdlModule.get_other_qcdl_module` instead of
+        :meth:`~dwave.gate.qcdl.QCDLModule.get_other_qcdl_module` instead of
         accessing this property directly.
 
         Returns:
