@@ -336,13 +336,10 @@ class Procedure(IndexerMixin):
             allocated[name] = RegisterAllocation(dtype, self)
 
     def _is_rerun_of(self, other: Procedure) -> bool:
-        """Whether ``other`` is an earlier run of the procedure that ``self`` is.
+        """Whether ``other`` is an earlier run of the user's same @procedure
+        decorated Python code.
 
-        Calling a procedure runs its body again, so a register it declares is
-        seen once per call even though the procedure is emitted once. Those
-        runs are separate :class:`.Procedure` instances sharing a name, and the
-        name is what the rest of the circuit deduplicates on, so matching on it
-        here agrees with what ends up in the program.
+        This logic is useful for tracking register allocations.
         """
         return other is not self and other.proc_name == self.proc_name
 
