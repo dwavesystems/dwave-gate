@@ -1207,57 +1207,14 @@ Guidance on Mirroring
     :func:`~dwave.gate.implementations.mirror_measurement_register`
     functions
 
-.. _qcdl_submitting_programs:
 
-Submitting Programs
-===================
-
-.. todo:: add references to places such as
-    https://docs.dwavequantum.com/en/latest/quantum_research/index_get_started.html
-
-.. unsupported currently
-
-    .. _qcdl_submitting_compiling:
-
-    Compilation
-    -----------
-
-    Compilation is required to submit a circuit to a QPU. The compiled artifact is a
-    ``.jmz`` file.
-
-    .. note::
-        Submitting to a QPU is currently not supported.
-
-    You do not need to compile if you are submitting your QCDL to a simulator, but
-    is useful if you wish to validate that your circuit could run on a QPU. You may
-    choose to compile to perform a more comprehensive validation of your QCDL
-    on the simulator, to ensure both that the program returns the correct results
-    and that the compiler is able to generate a set of instructions for the QPU to
-    correctly execute. Compilation takes some extra time and you probably do not
-    need to compile each simulation.
-
-    .. tip::
-        Compile immediately prior to every execution on a QPU to ensure the latest
-        calibrated parameters are used. Some applications may be able to reuse a
-        previously compiled ``.jmz`` to save time but ``.jmz`` files may expire.
-
-Execution
----------
-
-.. compilation unsupported currently
-
-    You can simulate either the QCDL itself directly or a compiled version of the
-    QCDL (a ``.jmz`` file).
-
-.. todo:: update for Ocean
-
-.. _qcdl_submitting_simulator:
+.. _qcdl_simulator:
 
 Simulator
----------
+=========
 
-Ocean software provides a Monte Carlo simulator of QCDL programs. This is an
-ideal simulator built on top of Qiskit's
+the |cloud|_ service provides a Monte Carlo simulator of QCDL programs. This is
+an ideal simulator built on top of Qiskit's
 `AerStatevector <https://qiskit.github.io/qiskit-aer/stubs/qiskit_aer.quantum_info.AerStatevector.html>`_.
 
 This simulator closely models the classical and quantum operation of the QPU
@@ -1278,11 +1235,11 @@ number of shots; however, its operation is
 
 The simulator in the |cloud|_ service supports two modes of simulations:
 
-*   Statevector Simulation
+*   Statevector Simulation (solver parameter `qpu=simulator`)
 
     This simulation is useful during initial testing of
     QCDL programs before introducing noise.
-*   Dual-Rail Erasure Simulation
+*   Dual-Rail Erasure Simulation (solver parameter `qpu=DR17`)
 
     This simulation is useful for exploring the impact of erasures on QCDL
     programs. It represents the quantum state as a Statevector with an array of
@@ -1313,8 +1270,10 @@ The following table compares these two simulation modes.
             erased, and the ``leak`` and ``seep`` instructions to simulate
             leakage and seepage errors.
 
-Simulator Configuration
-~~~~~~~~~~~~~~~~~~~~~~~
+.. _qcdl_simulator_parameters:
+
+Simulator Parameters
+--------------------
 
 ..  todo:: Update the rest once I can test in Leap
 
@@ -1325,24 +1284,90 @@ Simulator Configuration
         -   Description
         -   Type
         -   Default
-    *   -   ``transpile``
-        -   To run the circuit verbatim (error if incompatible), set
-            ``transpile=False``.
-        -   bool
-        -   True
-    *   -   ``timeout``
-        -   For faster feedback, use a lower timeout (in seconds) when
-            troubleshooting circuits with loops.
-        -   float
-        -   45 minutes
     *   -   ``noise_model``
-        -   If ``noise_model=None``, no noise model is used; otherwise, specify
-            the name of the noise model to use.
-        -   ``None``, ``"conservative_c8"``, ``"simple_default_model"``
-        -   ``"conservative_c8"``
-    *   -   ``use_registers``
-        -   If true, the bit-width restrictions are simulated; otherwise, the
-            classical calculations are done in full precision.
-        -   bool
-        -   False
+        -   Sets the noise model. When ``True``, a conservative noise model is
+            applied.
+        -   Boolean
+        -   ``False``: No noise model is used
+    *   -   ``qpu``
+        -   The QPU to simulate. ``simulator`` simulates an ideal QPU while
+            ``DR17`` simulates a dual-rail QPU with 17 qubits.
+        -   string
+        -   ``simulator``
+    *   -   ``repeat_until_shots_requested``
+        -   Repeatedly run the circuit to accumulate the requested number of
+            shots.
+        -   Boolean
+        -   ``False`` (executes the requested number of times)
+    *   -   ``shots``
+        -   Number of times to run the circuit.
+        -   Integer
+        -   See the ``default_shots`` property
+    *   -   ``time_limit``
+        -   Maximum run time in seconds.
+        -   float
+        -   See the ``maximum_time_limit_s`` property
+    *   -   ``transpile``
+        -   Run the circuit verbatim or return an error if incompatible (when
+            ``transpile=False``).
+        -   Boolean
+        -   True
+
+.. _qcdl_simulator_properties:
+
+Simulator Properties
+--------------------
+
+
+
+
+.. _qcdl_submitting_programs:
+
+Submitting Programs
+===================
+
+The gate-model simulator in the |cloud|_ service is intended to simulate the
+dual-rail quantum computer by executing gate-model programs formulated as QCDL.
+
+The following documentation describes how to work with the |cloud|_ service:
+
+*   The :ref:`index_leap_sapi` section describes the |cloud|_ service.
+*   The :ref:`ocean_install` section explains how to install Ocean software.
+*   The :ref:`ocean_leap_authorization` section walks you through authorizing
+    your Ocean client to access the simulator in the |cloud|_ service.
+
+Example Submission
+------------------
+
+
+.. unsupported currently
+
+    .. _qcdl_submitting_compiling:
+
+    Compilation
+    -----------
+
+    Compilation is required to submit a circuit to a QPU. The compiled artifact is a
+    ``.jmz`` file.
+
+    .. note::
+        Submitting to a QPU is currently not supported.
+
+    You do not need to compile if you are submitting your QCDL to a simulator, but
+    is useful if you wish to validate that your circuit could run on a QPU. You may
+    choose to compile to perform a more comprehensive validation of your QCDL
+    on the simulator, to ensure both that the program returns the correct results
+    and that the compiler is able to generate a set of instructions for the QPU to
+    correctly execute. Compilation takes some extra time and you probably do not
+    need to compile each simulation.
+
+    .. tip::
+        Compile immediately prior to every execution on a QPU to ensure the latest
+        calibrated parameters are used. Some applications may be able to reuse a
+        previously compiled ``.jmz`` to save time but ``.jmz`` files may expire.
+
+.. compilation unsupported currently
+
+    You can simulate either the QCDL itself directly or a compiled version of the
+    QCDL (a ``.jmz`` file).
 
