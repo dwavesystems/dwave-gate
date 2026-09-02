@@ -1275,7 +1275,6 @@ The following table compares these two simulation modes.
 Simulator Parameters
 --------------------
 
-..  todo:: Update the rest once I can test in Leap
 
 .. list-table::
     :header-rows: 1
@@ -1318,6 +1317,81 @@ Simulator Parameters
 Simulator Properties
 --------------------
 
+.. list-table::
+    :header-rows: 1
+
+    *   -   Property
+        -   Description
+        -   Type
+        -   Example Values
+    *   -   ``category``
+        -   Type of solver..
+        -   String
+        -   ``software-gate``: Gate-model simulator
+    *   -   ``default_noise_model``
+        -   Application of a noise model
+        -   Boolean
+        -   ``False``: No noise model is applied to the simulator
+    *   -   ``default_qpu``
+        -   QPU to simulate.
+        -   String
+        -   ``simulator``: Ideal simulator
+    *   -   ``default_repeat_until_shots_requested``
+        -   Repeatedly run the circuit to accumulate the requested number of
+            shots.
+        -   Boolean
+        -   ``False``: Executes the requested number of times
+    *   -   ``default_shots``
+        -   Number of times the circuit executes.
+        -   Integer
+        -   ``1``: Circuit executes once.
+    *   -   ``default_time_limit``
+        -   Requested run time in seconds.
+        -   Float
+        -   ``2700``: 45 minutes.
+    *   -   ``default_transpile``
+        -   Transpile the QCDL.
+        -   Boolean
+        -   ``True``: Transpile the QCDL.
+    *   -   ``max_shots``
+        -   Maximum times you can request that the circuit execute.
+        -   Integer
+        -   ``1,000,000``: Circuit executes a million times.
+    *   -   ``maximum_time_limit_s``
+        -   Maximum run time in seconds you can request.
+        -   Integer
+        -   ``2700``: 45 minutes.
+    *   -   ``minimum_time_limit_s``
+        -   Minimum run time in seconds you can request.
+        -   Integer
+        -   ``1``: One second.
+    *   -   ``quota_conversion_rate``
+        -   Rate at which user or project quota is consumed for the solver as a
+            ratio to QPU solver usage. Different solver types may consume quota
+            at different rates.
+
+            Time is deducted from your quota according to:
+
+            .. math::
+
+                \frac{num\_seconds}{quota\_conversion\_rate}
+
+            See the :ref:`leap_hybrid_usage_charges` section for more information.
+        -   Integer
+        -   ``1``: Same rate as QPU usage.
+    *   -   ``supported_problem_types``
+        -   Types of problems supported by this solver.
+        -   String
+        -   ``qcdl``: Solver supports programs formulated as QCDL.
+    *   -   ``supported_qpu_strings``
+        -   Target simulator modes.
+        -   String
+        -   ``simulator, DR17``: Ideal simulator and dual-rail simulator with 17
+            qubits.
+    *   -   ``version``
+        -   Software version of the simulator.
+        -   Float
+        -   ``0.1``: Version 0.1.
 
 
 
