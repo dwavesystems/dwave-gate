@@ -1304,8 +1304,10 @@ qpu
 
 The QPU to simulate, formatted as a string.
 
-Specified value must be one of the values of the
-:ref:`property_drsim_supported_qpu_strings` property.
+Specified value must be one of the following values:
+
+*   ``simulator``: Ideal simulator.
+*   ``DR17``: Dual-rail QPU with 17 qubits.
 
 Default is to simulate the QPU specified by the
 :ref:`property_drsim_default_qpu` property.
@@ -1421,6 +1423,212 @@ This example applies a noise model.
 
 Simulator Properties
 --------------------
+
+.. _property_drsim_category:
+
+category
+~~~~~~~~
+
+Type of solver, as a string.
+
+*   ``software-gate``: Gate-model simulator.
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
+
+.. _property_drsim_default_noise_model:
+
+default_noise_model
+~~~~~~~~~~~~~~~~~~~
+
+Default setting for the application of a noise model, as a Boolean.
+
+*   ``True``: A noise model is applied.
+*   ``False``: Simulates an ideal QPU.
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
+
+.. _property_drsim_default_qpu:
+
+default_qpu
+~~~~~~~~~~~
+
+Default selection of the QPU to simulate, as a string.
+
+*   ``simulator``: Ideal simulator.
+*   ``DR17``: Dual-rail QPU with 17 qubits.
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
+
+.. _property_drsim_default_repeat_until_shots_requested:
+
+default_repeat_until_shots_requested
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default setting, as a Boolean, for rerunning the circuit until the requested
+number of measurements is accumulated.
+
+*   ``True``: Repeatedly rerun the circuit.
+*   ``False``: Run the circuit the number of times set by the
+    :ref:`parameter_drsim_shots` parameter.
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
+
+.. _property_drsim_default_shots:
+
+default_shots
+~~~~~~~~~~~~~
+
+Default setting for the number of times to run the circuit, as an integer.
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
+
+.. _property_drsim_default_time_limit:
+
+default_time_limit
+~~~~~~~~~~~~~~~~~~
+
+Default maximum runtime, in seconds, the solver is allowed to work on the
+given program, as a float.
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
+
+.. _property_drsim_default_transpile:
+
+default_transpile
+~~~~~~~~~~~~~~~~~
+
+Default setting, as a Boolean, for transpiling the submitted QCDL program.
+
+*   ``True``: Transpile the program.
+*   ``False``: Run the circuit exactly as specified in the submitted
+    QCDL or return an error
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
+
+.. _property_drsim_max_shots:
+
+max_shots
+~~~~~~~~~
+
+Maximum number of times the circuit can be executed, as an integer.
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
+
+.. _property_drsim_maximum_time_limit_s:
+
+maximum_time_limit_s
+~~~~~~~~~~~~~~~~~~~~
+
+Maximum time you can specify that your submitted circuit be executed, as a
+float.
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
+
+.. _property_drsim_minimum_time_limit_s:
+
+minimum_time_limit_s
+~~~~~~~~~~~~~~~~~~~~
+
+Minimum time you can specify that your submitted circuit be executed, as a
+float.
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
+
+.. _property_drsim_quota_conversion_rate:
+
+quota_conversion_rate
+~~~~~~~~~~~~~~~~~~~~~
+
+Rate at which user or project quota is consumed for the solver as a
+ratio to QPU solver usage. Different solver types may consume quota
+at different rates.
+
+Time is deducted from your quota according to:
+
+.. math::
+
+    \frac{num\_seconds}{quota\_conversion\_rate}
+
+See the :ref:`leap_hybrid_usage_charges` section for more information.
+
+Example
+-------
+
+>>> from dwave.system import DWaveSampler
+...
+>>> sampler = DWaveSampler()
+>>> sampler.properties["default_readout_thermalization"]   # doctest: +SKIP
+0.0
 
 .. list-table::
     :header-rows: 1
