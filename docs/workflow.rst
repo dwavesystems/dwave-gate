@@ -1275,42 +1275,147 @@ The following table compares these two simulation modes.
 Simulator Parameters
 --------------------
 
+.. _parameter_drsim_noise_model:
 
-.. list-table::
-    :header-rows: 1
+noise_model
+~~~~~~~~~~~
 
-    *   -   Option
-        -   Description
-        -   Type
-        -   Default
-    *   -   ``noise_model``
-        -   Sets the noise model. When ``True``, a conservative noise model is
-            applied.
-        -   Boolean
-        -   ``False``: No noise model is used
-    *   -   ``qpu``
-        -   The QPU to simulate. ``simulator`` simulates an ideal QPU while
-            ``DR17`` simulates a dual-rail QPU with 17 qubits.
-        -   string
-        -   ``simulator``
-    *   -   ``repeat_until_shots_requested``
-        -   Repeatedly run the circuit to accumulate the requested number of
-            shots.
-        -   Boolean
-        -   ``False`` (executes the requested number of times)
-    *   -   ``shots``
-        -   Number of times to run the circuit.
-        -   Integer
-        -   See the ``default_shots`` property
-    *   -   ``time_limit``
-        -   Maximum run time in seconds.
-        -   float
-        -   See the ``maximum_time_limit_s`` property
-    *   -   ``transpile``
-        -   Run the circuit verbatim or return an error if incompatible (when
-            ``transpile=False``).
-        -   Boolean
-        -   True
+Boolean flag that applies a noise model.
+
+*   ``noise_model=True``: Apply a noise model.
+*   ``noise_model=False``: Do not apply a noise model.
+
+Default is the value specified by the :ref:`property_drsim_default_noise_model`
+property.
+
+This example applies a noise model.
+
+>>> from dwave.system import EmbeddingComposite, DWaveSampler
+...
+>>> sampler = EmbeddingComposite(DWaveSampler())
+>>> J = {('s1', 's2'): 0.5, ('s1', 's3'): 0.5, ('s2', 's3'): 0.5}
+>>> sampleset = sampler.sample_ising({}, J, num_reads=100,
+...                                  flux_drift_compensation=False)
+
+.. _parameter_drsim_qpu:
+
+qpu
+~~~
+
+The QPU to simulate, formatted as a string.
+
+Specified value must be one of the values of the
+:ref:`property_drsim_supported_qpu_strings` property.
+
+Default is to simulate the QPU specified by the
+:ref:`property_drsim_default_qpu` property.
+
+This example applies a noise model.
+
+>>> from dwave.system import EmbeddingComposite, DWaveSampler
+...
+>>> sampler = EmbeddingComposite(DWaveSampler())
+>>> J = {('s1', 's2'): 0.5, ('s1', 's3'): 0.5, ('s2', 's3'): 0.5}
+>>> sampleset = sampler.sample_ising({}, J, num_reads=100,
+...                                  flux_drift_compensation=False)
+
+
+.. _parameter_drsim_repeat_until_shots_requested:
+
+repeat_until_shots_requested
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Boolean flag to run the circuit repeatedly until the requested number of
+measurements are accumulated.
+
+*   ``repeat_until_shots_requested=True``: Repeatedly run the circuit until
+    the requested number of measurements, set by the
+    :ref:`parameter_drsim_shots` parameter, is accumulated.
+*   ``repeat_until_shots_requested=False``: Run the circuit the number of times
+    set by the :ref:`parameter_drsim_shots` parameter.
+
+Default is to run the circuit the number of times set by the
+:ref:`parameter_drsim_shots` parameter.
+
+This example applies a noise model.
+
+>>> from dwave.system import EmbeddingComposite, DWaveSampler
+...
+>>> sampler = EmbeddingComposite(DWaveSampler())
+>>> J = {('s1', 's2'): 0.5, ('s1', 's3'): 0.5, ('s2', 's3'): 0.5}
+>>> sampleset = sampler.sample_ising({}, J, num_reads=100,
+...                                  flux_drift_compensation=False)
+
+.. _parameter_drsim_shots:
+
+shots
+~~~~~
+
+The number of times to run the circuit, formatted as an integer.
+
+The specified value must not exceed the value of the
+:ref:`property_drsim_max_shots` property.
+
+Default is to run the circuit the number of times specified by the
+:ref:`property_drsim_default_shots` property.
+
+This example applies a noise model.
+
+>>> from dwave.system import EmbeddingComposite, DWaveSampler
+...
+>>> sampler = EmbeddingComposite(DWaveSampler())
+>>> J = {('s1', 's2'): 0.5, ('s1', 's3'): 0.5, ('s2', 's3'): 0.5}
+>>> sampleset = sampler.sample_ising({}, J, num_reads=100,
+...                                  flux_drift_compensation=False)
+
+.. _parameter_drsim_time_limit:
+
+time_limit
+~~~~~~~~~~
+
+Specifies the maximum runtime, in seconds, the solver is allowed to work on the
+given program. Can be a float or integer.
+
+The specified time must be between the values of the
+:ref:`property_drsim_maximum_time_limit_s` and
+:ref:`property_drsim_minimum_time_limit_s` properties.
+
+Default is to run the circuit for the time specified by the
+:ref:`property_drsim_default_time_limit` property.
+
+This example applies a noise model.
+
+>>> from dwave.system import EmbeddingComposite, DWaveSampler
+...
+>>> sampler = EmbeddingComposite(DWaveSampler())
+>>> J = {('s1', 's2'): 0.5, ('s1', 's3'): 0.5, ('s2', 's3'): 0.5}
+>>> sampleset = sampler.sample_ising({}, J, num_reads=100,
+...                                  flux_drift_compensation=False)
+
+.. _parameter_drsim_transpile:
+
+transpile
+~~~~~~~~~
+
+Boolean flag to rewrite the submitted QCDL circuit to use the QPU's supported
+basis gates and topology.
+
+*   ``transpile=True``: Transpile the circuit.
+*   ``transpile=False``: Run the circuit exactly as specified in the submitted
+    QCDL or return an error.
+
+Default is the value specified by the :ref:`property_drsim_default_transpile`
+property.
+
+This example applies a noise model.
+
+>>> from dwave.system import EmbeddingComposite, DWaveSampler
+...
+>>> sampler = EmbeddingComposite(DWaveSampler())
+>>> J = {('s1', 's2'): 0.5, ('s1', 's3'): 0.5, ('s2', 's3'): 0.5}
+>>> sampleset = sampler.sample_ising({}, J, num_reads=100,
+...                                  flux_drift_compensation=False)
+
 
 .. _qcdl_simulator_properties:
 
