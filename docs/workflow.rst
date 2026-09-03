@@ -1370,14 +1370,14 @@ Specified value must be one of the following values:
 Default is to simulate the QPU specified by the
 :ref:`property_drsim_default_qpu` property.
 
-This example applies a noise model.
+This example selects the ``DR17`` QPU simulator.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     noise_model=True)
+...     qpu='DR17')
 >>> result = future.result().result         # doctest: +SKIP
 
 
@@ -1398,14 +1398,15 @@ measurements are accumulated.
 Default is to run the circuit the number of times set by the
 :ref:`parameter_drsim_shots` parameter.
 
-This example applies a noise model.
+This example repeatedly executes the circuit to accumulate 10 measurements.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     noise_model=True)
+...     shots=10,
+...     repeat_until_shots_requested=True)
 >>> result = future.result().result         # doctest: +SKIP
 
 .. _parameter_drsim_shots:
@@ -1421,14 +1422,14 @@ The specified value must not exceed the value of the
 Default is to run the circuit the number of times specified by the
 :ref:`property_drsim_default_shots` property.
 
-This example applies a noise model.
+This example executes the circuit 15 times.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     noise_model=True)
+...     shots=10)
 >>> result = future.result().result         # doctest: +SKIP
 
 .. _parameter_drsim_time_limit:
@@ -1446,14 +1447,14 @@ The specified time must be between the values of the
 Default is to run the circuit for the time specified by the
 :ref:`property_drsim_default_time_limit` property.
 
-This example applies a noise model.
+This example sets a maximum runtime of 20 seconds.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     noise_model=True)
+...     time_limit=20)
 >>> result = future.result().result         # doctest: +SKIP
 
 .. _parameter_drsim_transpile:
@@ -1471,14 +1472,15 @@ basis gates and topology.
 Default is the value specified by the :ref:`property_drsim_default_transpile`
 property.
 
-This example applies a noise model.
+This example requires that the QCDL circuit be submitted as written to the
+simulator.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     noise_model=True)
+...     transpile=False)
 >>> result = future.result().result         # doctest: +SKIP
 
 
