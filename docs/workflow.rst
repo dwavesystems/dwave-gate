@@ -1391,7 +1391,8 @@ repeat_until_shots_requested
 
 Boolean flag to run the circuit repeatedly until the requested number of
 measurements, set by the :ref:`parameter_drsim_shots` parameter, are
-accumulated, even under noisy conditions.
+accumulated, even under noisy conditions, where the accumulated measurements do
+not include erasures (see the :ref:`qcdl_basic_result_records` section).
 
 *   ``repeat_until_shots_requested=True``: Repeatedly run the circuit until
     the requested number of measurements, set by the
@@ -1405,6 +1406,12 @@ accumulated, even under noisy conditions.
 
 The default value is set by the
 :ref:`property_drsim_default_repeat_until_shots_requested` property.
+
+If runtime exceeds the value you specified in the
+:ref:`parameter_drsim_time_limit` parameter, or the maximum allowed runtime
+value of the :ref:`property_drsim_maximum_time_limit_s` property, execution
+terminates. The maximum number of times the circuit is run cannot exceed the
+value specified by the :ref:`property_drsim_max_shots` property.
 
 This example repeatedly executes the circuit to accumulate 10 measurements.
 
@@ -1422,12 +1429,17 @@ This example repeatedly executes the circuit to accumulate 10 measurements.
 shots
 -----
 
-The number of times to run the circuit, formatted as an integer.
+The number of measurements to run, formatted as an integer.
+
+Your QCDL program is executed once for each requested measurement.
 
 The specified value must not exceed the value of the
-:ref:`property_drsim_max_shots` property.
+:ref:`property_drsim_max_shots` property. Execution time is limited by the
+the value you specified in the :ref:`parameter_drsim_time_limit` parameter, or
+the maximum allowed runtime value of the
+:ref:`property_drsim_maximum_time_limit_s` property.
 
-Default is to run the circuit the number of times specified by the
+The default value is to measure the number of times specified by the
 :ref:`property_drsim_default_shots` property.
 
 This example executes the circuit 15 times.
@@ -1437,7 +1449,7 @@ This example executes the circuit 15 times.
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     shots=10)
+...     shots=15)
 >>> result = future.result().result         # doctest: +SKIP
 
 .. _parameter_drsim_time_limit:
@@ -1452,7 +1464,7 @@ The specified time must be between the values of the
 :ref:`property_drsim_maximum_time_limit_s` and
 :ref:`property_drsim_minimum_time_limit_s` properties.
 
-Default is to run the circuit for the time specified by the
+The default runtime limit is specified by the
 :ref:`property_drsim_default_time_limit` property.
 
 This example sets a maximum runtime of 20 seconds.
@@ -1471,13 +1483,14 @@ transpile
 ---------
 
 Boolean flag to rewrite the submitted QCDL circuit to use the QPU's supported
-basis gates and topology.
+basis gates and topology, as described in the :ref:`qcdl_basic_transpilation`
+section.
 
 *   ``transpile=True``: Transpile the circuit.
 *   ``transpile=False``: Run the circuit exactly as specified in the submitted
     QCDL or return an error.
 
-Default is the value specified by the :ref:`property_drsim_default_transpile`
+The default value is specified by the :ref:`property_drsim_default_transpile`
 property.
 
 This example requires that the QCDL circuit be submitted as written to the
@@ -1520,7 +1533,8 @@ default_noise_model
 Default setting for the application of a noise model, as a Boolean.
 
 *   ``True``: A noise model is applied.
-*   ``False``: Simulates an ideal QPU.
+*   ``False``: Simulates an ideal QPU, as described in the
+    :ref:`qcdl_simulator` section.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
@@ -1550,7 +1564,8 @@ default_repeat_until_shots_requested
 ------------------------------------
 
 Default setting, as a Boolean, for rerunning the circuit until the requested
-number of measurements is accumulated.
+number of measurements is accumulated, where the accumulated measurements do not
+include erasures (see the :ref:`qcdl_basic_result_records` section).
 
 *   ``True``: Repeatedly rerun the circuit.
 *   ``False``: Run the circuit the number of times set by the
@@ -1567,7 +1582,9 @@ False
 default_shots
 -------------
 
-Default setting for the number of times to run the circuit, as an integer.
+Default setting for the number of measurements to run (times to execute your
+QCDL circuit), as an integer. With dual-rail QPUs, a measurement result can be a
+"splat" (see the :ref:`qcdl_basic_measurements` section).
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
@@ -1594,11 +1611,12 @@ given program, as a float.
 default_transpile
 -----------------
 
-Default setting, as a Boolean, for transpiling the submitted QCDL program.
+Default setting, as a Boolean, for :ref:`transpiling <qcdl_basic_transpilation>`
+the submitted QCDL program.
 
 *   ``True``: Transpile the program.
 *   ``False``: Run the circuit exactly as specified in the submitted
-    QCDL or return an error
+    QCDL or return an error.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
@@ -1613,7 +1631,8 @@ max_num_qubits
 
 Maximum number of qubits for QCDL circuits, as an integer.
 
-.. note:: Transpilation can introduce and remove qubits from your QCDL.
+.. note:: :ref:`Transpilation <qcdl_basic_transpilation>` can add and remove
+    qubits in your QCDL.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
@@ -1639,8 +1658,12 @@ Maximum number of times the circuit can be executed, as an integer.
 maximum_time_limit_s
 --------------------
 
-Maximum time you can specify that your submitted circuit be executed, as a
-float.
+Maximum time, in seconds as a float, that your submitted circuit can run.
+
+This value limits the range of values you can set on the
+:ref:`parameter_drsim_time_limit` parameter and also limits the runtime allowed
+for a program submitted with the
+:ref:`parameter_drsim_repeat_until_shots_requested` set to true.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
@@ -1653,8 +1676,8 @@ float.
 minimum_time_limit_s
 --------------------
 
-Minimum time you can specify that your submitted circuit be executed, as a
-float.
+Minimum time, in seconds as a float, you can specify for the runtime limit (the
+:ref:`parameter_drsim_time_limit` parameter) on your submitted circuit.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
@@ -1667,9 +1690,8 @@ float.
 quota_conversion_rate
 ---------------------
 
-Rate at which user or project quota is consumed for the solver as a
-ratio to QPU solver usage. Different solver types may consume quota
-at different rates.
+Rate at which user or project quota is consumed for the solver as a ratio to
+QPU solver usage. Different solver types may consume quota at different rates.
 
 Time is deducted from your quota according to:
 
