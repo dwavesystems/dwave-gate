@@ -20,8 +20,8 @@ from typing import Any, cast
 from addict import Addict
 
 from .exceptions import QCDLInternalError
-from .qcdl_models import QCDLStatement
-from .qcdl_objects import format_signature
+from .models import QCDLStatement
+from .objects import format_signature
 from .utils import is_qubit_name, is_qubit_or_coupler_name
 
 logger = logging.getLogger(__name__)

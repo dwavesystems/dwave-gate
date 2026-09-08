@@ -44,7 +44,7 @@ from pydantic import (
 from pydantic.functional_serializers import SerializerFunctionWrapHandler
 
 from .exceptions import QCDLInternalError
-from .qcdl_objects import format_signature
+from .objects import format_signature
 from .utils import is_qubit_name, is_qubit_or_coupler_name
 
 

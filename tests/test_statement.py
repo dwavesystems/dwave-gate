@@ -15,7 +15,7 @@
 import itertools
 
 from dwave.gate.qcdl import QCDLModule, qcdl
-from dwave.gate.qcdl.qcdl_models import QCDLStatement
+from dwave.gate.qcdl.models import QCDLStatement
 from dwave.gate.qcdl.utils import is_qubit_name
 
 

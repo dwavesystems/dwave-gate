@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 
 from dwave.gate.qcdl import QCDLUserError, Scope, print_qcdl, procedure, qcdl
-from dwave.gate.qcdl.qcdl_models import QCDLStatement
+from dwave.gate.qcdl.models import QCDLStatement
 from dwave.gate.qcdl.utils import simplify_float
 
 

@@ -28,7 +28,7 @@ import numpy as np
 from .base import IndexerMixin
 from .components import Procedure, QCDLModule
 from .exceptions import QCDLInternalError, QCDLUserError
-from .qcdl_models import QCDLProgram, QCDLModuleName, QCDLProcedureDef
+from .models import QCDLProgram, QCDLModuleName, QCDLProcedureDef
 from .transformer import print_qcdl
 from .utils import is_qubit_or_coupler_name
 

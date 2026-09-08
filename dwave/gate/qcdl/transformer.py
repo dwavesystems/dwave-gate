@@ -22,8 +22,8 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from .base import VariableExpression
-from .qcdl_models import QCDLProgram, QCDLProcedureDef, QCDLStatement
-from .qcdl_objects import (
+from .models import QCDLProgram, QCDLProcedureDef, QCDLStatement
+from .objects import (
     AsmSync,
     ParserAsmInstruction,
     ParserAsmProgram,
@@ -48,7 +48,7 @@ except ImportError:
     HAVE_IPYTHON = False
 
 if TYPE_CHECKING:
-    from .qcdl_circuit import QCDLV2
+    from .circuit import QCDLV2
 
 
 def transform_statement(

@@ -35,7 +35,7 @@ import numpy as np
 from .base import IndexerMixin, QCDLArgument, QCDLModuleContainerBase
 from .constants import MIN_INT_REGISTER_VALUE, NUM_RECS
 from .exceptions import QCDLInternalError, QCDLUserError
-from .qcdl_models import (
+from .models import (
     QCDLModuleName,
     QCDLProcedureDef,
     QCDLSignature,
@@ -54,7 +54,7 @@ from .statement import Statement  # noqa: F401  kept for public API
 from .utils import map_container, objwalk
 
 if TYPE_CHECKING:
-    from .qcdl_circuit import QCDLCircuit
+    from .circuit import QCDLCircuit
 
 logger = logging.getLogger(__name__)
 

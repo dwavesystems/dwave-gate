@@ -63,7 +63,7 @@ These classes are of interest mostly to developers of QCDL.
     :members: QCDLProgram, QCDLModule, QCDLModuleContainer, QCDLProcedureDef,
         QCDLStatement
 
-.. automodule:: dwave.gate.qcdl.qcdl_circuit
+.. automodule:: dwave.gate.qcdl.circuit
     :show-inheritance:
     :members: QCDLCircuit
 
@@ -71,6 +71,6 @@ These classes are of interest mostly to developers of QCDL.
     :show-inheritance:
     :members: Procedure, QCDLModuleName
 
-.. automodule:: dwave.gate.qcdl.qcdl_models
+.. automodule:: dwave.gate.qcdl.models
     :show-inheritance:
     :members: QCDLSignature

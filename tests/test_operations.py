@@ -28,7 +28,7 @@ from dwave.gate.qcdl import (
     qcdl,
 )
 from dwave.gate.qcdl.operations import AngleType
-from dwave.gate.qcdl.qcdl_models import QCDLStatement
+from dwave.gate.qcdl.models import QCDLStatement
 
 available_operations = [
     name

@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Self
 import orjson
 from dwave.cloud.client import Client
 
-from dwave.gate.qcdl.qcdl_models import QCDLProgram
+from dwave.gate.qcdl.models import QCDLProgram
 
 if TYPE_CHECKING:
     from dwave.gate.results import Result

@@ -26,8 +26,8 @@ import pickle
 import pytest
 
 from dwave.gate.qcdl import QCDLUserError, qcdl
-from dwave.gate.qcdl.qcdl_circuit import QCDLCircuit, _get_fspec
-from dwave.gate.qcdl.qcdl_models import QCDLProgram
+from dwave.gate.qcdl.circuit import QCDLCircuit, _get_fspec
+from dwave.gate.qcdl.models import QCDLProgram
 
 # ---------------------------------------------------------------------------
 # Shared test doubles
