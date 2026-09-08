@@ -1261,7 +1261,7 @@ The following table compares these two simulation modes.
         -   Scales as :math:`O(2^n)` where :math:`n` is the number of qubits.
         -   Slightly slower than statevector simulation but same scaling.
     *   -   Supported gates.
-        -   All basis gates available in Qiskit (no transpilation require).
+        -   All gates available in Qiskit (no transpilation required).
         -   Subset of basis gates (transpilation required).
     *   -   Support for errors.
         -   No support.
@@ -1364,12 +1364,8 @@ qpu
 
 The QPU to simulate, formatted as a string.
 
-The following values are supported:
-
-*   ``DRsim_17qubits``: Dual-rail QPU with 17 qubits.
-*   ``DRsim_21qubits``: Dual-rail QPU with 21 qubits.
-
-The default QPU to simulate is specified by the
+The :ref:`property_drsim_supported_qpu_strings` property lists the supported
+values. The default QPU to simulate is specified by the
 :ref:`property_drsim_default_qpu` property.
 
 This example submits a QCDL program to a dual-rail QPU simulator with 17 qubits,
@@ -1408,10 +1404,10 @@ The default value is set by the
 :ref:`property_drsim_default_repeat_until_shots_requested` property.
 
 If runtime exceeds the value you specified in the
-:ref:`parameter_drsim_time_limit` parameter, or the maximum allowed runtime
-value of the :ref:`property_drsim_maximum_time_limit_s` property, execution
+:ref:`parameter_drsim_time_limit` parameter (or the default value of the
+:ref:`property_drsim_default_time_limit_s` property), execution
 terminates. The maximum number of times the circuit is run cannot exceed the
-value specified by the :ref:`property_drsim_max_shots` property.
+value specified by the :ref:`property_drsim_maximum_shots` property.
 
 This example repeatedly executes the circuit to accumulate 10 measurements.
 
@@ -1434,10 +1430,9 @@ The number of measurements to run, formatted as an integer.
 Your QCDL program is executed once for each requested measurement.
 
 The specified value must not exceed the value of the
-:ref:`property_drsim_max_shots` property. Execution time is limited by the
-the value you specified in the :ref:`parameter_drsim_time_limit` parameter, or
-the maximum allowed runtime value of the
-:ref:`property_drsim_maximum_time_limit_s` property.
+:ref:`property_drsim_maximum_shots` property. Execution time is limited by the
+the value you specified in the :ref:`parameter_drsim_time_limit` parameter (or
+the default value of the :ref:`property_drsim_default_time_limit_s` property).
 
 The default value is to measure the number of times specified by the
 :ref:`property_drsim_default_shots` property.
@@ -1465,7 +1460,7 @@ The specified time must be between the values of the
 :ref:`property_drsim_minimum_time_limit_s` properties.
 
 The default runtime limit is specified by the
-:ref:`property_drsim_default_time_limit` property.
+:ref:`property_drsim_default_time_limit_s` property.
 
 This example sets a maximum runtime of 20 seconds.
 
@@ -1549,8 +1544,8 @@ default_qpu
 
 Default selection of the QPU to simulate, as a string.
 
-*   ``DRsim_17qubits``: Dual-rail QPU with 17 qubits.
-*   ``DRsim_21qubits``: Dual-rail QPU with 21 qubits.
+Supported QPUs are listed in the :ref:`property_drsim_supported_qpu_strings`
+property.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
@@ -1592,10 +1587,10 @@ QCDL circuit), as an integer. With dual-rail QPUs, a measurement result can be a
 >>> simulator.properties["default_shots"]   # doctest: +SKIP
 1
 
-.. _property_drsim_default_time_limit:
+.. _property_drsim_default_time_limit_s:
 
-default_time_limit
-------------------
+default_time_limit_s
+--------------------
 
 Default maximum runtime, in seconds, the solver is allowed to work on the
 given program, as a float.
@@ -1603,7 +1598,7 @@ given program, as a float.
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
->>> simulator.properties["default_time_limit"]      # doctest: +SKIP
+>>> simulator.properties["default_time_limit_s"]      # doctest: +SKIP
 2700
 
 .. _property_drsim_default_transpile:
@@ -1624,10 +1619,10 @@ the submitted QCDL program.
 >>> simulator.properties["default_transpile"]       # doctest: +SKIP
 True
 
-.. _property_drsim_max_num_qubits:
+.. _property_drsim_maximum_num_qubits:
 
-max_num_qubits
---------------
+maximum_num_qubits
+------------------
 
 Maximum number of qubits for QCDL circuits, as an integer.
 
@@ -1636,21 +1631,21 @@ Maximum number of qubits for QCDL circuits, as an integer.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
->>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
->>> simulator.properties["max_num_qubits"]       # doctest: +SKIP
+>>> simulator = LeapQCDLSimulator()                     # doctest: +SKIP
+>>> simulator.properties["maximum_num_qubits"]          # doctest: +SKIP
 21
 
-.. _property_drsim_max_shots:
+.. _property_drsim_maximum_shots:
 
-max_shots
----------
+maximum_shots
+-------------
 
 Maximum number of times the circuit can be executed, as an integer.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
->>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
->>> simulator.properties["max_shots"]       # doctest: +SKIP
+>>> simulator = LeapQCDLSimulator()             # doctest: +SKIP
+>>> simulator.properties["maximum_shots"]       # doctest: +SKIP
 1000000
 
 .. _property_drsim_maximum_time_limit_s:
@@ -1670,6 +1665,19 @@ for a program submitted with the
 >>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
 >>> simulator.properties["maximum_time_limit_s"]    # doctest: +SKIP
 2700
+
+.. _property_drsim_minimum_shots:
+
+minimum_shots
+-------------
+
+Minimum number of times the circuit can be executed, as an integer.
+
+>>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()             # doctest: +SKIP
+>>> simulator.properties["minimum_shots"]       # doctest: +SKIP
+1
 
 .. _property_drsim_minimum_time_limit_s:
 
@@ -1707,6 +1715,23 @@ See the :ref:`leap_hybrid_usage_charges` section for more information.
 >>> simulator.properties["quota_conversion_rate"]   # doctest: +SKIP
 1
 
+.. _property_drsim_supported_qpu_strings:
+
+supported_qpu_strings
+---------------------
+
+Names of supported simulators, as a list of strings.
+
+Available QPUs are the following:
+
+*   ``DRsim_17qubits``: Dual-rail QPU with 17 qubits.
+*   ``DRsim_21qubits``: Dual-rail QPU with 21 qubits.
+
+>>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
+>>> simulator.properties["supported_qpu_strings"]   # doctest: +SKIP
+['DRsim_17qubits', 'DRsim_21qubits']
 
 .. unsupported currently
 
