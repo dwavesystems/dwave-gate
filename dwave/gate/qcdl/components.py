@@ -1054,8 +1054,9 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
 
             .. testcode::
 
-                from dwave.gate.qcdl import print_qcdl, qcdl
+                from dwave.gate.qcdl import qcdl
                 from dwave.gate.qcdl.operations import measure, x
+                from dwave.gate.utils.display import print_qcdl
 
                 @qcdl(2)
                 def add_comment(q0, q1):
@@ -1165,6 +1166,7 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
 
                 from dwave.gate.qcdl import qcdl, Register
                 from dwave.gate.qcdl.operations import measure, x
+                from dwave.gate.utils.display import print_qcdl
 
                 @qcdl(1)
                 def cpu_example(q0):
@@ -2180,7 +2182,8 @@ class Scope(QCDLModuleContainer):
 
             .. testcode::
 
-                from dwave.gate.qcdl import print_qcdl, qcdl, Scope
+                from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.utils.display import print_qcdl
                 from dwave.gate.qcdl.operations import measure, sx
 
                 @qcdl(2)

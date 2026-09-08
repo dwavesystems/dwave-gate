@@ -25,11 +25,13 @@ Classes
 Utilities
 =========
 
-.. currentmodule:: dwave.gate.qcdl
+.. currentmodule:: dwave.gate.utils.display
 
 .. autofunction:: print_qcdl
 
 .. autofunction:: display_qcdl
+
+.. currentmodule:: dwave.gate.qcdl
 
 .. autoclass:: LogicalOutcomeToInteger
     :members:

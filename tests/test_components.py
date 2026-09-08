@@ -22,10 +22,10 @@ from dwave.gate.qcdl import (
     QCDLUserError,
     Register,
     Scope,
-    print_qcdl,
     procedure,
     qcdl,
 )
+from dwave.gate.utils.display import print_qcdl
 from dwave.gate.qcdl.components import (
     IndexerMixin,
     Procedure,

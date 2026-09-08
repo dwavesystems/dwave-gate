@@ -29,7 +29,7 @@ from .base import IndexerMixin
 from .components import Procedure, QCDLModule
 from .exceptions import QCDLInternalError, QCDLUserError
 from .models import QCDLProgram, QCDLModuleName, QCDLProcedureDef
-from .transformer import print_qcdl
+from .transformer import transform_program_to_qcdl_str, transform_qcdl
 from ._utils import is_qubit_or_coupler_name
 
 logger = logging.getLogger(__name__)
@@ -754,10 +754,7 @@ def qcdl(
 
             qcdl_model = qcdl_circuit.to_model()
             if to_qcdlv2:
-                result_v2 = print_qcdl(qcdl_model, to_Display=False)
-                if result_v2 is None:
-                    raise QCDLInternalError("print_qcdl returned None unexpectedly")
-                return result_v2
+                return transform_program_to_qcdl_str(transform_qcdl(qcdl_model))
             else:
                 return qcdl_model
 

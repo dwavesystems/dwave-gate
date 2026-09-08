@@ -107,7 +107,8 @@ def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
 
         .. testcode::
 
-            from dwave.gate.qcdl import print_qcdl, qcdl
+            from dwave.gate.qcdl import qcdl
+            from dwave.gate.utils.display import print_qcdl
             from dwave.gate.qcdl.operations import barrier, measure, x
 
             @qcdl()

@@ -59,13 +59,13 @@ function ``main()`` returns a
 that you can submit to a compiler or simulator in the |cloud|_ service, as
 described in the :ref:`qcdl_submitting_programs` section.
 
-The :func:`~dwave.gate.qcdl.print_qcdl` function can visualize this structure
+The :func:`~dwave.gate.utils.display.print_qcdl` function can visualize this structure
 as readable text, and if run in a `Jupyter <https://jupyter.org/>`_ notebook,
 as a display object.
 
 .. testcode::
 
-    from dwave.gate.qcdl import print_qcdl
+    from dwave.gate.utils.display import print_qcdl
 
     print_qcdl(qcdl_program)
 
@@ -86,7 +86,7 @@ The code above displays the following QCDL program.
         measure([q1], q1, log=True)
     end quantum
 
-If :func:`~dwave.gate.qcdl.print_qcdl` displays poorly, you can output a
+If :func:`~dwave.gate.utils.display.print_qcdl` displays poorly, you can output a
 string by setting the function's ``to_Display=False`` parameter.
 
 .. [#]
@@ -813,7 +813,7 @@ Guidelines for Using Conditionals
     used in a conditional. Use with caution.
 -   Since a condition can be a Boolean, if you do not intend that, be careful
     that your Python code does not inadvertently cast the condition to a
-    Boolean. (You may find the output of :func:`~dwave.gate.qcdl.print_qcdl`
+    Boolean. (You may find the output of :func:`~dwave.gate.utils.display.print_qcdl`
     helpful for this.)
 -   Your true and false branches must not contain operations on qubits that are
     not a part of the conditional branch.

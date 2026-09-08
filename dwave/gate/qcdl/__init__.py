@@ -21,7 +21,6 @@ from .circuit import qcdl
 from .models import QCDLProgram, QCDLProcedureDef, QCDLStatement
 from .registers import FixedPointRegister, Register, arbitrary_function
 from .statement import Statement
-from .transformer import display_qcdl, print_qcdl
 
 __all__ = [
     "FixedPointRegister",
@@ -38,9 +37,7 @@ __all__ = [
     "Scope",
     "Statement",
     "arbitrary_function",
-    "display_qcdl",
     "operations",
-    "print_qcdl",
     "procedure",
     "qcdl",
 ]
