@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 
-"""Unit tests for the @qcdl decorator in qcdl_circuit.py.
+"""Unit tests for the @qcdl decorator in circuit.py.
 
 Covers qubit-source modes (infer from signature, num_qubits, environment),
 machine integration (get_system / set_up_systems / clean_up_systems),

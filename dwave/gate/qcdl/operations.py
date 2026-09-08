@@ -55,14 +55,12 @@ Examples:
         qcdl_program = qcdl_module_methods()
 """
 
-from collections.abc import Sequence
 from typing import Any, TypeAlias
 
 import numpy as np
 
 from .. import implementations
 from .components import QCDLModule
-from .exceptions import QCDLUserError
 from .registers import FixedPointRegister, Register
 
 AngleType: TypeAlias = float | FixedPointRegister

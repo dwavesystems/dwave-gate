@@ -298,7 +298,7 @@ program. You can measure qubits multiple times in a given shot (usually
 resetting the qubit(s) in between).
 
 .. tip::
-    Using the :attr:`~dwave.gate.Result.tags` property is the recommended way
+    Using the :attr:`~dwave.gate.results.Result.tags` property is the recommended way
     to organize measurement data.
 
 Measurement outcomes are handled in three different ways:
@@ -345,7 +345,7 @@ Measurement outcomes are handled in three different ways:
     number of measurements per shot, you cannot relate measurement outcomes with
     the generating instruction.
 
-By default, the :meth:`~dwave.gate.Result.get_counts` method returns all data,
+By default, the :meth:`~dwave.gate.results.Result.get_counts` method returns all data,
 including erasures. To return only results without the ``*``, thereby
 post-selecting on the detected errors, use the ``post_select=True`` flag.
 
@@ -389,8 +389,8 @@ though it were a cross between a print statement and a breakpoint.
 .. todo:: update for Ocean
 
 If your QCDL uses the :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row`
-method, the :class:`~dwave.gate.Result` output contains records that you may
-retrieve with :meth:`~Result.get_records` method.
+method, the :class:`~dwave.gate.results.Result` output contains records that you may
+retrieve with the :attr:`~dwave.gate.results.Result.records` property.
 
 .. testcode::
     :skipif: True
@@ -447,7 +447,7 @@ with 10 rows, each of which have a value of :math:`13`.
 Yield Handling
 ~~~~~~~~~~~~~~
 
-The :class:`~dwave.gate.YieldHandling` class provides a general way of handling
+The :class:`~dwave.gate.results.YieldHandling` class provides a general way of handling
 result distributions. It supports options for renormalizing distributions,
 ignoring erasures, and others.
 
@@ -488,7 +488,7 @@ Alternatively, a ``YieldHandling`` option may be passed to ``get_counts``.
 .. [#]
     If an application you use, for example, in computing statistical errors,
     is not robust to results containing fewer shots than requested, you can use
-    the :class:`~dwave.gate.YieldHandling` class as a workaround *temporarily and
+    the :class:`~dwave.gate.results.YieldHandling` class as a workaround *temporarily and
     with caution*.
 
 .. _qcdl_basic_initialize_reset:

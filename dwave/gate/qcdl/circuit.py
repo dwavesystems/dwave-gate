@@ -189,7 +189,7 @@ class QCDLCircuit(IndexerMixin):
 
         These objects are not necessarily ready to be used as-is in a circuit,
         needing to be rewrapped based on the procedure. Use the
-        :meth:`~dwave.gate.qcdl.QcdlModule.get_other_qcdl_module` instead of
+        :meth:`~dwave.gate.qcdl.QCDLModule.get_other_qcdl_module` instead of
         accessing this property directly.
 
         Returns:

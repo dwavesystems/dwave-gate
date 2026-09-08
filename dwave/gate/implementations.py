@@ -110,7 +110,7 @@ def mirror_measurement_register(
     qubits.
 
     May be useful for a :class:`~dwave.gate.qcdl.registers.Register` object used
-    for the outcome of a :func:`~dwave.gate.qcdl.operations.measurement`
+    for the outcome of a :func:`~dwave.gate.qcdl.operations.measure`
     operation. See the :ref:`qcdl_advanced_registers_mirroring` section to learn
     about mirroring.
 

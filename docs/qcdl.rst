@@ -17,6 +17,8 @@ Classes
     :show-inheritance:
     :inherited-members:
 
+.. currentmodule:: dwave.gate.leap
+
 .. autoclass:: LeapQCDLSimulator
     :members:
     :show-inheritance:
@@ -71,8 +73,8 @@ These classes are of interest mostly to developers of QCDL.
 
 .. automodule:: dwave.gate.qcdl.components
     :show-inheritance:
-    :members: Procedure, QCDLModuleName
+    :members: Procedure
 
 .. automodule:: dwave.gate.qcdl.models
     :show-inheritance:
-    :members: QCDLSignature
+    :members: QCDLModuleName, QCDLSignature

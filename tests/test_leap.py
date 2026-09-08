@@ -25,7 +25,8 @@ from dwave.cloud.computation import Future
 from dwave.cloud.solver import StructuredSolver, QCDLSolver
 from dwave.cloud.testing.mocks import qpu_clique_solver_data, qcdl_solver_data
 
-from dwave.gate.qcdl import LeapQCDLSimulator, qcdl
+from dwave.gate.leap import LeapQCDLSimulator
+from dwave.gate.qcdl import qcdl
 from dwave.gate.results import Result
 
 
