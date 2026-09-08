@@ -20,7 +20,7 @@ import pytest
 
 from dwave.gate.qcdl import QCDLUserError, Scope, print_qcdl, procedure, qcdl
 from dwave.gate.qcdl.models import QCDLStatement
-from dwave.gate.qcdl.utils import simplify_float
+from dwave.gate.qcdl._utils import simplify_float
 
 
 def test_if_conditional():

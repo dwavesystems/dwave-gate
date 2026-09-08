@@ -32,7 +32,7 @@ from .objects import (
     format_signature,
     get_indent_change,
 )
-from .utils import map_container
+from ._utils import map_container
 
 try:
     import black

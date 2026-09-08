@@ -51,7 +51,7 @@ from .registers import (
     arbitrary_function,
 )
 from .statement import Statement  # noqa: F401  kept for public API
-from .utils import map_container, objwalk
+from ._utils import map_container, objwalk
 
 if TYPE_CHECKING:
     from .circuit import QCDLCircuit

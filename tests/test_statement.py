@@ -16,7 +16,7 @@ import itertools
 
 from dwave.gate.qcdl import QCDLModule, qcdl
 from dwave.gate.qcdl.models import QCDLStatement
-from dwave.gate.qcdl.utils import is_qubit_name
+from dwave.gate.qcdl._utils import is_qubit_name
 
 
 def make_statement(qubit, op, *op_args, **op_kwargs):

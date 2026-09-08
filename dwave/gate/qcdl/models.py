@@ -45,7 +45,7 @@ from pydantic.functional_serializers import SerializerFunctionWrapHandler
 
 from .exceptions import QCDLInternalError
 from .objects import format_signature
-from .utils import is_qubit_name, is_qubit_or_coupler_name
+from ._utils import is_qubit_name, is_qubit_or_coupler_name
 
 
 def _get_module_from_arg(arg: Any) -> str | None:

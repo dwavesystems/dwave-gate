@@ -30,7 +30,7 @@ from .components import Procedure, QCDLModule
 from .exceptions import QCDLInternalError, QCDLUserError
 from .models import QCDLProgram, QCDLModuleName, QCDLProcedureDef
 from .transformer import print_qcdl
-from .utils import is_qubit_or_coupler_name
+from ._utils import is_qubit_or_coupler_name
 
 logger = logging.getLogger(__name__)
 
