@@ -1228,28 +1228,15 @@ number of shots; however, its operation is
 .. tip::
     Accuracy bears a simulation cost and error handling increases circuit
     complexity. It is advisable to start circuit development against the ideal
-    simulator and then introduce error modeling in a controlled way. For
-    example, start by simulating full-precision registers before simulating
-    reduced-precision registers; start with ideal quantum operations before
-    introducing erasures.
+    simulator and then introduce error modeling.
 
-The simulator in the |cloud|_ service supports two modes of simulations:
+    .. for future consideration
+        in a controlled way. For example, start by simulating full-precision
+        registers before simulating reduced-precision registers; start with
+        ideal quantum operations before introducing erasures.
 
-*   Statevector Simulation (solver parameter :ref:`parameter_drsim_noise_model`
-    set to ``False``)
-
-    This simulation is useful during initial testing of
-    QCDL programs before introducing noise.
-*   Dual-Rail Erasure Simulation (solver parameter
-    :ref:`parameter_drsim_noise_model` set to ``True``)
-
-    This simulation is useful for exploring the impact of erasures on QCDL
-    programs. It represents the quantum state as a Statevector with an array of
-    booleans (which mark whether a qubit has leaked or not). It operates by
-    randomly applying Pauli errors, leakages, and seepages after quantum gates
-    and idles.
-
-The following table compares these two simulation modes.
+The simulator in the |cloud|_ service supports two modes of simulations. The
+following table compares these two simulation modes.
 
 .. list-table::
     :header-rows: 1
@@ -1257,12 +1244,26 @@ The following table compares these two simulation modes.
     *   -   Characteristic
         -   Statevector Simulation
         -   Dual-Rail Erasure Simulation
+    *   -   Noise model.
+        -   Solver parameter :ref:`parameter_drsim_noise_model` set to
+            ``False``.
+
+            Useful during initial testing of QCDL programs before introducing
+            noise.
+        -   Solver parameter :ref:`parameter_drsim_noise_model` set to
+            ``True``.
+
+            This simulation is useful for exploring the impact of erasures on
+            QCDL programs. It operates by randomly applying Pauli errors,
+            leakages, and seepages after quantum gates and idles.
     *   -   Runtime.
         -   Scales as :math:`O(2^n)` where :math:`n` is the number of qubits.
-        -   Slightly slower than statevector simulation but same scaling.
+
+            Faster.
+        -   Slower but same scaling.
     *   -   Supported gates.
         -   All gates available in Qiskit (no transpilation required).
-        -   Subset of basis gates (transpilation required).
+        -   Subset of gates (transpilation required).
     *   -   Support for errors.
         -   No support.
         -   Supports the ``mced`` instruction to detect if the qubit has been
@@ -1270,13 +1271,15 @@ The following table compares these two simulation modes.
             leakage and seepage errors.
 
 
+
 .. _qcdl_submitting_programs:
 
 Submitting Programs
 ===================
 
-The gate-model simulator in the |cloud|_ service is intended to simulate the
-dual-rail quantum computer by executing gate-model programs formulated as QCDL.
+The :ref:`QPU simulator <qcdl_simulator>` in the |cloud|_ service is intended to
+simulate :ref:`gate-model quantum computers <qpu_gate_model_intro>` by executing
+programs formulated as QCDL.
 
 The following documentation describes how to work with the |cloud|_ service:
 
@@ -1368,15 +1371,15 @@ The :ref:`property_drsim_supported_qpu_strings` property lists the supported
 values. The default QPU to simulate is specified by the
 :ref:`property_drsim_default_qpu` property.
 
-This example submits a QCDL program to a dual-rail QPU simulator with 17 qubits,
-``DRsim_17qubits`` .
+This example submits a QCDL program to a dual-rail QPU simulator with 21 qubits,
+``DRsim_21qubits`` .
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     qpu='DRsim_17qubits')
+...     qpu='DRsim_21qubits')
 >>> result = future.result().result         # doctest: +SKIP
 
 
@@ -1385,20 +1388,30 @@ This example submits a QCDL program to a dual-rail QPU simulator with 17 qubits,
 repeat_until_shots_requested
 ----------------------------
 
-Boolean flag to run the circuit repeatedly until the requested number of
-measurements, set by the :ref:`parameter_drsim_shots` parameter, are
-accumulated, even under noisy conditions, where the accumulated measurements do
-not include erasures (see the :ref:`qcdl_basic_result_records` section).
+Boolean flag to run the circuit repeatedly until a target number of
+non-erased measurements are accumulated.
+
+Running a circuit might return, under noisy conditions, measurements that are
+declared to be “erased”, as described in the :ref:`qcdl_basic_measurements`
+section. To try to achieve the required number of non-erasure measurements
+indicted by the :ref:`parameter_drsim_shots` parameter, as counted after
+post-selection to remove "splats" (see the :ref:`qcdl_basic_result_records`
+section), you can select to repeatedly run the circuit. With yield defined as
+the percentage of shots without erasures, the required number of executions (and
+runtime) is proportional to the value of the :ref:`parameter_drsim_shots`
+parameter and the reciprocal of the yield, and can grow exponentially with
+increased noise.
 
 *   ``repeat_until_shots_requested=True``: Repeatedly run the circuit until
-    the requested number of measurements, set by the
-    :ref:`parameter_drsim_shots` parameter, is accumulated. Under noisy
-    conditions the circuit might be executed a greater number of times than set
-    by the :ref:`parameter_drsim_shots` parameter.
+    the requested number of non-erasure measurements, indicated by the
+    :ref:`parameter_drsim_shots` parameter, is accumulated with
+    ``post_select=True``. Under noisy conditions the circuit might be executed a
+    greater number of times than set by the :ref:`parameter_drsim_shots`
+    parameter.
 *   ``repeat_until_shots_requested=False``: Run the circuit the number of times
     set by the :ref:`parameter_drsim_shots` parameter. Under noisy conditions,
-    fewer measurements than requested by the :ref:`parameter_drsim_shots`
-    parameter might be accumulated.
+    fewer measurements than indicated by the :ref:`parameter_drsim_shots`
+    parameter might be accumulated with ``post_select=True``.
 
 The default value is set by the
 :ref:`property_drsim_default_repeat_until_shots_requested` property.
@@ -1585,7 +1598,7 @@ QCDL circuit), as an integer. With dual-rail QPUs, a measurement result can be a
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> simulator.properties["default_shots"]   # doctest: +SKIP
-1
+1000
 
 .. _property_drsim_default_time_limit_s:
 
