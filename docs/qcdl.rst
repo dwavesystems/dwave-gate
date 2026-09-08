@@ -38,7 +38,7 @@ Utilities
 Mirroring Utilities
 ~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: dwave.gate.qcdl.implementations
+.. automodule:: dwave.gate.implementations
    :members:
 
 Decorators

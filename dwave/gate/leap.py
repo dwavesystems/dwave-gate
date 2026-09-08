@@ -56,7 +56,7 @@ class LeapQCDLSimulator:
 
         .. code-block:: python
 
-            from dwave.gate.qcdl.leap import LeapQCDLSimulator
+            from dwave.gate.leap import LeapQCDLSimulator
 
             simulator = LeapQCDLSimulator()
             future = simulator.run(qcdl_program, shots=100)
@@ -166,7 +166,7 @@ class LeapQCDLSimulator:
         return None
 
     class RunResult(NamedTuple):
-        """:meth:`~dwave.gate.qcdl.leap.LeapQCDLSimulator.run` method future result
+        """:meth:`~dwave.gate.leap.LeapQCDLSimulator.run` method future result
         """
         result: Result
         # note: use a string annotation to avoid dependency on dwave-system
@@ -175,7 +175,7 @@ class LeapQCDLSimulator:
     def run(self, qcdl: QCDLProgram | Mapping[str, Any], **params) -> Future[RunResult]:
         """Run the :term:`QCDL` program using the selected Leap simulator,
         and return the :class:`~dwave.gate.results.Result`, alongside the SAPI
-        job metadata, both wrapped in a :class:`~dwave.gate.qcdl.leap.LeapQCDLSimulator.RunResult`
+        job metadata, both wrapped in a :class:`~dwave.gate.leap.LeapQCDLSimulator.RunResult`
         and returned in a class:`~concurrent.futures.Future`.
 
         Args:

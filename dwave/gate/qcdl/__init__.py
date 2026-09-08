@@ -16,7 +16,7 @@ from . import operations
 from .components import QCDLModule, QCDLModuleContainer, Scope, procedure
 from .constants import LogicalOutcomeToInteger
 from .exceptions import QCDLInternalError, QCDLUserError
-from .leap import LeapQCDLSimulator
+from ..leap import LeapQCDLSimulator
 from .circuit import qcdl
 from .models import QCDLProgram, QCDLProcedureDef, QCDLStatement
 from .registers import FixedPointRegister, Register, arbitrary_function

@@ -1203,8 +1203,8 @@ Guidance on Mirroring
 
 .. seealso::
 
-    :func:`~dwave.gate.qcdl.implementations.mirror_bool_register` and
-    :func:`~dwave.gate.qcdl.implementations.mirror_measurement_register`
+    :func:`~dwave.gate.implementations.mirror_bool_register` and
+    :func:`~dwave.gate.implementations.mirror_measurement_register`
     functions
 
 .. _qcdl_submitting_programs:

@@ -17,7 +17,7 @@ import inspect
 import pytest
 from pytest_mock import MockerFixture
 
-import dwave.gate.qcdl.implementations
+import dwave.gate.implementations
 from dwave.gate.qcdl import (
     QCDLModule,
     QCDLUserError,
@@ -125,7 +125,7 @@ def test_measure_register(mirror, mocker: MockerFixture):
         register = scope.Register()
         operations.measure(qubit=qubits[0], register=register, mirror=mirror)
 
-    spy = mocker.spy(dwave.gate.qcdl.implementations, "mirror_measurement_register")
+    spy = mocker.spy(dwave.gate.implementations, "mirror_measurement_register")
     _ = main().model_dump(exclude_unset=True)
     assert spy.called == mirror
 
@@ -139,6 +139,6 @@ def test_mced_register(mirror, mocker: MockerFixture):
         register = scope.Register()
         operations.mced(qubit=qubits[0], register=register, mirror=mirror)
 
-    spy = mocker.spy(dwave.gate.qcdl.implementations, "mirror_bool_register")
+    spy = mocker.spy(dwave.gate.implementations, "mirror_bool_register")
     _ = main().model_dump(exclude_unset=True)
     assert spy.called == mirror
