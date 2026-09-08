@@ -39,8 +39,7 @@ logger = logging.getLogger(__name__)
 class Environment(Protocol):
     """Structural type for environments."""
 
-    def get_modules(self, include_couplers: bool) -> Iterable[Any]:
-        ...
+    def get_modules(self, include_couplers: bool) -> Iterable[Any]: ...
 
 
 class Machine(Protocol):
@@ -48,14 +47,11 @@ class Machine(Protocol):
 
     environment: Environment
 
-    def get_system(self, name: str) -> QCDLModule:
-        ...
+    def get_system(self, name: str) -> QCDLModule: ...
 
-    def set_up_systems(self, systems: dict[str, Any], procedure: Procedure) -> None:
-        ...
+    def set_up_systems(self, systems: dict[str, Any], procedure: Procedure) -> None: ...
 
-    def clean_up_systems(self, systems: dict[str, Any]) -> None:
-        ...
+    def clean_up_systems(self, systems: dict[str, Any]) -> None: ...
 
 
 class QCDLCircuit(IndexerMixin):
@@ -560,6 +556,8 @@ def _validate_num_qubits(num_qubits: Any) -> None:
             ``num_qubits`` could not generate at least one qubit.
     """
     if callable(num_qubits):
+        # num_qubits is the first arg, so it would end up as the decorator
+        # itself if the decorator doesn't get called.
         raise QCDLUserError(
             f"the qcdl decorator must be called, so decorate"
             f" {getattr(num_qubits, '__name__', num_qubits)} with @qcdl() or"
