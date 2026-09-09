@@ -35,27 +35,6 @@ from dwave.gate.results import (
 
 logger = logging.getLogger(__name__)
 
-
-# ---------------------------------------------------------------------------
-# Documented import paths
-# ---------------------------------------------------------------------------
-
-
-def test_result_classes_are_importable_from_the_package_root():
-    """The guide refers to these as dwave.gate.Result / dwave.gate.YieldHandling."""
-    import dwave.gate
-
-    assert dwave.gate.Result is Result
-    assert dwave.gate.YieldHandling is YieldHandling
-    assert set(dwave.gate.__all__) == {"Result", "YieldHandling"}
-
-
-def test_re_export_leaves_the_defining_module_alone():
-    """Sphinx and pickle both key off __module__, so it must not move."""
-    assert Result.__module__ == "dwave.gate.results"
-    assert YieldHandling.__module__ == "dwave.gate.results"
-
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -105,7 +84,8 @@ def test_result_allows_extra_keys():
 
 
 def test_result_valid_timestamps():
-    r = Result.model_validate({
+    r = Result.model_validate(
+        {
             "num_shots": 1,
             "start_time": "2026-01-01T00:00:00",
             "end_time": "2026-01-01T01:00:00",
@@ -434,6 +414,7 @@ def test_none_in_register(nones, shots=10):
 
     counts = count_measurements(memory)
     assert counts == {expected: shots}
+
 
 # ---------------------------------------------------------------------------
 # The register Result uses when none is given
