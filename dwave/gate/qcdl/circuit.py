@@ -19,6 +19,7 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
+import numbers
 from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from typing import Any, Callable, Literal, TypeAlias, overload, Protocol
@@ -38,8 +39,7 @@ logger = logging.getLogger(__name__)
 class Environment(Protocol):
     """Structural type for environments."""
 
-    def get_modules(self, include_couplers: bool) -> Iterable[Any]:
-        ...
+    def get_modules(self, include_couplers: bool) -> Iterable[Any]: ...
 
 
 class Machine(Protocol):
@@ -47,14 +47,11 @@ class Machine(Protocol):
 
     environment: Environment
 
-    def get_system(self, name: str) -> QCDLModule:
-        ...
+    def get_system(self, name: str) -> QCDLModule: ...
 
-    def set_up_systems(self, systems: dict[str, Any], procedure: Procedure) -> None:
-        ...
+    def set_up_systems(self, systems: dict[str, Any], procedure: Procedure) -> None: ...
 
-    def clean_up_systems(self, systems: dict[str, Any]) -> None:
-        ...
+    def clean_up_systems(self, systems: dict[str, Any]) -> None: ...
 
 
 class QCDLCircuit(IndexerMixin):
@@ -551,6 +548,98 @@ def _get_fspec(f: Any) -> tuple[list[str], str | None]:
     return fspec.args, f_keywords
 
 
+def _validate_num_qubits(num_qubits: Any) -> None:
+    """Check the ``num_qubits`` argument of the :func:`qcdl` decorator.
+
+    Raises:
+        :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If
+            ``num_qubits`` could not generate at least one qubit.
+    """
+    if callable(num_qubits):
+        # num_qubits is the first arg, so it would end up as the decorator
+        # itself if the decorator doesn't get called.
+        raise QCDLUserError(
+            f"the qcdl decorator must be called, so decorate"
+            f" {getattr(num_qubits, '__name__', num_qubits)} with @qcdl() or"
+            f" @qcdl(num_qubits) rather than with a bare @qcdl"
+        )
+    if isinstance(num_qubits, bool) or not isinstance(num_qubits, numbers.Integral):
+        raise QCDLUserError(
+            f"num_qubits must be an integer, not {num_qubits!r} of type"
+            f" {type(num_qubits).__name__}"
+        )
+    if num_qubits < 1:
+        raise QCDLUserError(
+            f"num_qubits must be at least 1, not {num_qubits}; a program needs"
+            f" at least one qubit"
+        )
+
+
+def _qubit_source(num_qubits: int | None, from_environment: bool) -> str:
+    """Describe what generated the qubits, for error messages."""
+    if from_environment:
+        return "the environment"
+    return "@qcdl()" if num_qubits is None else f"@qcdl({num_qubits})"
+
+
+def _validate_call(
+    f: Any,
+    args: Sequence[Any],
+    passed_names: set[str],
+    qubits: Iterable[str],
+    source: str,
+    allow_dropped_qubits: bool,
+) -> None:
+    """Check that a call to the decorated function binds qubits and parameters.
+
+    Qubits reach the decorated function by *name*, so a parameter that is not a
+    ``q<N>`` receives nothing and a generated qubit the signature does not name
+    goes nowhere. Python's own message for the first names only the parameter,
+    with no hint that qubits are involved, and the second is silent.
+
+    Args:
+        f: The decorated function.
+        args: Positional arguments the caller supplied.
+        passed_names: Names of the keyword arguments the call will supply.
+        qubits: Names of the generated qubits.
+        source: What generated the qubits, for the error message.
+        allow_dropped_qubits: If True, a qubit no parameter names is not an
+            error. An environment always supplies its whole set of qubits.
+
+    Raises:
+        :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If a generated
+            qubit has no parameter to be passed to.
+        TypeError: If the call would leave a parameter of ``f`` unbound.
+    """
+    f_name = getattr(f, "__name__", "the decorated function")
+    supplied = ", ".join(qubits) or "none"
+
+    # an unfilled parameter first: when a parameter is misnamed its qubit is
+    # also dropped, and the name is the more useful half to report
+    try:
+        # only the names matter to bind, so the values can be placeholders
+        inspect.signature(f).bind(*args, **dict.fromkeys(passed_names))
+    except TypeError as exc:
+        raise TypeError(
+            f"{f_name}() {exc}. The qcdl decorator injects qubits as keyword"
+            f" arguments named q<N> (q0, q1, ...), and {source} supplied"
+            f" {supplied}; rename the parameter q0, q1, ..., raise num_qubits,"
+            f" give the parameter a default, or pass it a value"
+        ) from None
+    except ValueError:
+        # a callable we can not introspect; let python report the call itself
+        return
+
+    dropped = [q for q in qubits if q not in passed_names]
+    if dropped and not allow_dropped_qubits:
+        raise QCDLUserError(
+            f"{source} generates {supplied} but {f_name}() has no parameter for"
+            f" {', '.join(dropped)}, which would be dropped from the program;"
+            f" declare a parameter for every generated qubit, lower num_qubits,"
+            f" or accept **kwargs"
+        )
+
+
 QCDLV2: TypeAlias = str
 """Display-oriented QCDL string representation returned by @qcdl when
 ``to_qcdlv2=True``.
@@ -628,7 +717,9 @@ def qcdl(
             of qubits, infers qubits from the signature of the decorated
             function: any ``q<N>`` arguments, where ``<N>`` is an integer, are
             considered qubits. Generated qubits are passed in to the decorated
-            function through keyword arguments.
+            function through keyword arguments, so unless the decorated function
+            accepts ``**kwargs``, it must declare a ``q<N>`` parameter for each
+            generated qubit.
         environment: Environment. The number of qubits supplied is the full set
             supported by the environment. This parameter is intended for use by
             developers of QCDL.
@@ -684,6 +775,9 @@ def qcdl(
 
     """
 
+    if num_qubits is not None:
+        _validate_num_qubits(num_qubits)
+
     def decorator(f: QCDLSource) -> Callable[..., QCDLProgram | QCDLV2]:
         @functools.wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> QCDLProgram | QCDLV2:
@@ -732,19 +826,31 @@ def qcdl(
             # kwargs may include modules/systems the user has already created
             merged_kwargs = module_kwargs | kwargs
 
+            # names f will be given: without **kwargs, only ones it declares
+            passed_names = (
+                set(merged_kwargs) if f_keywords else set(merged_kwargs) & set(f_args)
+            )
+
+            # report a qubit with nowhere to go, or a parameter with nothing to
+            # fill it, before running the function or setting up any systems
+            _validate_call(
+                f,
+                args,
+                passed_names,
+                module_kwargs,
+                source=_qubit_source(num_qubits, from_environment=bool(_env)),
+                allow_dropped_qubits=bool(_env),
+            )
+
             if machine:
                 # let the machine configure the procedure and any other setup it
                 # wants
                 machine.set_up_systems(merged_kwargs, qcdl_circuit.main)
 
-            if not f_keywords:
-                # if there's no f_keywords, then only include keyword args that
-                # match f's arguments
-                passed_kwargs = {
-                    key: val for key, val in merged_kwargs.items() if key in f_args
-                }
-            else:
-                passed_kwargs = merged_kwargs
+            # after set_up_systems, which promotes the values in place
+            passed_kwargs = {
+                key: val for key, val in merged_kwargs.items() if key in passed_names
+            }
 
             try:
                 f(*args, **passed_kwargs)
