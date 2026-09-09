@@ -214,37 +214,38 @@ def count_measurements(
 ) -> dict[int | str, int]:
     """Convert memory to a dict of observation counts.
 
-    Raw data (memory) is just 0, 1, or ``"*"`` (called "splat") for each qubit,
-    for each shot. This method will convert that into a count of each set of
+    Raw data (memory) contains values :math:`0, 1` or ``"*"`` ("splat") for each
+    qubit, for each shot. This method converts that into a count of each set of
     measurements. The key for the dict is customizable.
 
-    When converting to int/bin, this treats the qubit register as big endian,
-    i.e., that the register has the least significant bit last in the array for
-    each shot.
+    When converting to int/bin, the qubit register is treated as big endian;
+    i.e., the least-significant bit is last in the array for each shot.
 
     :data:`key_format` values:
-        * ``"bin"``: keys will be binary numbers with width taken from the memory
-        * ``"hex"``: keys will be hexadecimal strings (e.g., ``'0x3'``)
-        * ``None``: keys will be integers
-
-    Examples:
-        >>> count_measurements([[0,1,0,0]]*10, key_format='bin')
-        {'0100': 10}
-        >>> count_measurements([[0,1,0,0]]*10, key_format='hex')
-        {'0x4': 10}
-        >>> count_measurements([[0,1,0,0]]*10, key_format=None)
-        {4: 10}
+        * ``"bin"``: keys are binary numbers with width taken from the memory.
+        * ``"hex"``: keys are hexadecimal strings (e.g., ``'0x3'``).
+        * ``None``: keys are integers.
 
     Args:
-        memory: a shots x qubits 2D array, sorted least significant
-            bit is last / on the right.
-        key_format: how to format the ints which will be used
-            as keys. This is ignored if the memory consists of strings.
+        memory: 2D array of size ``shots x qubits`` sorted with the
+            least-significant bit last (on the right).
+        key_format: Formats the ints used as dict keys. Ignored if the memory
+            consists of strings.
         post_select: If True, any bitstrings that have ``"*"`` in them
-            will be excluded.
+            are excluded.
+
+    Examples:
+        >>> from dwave.gate.results import count_measurements
+        ...
+        >>> count_measurements([[0,1,0,0]]*10, key_format='bin')
+        {'0100': 10}
+        >>> count_measurements([[0,1,0,0]]*10, key_format='hex')    # doctest: +SKIP
+        {'0x4': 10}
+        >>> count_measurements([[0,1,0,0]]*10, key_format=None)     # doctest: +SKIP
+        {4: 10}
 
     Returns:
-        A dict counting occurrences of each formatted shots value
+        A dict counting occurrences of each value of formatted shots.
 
     """
     if isinstance(memory, list):
@@ -418,13 +419,11 @@ class Result(BaseModel):
     def default_tag(self) -> str:
         """The default tag, if defined.
 
-        If there is only one tag, then this method will return it. This is
-        sufficient for many experiments which only have one measurement per
-        qubit.
+        If there is only one tag, this method returns it. This is sufficient for
+        many experiments which only have one measurement per qubit.
 
-        If there are multiple tags present in the data or no tag, then there is
-        no "default" tag. In either of these cases this method will raise
-        ValueError.
+        If there are multiple tags present in the data or no tag, there is no
+        default tag, and the method raises a :class:`ValueError`.
 
         Returns:
             The default tag.
@@ -441,20 +440,19 @@ class Result(BaseModel):
     def get_measurements_register(
         self, tag: str | None = None, descending: bool = True
     ) -> list[str]:
-        """Get the register inferred from the measurements data for a particular
-        tag.
+        """Return the register inferred from the measurements data for the tag.
 
-        This method will include a qubit in the register if and only if it has
+        This method includes a qubit in the register if and only if it has
         measurements in the log data. It determines the name of the qubit from
         its index in the measurements array.
 
         Args:
-            tag: Which data set to load. Defaults to
-                :attr:`dwave.gate.results.Result.default_tag`.
+            tag: The data set to load. Defaults to
+                :attr:`~dwave.gate.results.Result.default_tag`.
             descending: Whether qubits are in descending order. Defaults to True.
 
         Returns:
-            A list of qubit names.
+            List of qubit names.
         """
         if tag is None:
             tag = self.default_tag
@@ -474,17 +472,17 @@ class Result(BaseModel):
         unmeasured_value: int | str = "_",
         shots: int | None = None,
     ) -> np.ndarray:
-        """Memory is the 3D array of measurements per shot x shots x qubits
+        """Memory is the 3D array of ``measurements per shot, shots, qubits``.
 
-        These are the raw bits returned from a statement like ``q0.measure()``.
+        The raw bits returned from a statement such as ``q0.measure()``.
 
         Args:
-            tag: Which data set to load. Defaults to
-                :attr:`dwave.gate.results.Result.default_tag`.
+            tag: The data set to load. Defaults to
+                :attr:`~dwave.gate.results.Result.default_tag`.
             register: List of qubit names to include in the register; determines
                 the inner dimension of the returned value.
-            unmeasured_value: What to put in the register if a requested qubit
-                wasn't measured.
+            unmeasured_value: Value to put in the register if a requested qubit
+                is not measured.
             shots: Overrides the shots in the result object.
 
         Returns:
@@ -540,7 +538,8 @@ class Result(BaseModel):
 
     @functools.cached_property
     def records(self) -> dict | str | None:
-        """Records are the data generated by append_table_row"""
+        """Data generated by the :meth:`~dwave.gate.qcdl.Scope.append_table_row`
+        method."""
         records = copy.deepcopy(self.encoded_records)
 
         if records and self.record_format is RecordFormat.POLARS:
@@ -556,7 +555,7 @@ class Result(BaseModel):
 
     @functools.cached_property
     def measurements(self) -> dict[str, list[np.ndarray]] | None:
-        """Measurements are the data generated by log=True"""
+        """Data generated by ``log=True``."""
         if measurements := copy.deepcopy(self.encoded_measurements):
             for data in measurements.values():
                 for loc, meas in enumerate(data):
