@@ -18,9 +18,10 @@ from collections import Counter
 import numpy as np
 import pytest
 
-from dwave.gate.qcdl import QCDLUserError, Scope, print_qcdl, procedure, qcdl
-from dwave.gate.qcdl.qcdl_models import QCDLStatement
-from dwave.gate.qcdl.utils import simplify_float
+from dwave.gate.qcdl import QCDLUserError, Scope, procedure, qcdl
+from dwave.gate.qcdl.models import QCDLStatement
+from dwave.gate.qcdl._utils import simplify_float
+from dwave.gate.utils.display import print_qcdl
 
 
 def test_if_conditional():

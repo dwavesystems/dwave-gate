@@ -1,0 +1,34 @@
+---
+upgrade:
+  - |
+    Rename QCDL modules to drop the redundant ``qcdl_`` prefix:
+    ``dwave.gate.qcdl.qcdl_circuit`` is now ``dwave.gate.qcdl.circuit``,
+    ``dwave.gate.qcdl.qcdl_models`` is now ``dwave.gate.qcdl.models``, and
+    ``dwave.gate.qcdl.qcdl_objects`` is now ``dwave.gate.qcdl.objects``. Names
+    re-exported from ``dwave.gate.qcdl`` itself, such as ``QCDLProgram`` and
+    ``QCDLStatement``, are unaffected.
+  - |
+    Move ``LeapQCDLSimulator`` from ``dwave.gate.qcdl.leap`` to
+    ``dwave.gate.leap``, and the register mirroring helpers from
+    ``dwave.gate.qcdl.implementations`` to ``dwave.gate.implementations``.
+    Neither module defines the QCDL language itself, so both now sit alongside
+    ``dwave.gate.results``. ``LeapQCDLSimulator`` is no longer re-exported from
+    ``dwave.gate.qcdl``; use ``from dwave.gate.leap import LeapQCDLSimulator``.
+  - |
+    Rename ``dwave.gate.qcdl.utils`` to ``dwave.gate.qcdl._utils`` to mark it
+    private. It contains internal helpers only, and its name collided with the
+    public ``dwave.gate.utils`` package.
+  - |
+    Move ``print_qcdl`` and ``display_qcdl``, together with
+    ``blacken_qcdl_str``, from ``dwave.gate.qcdl`` to
+    ``dwave.gate.utils.display``. They are no longer exported from
+    ``dwave.gate.qcdl``; use
+    ``from dwave.gate.utils.display import print_qcdl``. Importing
+    ``dwave.gate.qcdl`` no longer imports the optional ``black`` and
+    ``IPython`` dependencies.
+fixes:
+  - |
+    Fix broken documentation references to ``dwave.gate.results.Result`` and
+    ``dwave.gate.results.YieldHandling``, which were documented under
+    ``dwave.gate``, and to ``dwave.gate.qcdl.operations.measure``. Document
+    ``QCDLModuleName`` under ``dwave.gate.qcdl.models``, where it is defined.
