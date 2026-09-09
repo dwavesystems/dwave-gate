@@ -1317,7 +1317,7 @@ The example below submits the following
 Submit the program above to a simulator for a dual-rail QPU with 17 qubits,
 ``DRsim_17qubits``, in the |cloud|_ service.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
@@ -1352,7 +1352,7 @@ property.
 
 This example applies a noise model for the program submitted to the simulator.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
@@ -1374,7 +1374,7 @@ values. The default QPU to simulate is specified by the
 This example submits a QCDL program to a dual-rail QPU simulator with 21 qubits,
 ``DRsim_21qubits`` .
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
@@ -1425,7 +1425,7 @@ terminates.
 This example repeatedly executes the circuit, under noisy conditions, to
 accumulate 10 non-erasure measurements.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
@@ -1460,7 +1460,7 @@ The default value is to measure the number of times specified by the
 
 This example executes the circuit 1000 times.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
@@ -1485,7 +1485,7 @@ The default runtime limit is specified by the
 
 This example sets a maximum runtime of 10 minutes.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
@@ -1512,7 +1512,7 @@ property.
 This example requires that the QCDL circuit be submitted as written to the
 simulator.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
@@ -1536,7 +1536,7 @@ Type of solver, as a string.
 
 *   ``software-gate``: Gate-model simulator.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()     # doctest: +SKIP
 >>> simulator.properties["category"]    # doctest: +SKIP
@@ -1553,7 +1553,7 @@ Default setting for the application of a noise model, as a Boolean.
 *   ``False``: Simulates an ideal QPU, as described in the
     :ref:`qcdl_simulator` section.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
 >>> simulator.properties["default_noise_model"]     # doctest: +SKIP
@@ -1569,7 +1569,7 @@ Default selection of the QPU to simulate, as a string.
 Supported QPUs are listed in the :ref:`property_drsim_supported_qpu_strings`
 property.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> simulator.properties["default_qpu"]     # doctest: +SKIP
@@ -1588,7 +1588,7 @@ include erasures (see the :ref:`qcdl_basic_result_records` section).
 *   ``False``: Run the circuit the number of times set by the
     :ref:`parameter_drsim_shots` parameter.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()                                 # doctest: +SKIP
 >>> simulator.properties["default_repeat_until_shots_requested"]    # doctest: +SKIP
@@ -1603,7 +1603,7 @@ Default setting for the number of measurements to run (times to execute your
 QCDL circuit), as an integer. With dual-rail QPUs, a measurement result can be a
 "splat" (see the :ref:`qcdl_basic_measurements` section).
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> simulator.properties["default_shots"]   # doctest: +SKIP
@@ -1617,7 +1617,7 @@ default_time_limit_s
 Default maximum runtime, in seconds, the solver is allowed to work on the
 given program, as a float.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
 >>> simulator.properties["default_time_limit_s"]      # doctest: +SKIP
@@ -1635,7 +1635,7 @@ the submitted QCDL program.
 *   ``False``: Run the circuit exactly as specified in the submitted
     QCDL or return an error.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
 >>> simulator.properties["default_transpile"]       # doctest: +SKIP
@@ -1651,7 +1651,7 @@ Maximum number of qubits for QCDL circuits, as an integer.
 .. note:: :ref:`Transpilation <qcdl_basic_transpilation>` can add and remove
     qubits in your QCDL.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()                     # doctest: +SKIP
 >>> simulator.properties["maximum_num_qubits"]          # doctest: +SKIP
@@ -1665,7 +1665,7 @@ maximum_shots
 Maximum value of the :ref:`parameter_drsim_shots` you can specify, as an
 integer.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()             # doctest: +SKIP
 >>> simulator.properties["maximum_shots"]       # doctest: +SKIP
@@ -1681,7 +1681,7 @@ Maximum time, in seconds as a float, that your submitted circuit can run.
 This value limits the range of values you can set on the
 :ref:`parameter_drsim_time_limit` parameter.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
 >>> simulator.properties["maximum_time_limit_s"]    # doctest: +SKIP
@@ -1694,7 +1694,7 @@ minimum_shots
 
 Minimum number of times the circuit can be executed, as an integer.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()             # doctest: +SKIP
 >>> simulator.properties["minimum_shots"]       # doctest: +SKIP
@@ -1708,7 +1708,7 @@ minimum_time_limit_s
 Minimum time, in seconds as a float, you can specify for the runtime limit (the
 :ref:`parameter_drsim_time_limit` parameter) on your submitted circuit.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
 >>> simulator.properties["minimum_time_limit_s"]    # doctest: +SKIP
@@ -1730,7 +1730,7 @@ Time is deducted from your quota according to:
 
 See the :ref:`leap_hybrid_usage_charges` section for more information.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
 >>> simulator.properties["quota_conversion_rate"]   # doctest: +SKIP
@@ -1748,7 +1748,7 @@ Available QPUs are the following:
 *   ``DRsim_17qubits``: Dual-rail QPU with 17 qubits.
 *   ``DRsim_21qubits``: Dual-rail QPU with 21 qubits.
 
->>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
+>>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
 >>> simulator.properties["supported_qpu_strings"]   # doctest: +SKIP
