@@ -29,9 +29,9 @@ import numpy as np
 from .base import IndexerMixin
 from .components import Procedure, QCDLModule
 from .exceptions import QCDLInternalError, QCDLUserError
-from .qcdl_models import QCDLProgram, QCDLModuleName, QCDLProcedureDef
-from .transformer import print_qcdl
-from .utils import is_qubit_or_coupler_name
+from .models import QCDLProgram, QCDLModuleName, QCDLProcedureDef
+from .transformer import transform_program_to_qcdl_str, transform_qcdl
+from ._utils import is_qubit_or_coupler_name
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +186,7 @@ class QCDLCircuit(IndexerMixin):
 
         These objects are not necessarily ready to be used as-is in a circuit,
         needing to be rewrapped based on the procedure. Use the
-        :meth:`~dwave.gate.qcdl.QcdlModule.get_other_qcdl_module` instead of
+        :meth:`~dwave.gate.qcdl.QCDLModule.get_other_qcdl_module` instead of
         accessing this property directly.
 
         Returns:
@@ -860,10 +860,7 @@ def qcdl(
 
             qcdl_model = qcdl_circuit.to_model()
             if to_qcdlv2:
-                result_v2 = print_qcdl(qcdl_model, to_Display=False)
-                if result_v2 is None:
-                    raise QCDLInternalError("print_qcdl returned None unexpectedly")
-                return result_v2
+                return transform_program_to_qcdl_str(transform_qcdl(qcdl_model))
             else:
                 return qcdl_model
 

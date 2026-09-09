@@ -13,11 +13,11 @@
 #    limitations under the License.
 
 """Tests for the Pydantic QCDL schema models in
-:mod:`dwave.gate.qcdl.qcdl_models`.
+:mod:`dwave.gate.qcdl.models`.
 
 The fixtures mirror the sparse dict format that
 :meth:`~dwave.gate.qcdl.components.Procedure.add_statement` and
-:meth:`~dwave.gate.qcdl.qcdl_circuit.QCDLCircuit.to_model` actually produce, so
+:meth:`~dwave.gate.qcdl.circuit.QCDLCircuit.to_model` actually produce, so
 that tests remain grounded in the real serialisation behaviour.
 """
 
@@ -31,7 +31,7 @@ from pydantic import BaseModel, ValidationError
 
 from dwave.gate.qcdl import procedure, qcdl
 from dwave.gate.qcdl.exceptions import QCDLInternalError
-from dwave.gate.qcdl.qcdl_models import (
+from dwave.gate.qcdl.models import (
     QCDLProgram,
     QCDLModuleName,
     QCDLProcedureDef,

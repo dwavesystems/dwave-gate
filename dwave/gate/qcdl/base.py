@@ -24,7 +24,7 @@ from .exceptions import QCDLInternalError
 
 if TYPE_CHECKING:
     from .components import Procedure, QCDLModule
-    from .qcdl_circuit import QCDLCircuit
+    from .circuit import QCDLCircuit
 
 
 class QCDLArgument(abc.ABC):
@@ -273,7 +273,7 @@ class VariableExpression(QCDLArgument):
 class Variable(QCDLArgument):
     """This is the QCDL approach for creating a QCDL Variable
 
-    Corresponds 1-to-1 with the qcdl_objects.py Variable. There will be
+    Corresponds 1-to-1 with the objects.py Variable. There will be
     no reason to use this instead of an RegisterExpression, but it's supported anyway
     due to its special handling in the compiler.
 

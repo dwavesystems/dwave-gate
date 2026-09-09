@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 
-"""Unit tests for the @qcdl decorator in qcdl_circuit.py.
+"""Unit tests for the @qcdl decorator in circuit.py.
 
 Covers qubit-source modes (infer from signature, num_qubits, environment),
 machine integration (get_system / set_up_systems / clean_up_systems),
@@ -26,8 +26,8 @@ import pickle
 import pytest
 
 from dwave.gate.qcdl import QCDLUserError, qcdl
-from dwave.gate.qcdl.qcdl_circuit import QCDLCircuit, _get_fspec
-from dwave.gate.qcdl.qcdl_models import QCDLProgram
+from dwave.gate.qcdl.circuit import QCDLCircuit, _get_fspec
+from dwave.gate.qcdl.models import QCDLProgram
 
 # ---------------------------------------------------------------------------
 # Shared test doubles
