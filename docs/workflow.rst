@@ -1679,9 +1679,7 @@ maximum_time_limit_s
 Maximum time, in seconds as a float, that your submitted circuit can run.
 
 This value limits the range of values you can set on the
-:ref:`parameter_drsim_time_limit` parameter and also limits the runtime allowed
-for a program submitted with the
-:ref:`parameter_drsim_repeat_until_shots_requested` set to true.
+:ref:`parameter_drsim_time_limit` parameter.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
