@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-"""Utilities for handling results returned by the simulator or QPU."""
+"""Utilities for handling results returned by a gate-model simulator or QPU."""
 
 from __future__ import annotations
 
@@ -42,18 +42,18 @@ DEFAULT_TAG = ""
 
 
 def get_default_register(qubits: Iterable[str]) -> RegisterType:
-    """The register used if none is provided.
+    """Return the register used when none is specified.
 
-    This register will include all qubits in the circuit, regardless of which
-    have measurements. This is usually not what is desired.
+    This register includes all qubits in the circuit, regardless of which
+    have measurements. Specifying a register is preferable.
 
-    Sorts qubits to have the highest index first, e.g., ``[q2, q1, q0]``
+    Sorts qubits from highest to lowest index; e.g., ``[q2, q1, q0]``
 
     Args:
-        qubits: list of qubits in system
+        qubits: List of qubits in the QPU.
 
     Returns:
-        Qubits sorted highest index to lowest.
+        Qubits sorted from highest index to lowest.
     """
     return cast(
         RegisterType, sorted(qubits, key=lambda qubit: int(qubit[1:]), reverse=True)
@@ -89,39 +89,39 @@ def format_memory(
     register: RegisterType | None = None,
     unmeasured_value: int | str = "_",
 ) -> np.ndarray:
-    """Shape results
+    """Shape results.
 
-    The measurement input is simply a flat array of all the measurements on each
-    qubit over the entire calculation (i.e., for all shots). This data structure
-    itself is naive to how many measurements occurred per shot. If a tag was
-    provided to the `measure` instructions, then this method would be called
-    once for each tag.
+    The measurement input is a flat array of all the measurements on each
+    qubit over the entire circuit execution (i.e., for all shots), and does not
+    indicate how many measurements occurred per shot. If you specify a tag for
+    the :func:`~dwave.gate.qcdl.operations.measure` operations, this method is
+    called once for each tag.
 
-    The primary purpose of this method is to handle the possibility that each
-    qubit may have been measured multiple times per shot and that the number can
-    be different between qubits. This method will add padding to the
-    measurements if the number of measurements is different so that we can make
-    a dict of bitstrings from the data.
+    This method handles results where each qubit may have been measured multiple
+    times per shot with the number of measurements varying among qubits. The
+    method adds padding to the measurements if those numbers differ to enable
+    the formation of a dict of bitstrings from the data.
 
-    NOTE: after converting the individual measurement arrays to a numpy array of
-    type str, it will update the input measurements data structure in-place.
+    .. note:: After converting individual measurement arrays to a NumPy array of
+        type str, it updates the input-measurements data structure in-place.
 
     Args:
-        measurements: The measurements 2D array or dict of arrays from either
-            the simulator or qpu. If a 2D array is passed the qubit name is
+        measurements: Measurements, as a 2D array or dict of arrays, from either
+            the simulator or QPU. If a 2D array is passed, the qubit name is
             inferred from the index in the array.
-        shots: The number of shots to produce this data.
-        register: List of qubit names (or None) to go into the register. A None in 
-            the list will fill in the unmeasured_value. If a register is not
-            provided, get_default_register will be used to create one.
-        unmeasured_value: What to put in the register if a requested qubit wasn't measured.
-            Defaults to "_".
+        shots: Number of shots to produce this data.
+        register: List of qubit names (or None) to go into the register. A None
+            in the list fills in the value to set through the
+            ``unmeasured_value`` argument. If a register is not provided,
+            the :func:`.get_default_register` creates one.
+        unmeasured_value: Value to put in the register if a requested qubit is
+            not measured. Defaults to "_".
 
     Raises:
-        ValueError: register mismatch with results
+        ValueError: Register mismatch with results.
 
     Returns:
-        A 3D array of str with shape (measurements per shot, shots, qubits)
+        A 3D array of str with shape ``(measurements per shot, shots, qubits)``.
     """
     if isinstance(measurements, dict):
         qubit_name_to_loc: dict[str, Any] = {qn: qn for qn in measurements}
@@ -312,25 +312,24 @@ def count_measurements(
 
 
 class Result(BaseModel):
-    """Schema and API for a result returned by the simulator or QPU.
-
-    This model permits unknown keys (``extra='allow'``) so newly added service
-    fields do not cause validation failures.
+    """Result returned by a gate-model simulator or QPU.
 
     Attributes:
-        num_shots: Total number of shots executed.
+        num_shots: Total number of times the circuit was executed.
         start_time: Timestamp for when execution began.
         end_time: Timestamp for when execution ended.
-        seconds_per_shot: Average wall-clock time per shot, in seconds.
+        seconds_per_shot: Average per-shot wall-clock time, in seconds.
         num_qubits: Number of qubits used in the circuit.
-        simulated_qcdl: Label describing which QCDL was simulated.
+        simulated_qcdl: Label describing the simulated QCDL.
         record_format: Serialization format used for ``records``.
-        measurements: Raw measurement data keyed by tag.
+        measurements: Raw measurement data, keyed by tag.
         records: Table data or raw QIR log output.
         executed_qcdl: QCDL payload representing the executed program.
     """
+    # This model permits unknown keys (``extra='allow'``) so newly added service
+    # fields do not cause validation failures.
     model_config = ConfigDict(extra="allow", frozen=True, arbitrary_types_allowed=True)
-    
+
     num_shots: int = Field(description="Total number of shots executed.")
     start_time: datetime.datetime | None = Field(
         default=None, description="ISO-8601 string for when execution began."
