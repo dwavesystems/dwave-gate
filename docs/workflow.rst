@@ -1410,8 +1410,9 @@ increased noise.
     parameter.
 *   ``repeat_until_shots_requested=False``: Run the circuit the number of times
     set by the :ref:`parameter_drsim_shots` parameter. Under noisy conditions,
-    fewer measurements than indicated by the :ref:`parameter_drsim_shots`
-    parameter might be accumulated with ``post_select=True``.
+    fewer non-erasure measurements than indicated by the
+    :ref:`parameter_drsim_shots` parameter might be accumulated with
+    ``post_select=True``.
 
 The default value is set by the
 :ref:`property_drsim_default_repeat_until_shots_requested` property.
@@ -1419,10 +1420,10 @@ The default value is set by the
 If runtime exceeds the value you specified in the
 :ref:`parameter_drsim_time_limit` parameter (or the default value of the
 :ref:`property_drsim_default_time_limit_s` property), execution
-terminates. The maximum number of times the circuit is run cannot exceed the
-value specified by the :ref:`property_drsim_maximum_shots` property.
+terminates.
 
-This example repeatedly executes the circuit to accumulate 10 measurements.
+This example repeatedly executes the circuit, under noisy conditions, to
+accumulate 10 non-erasure measurements.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
@@ -1430,8 +1431,15 @@ This example repeatedly executes the circuit to accumulate 10 measurements.
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
 ...     shots=10,
+...     noise_model=True,
 ...     repeat_until_shots_requested=True)
 >>> result = future.result().result         # doctest: +SKIP
+
+The sum of non-splat states in the returned results is the requested number of
+shots:
+
+>>> print(sum(result.get_counts(post_select=True)[0].values())) # doctest: +SKIP
+10
 
 .. _parameter_drsim_shots:
 
@@ -1444,20 +1452,20 @@ Your QCDL program is executed once for each requested measurement.
 
 The specified value must not exceed the value of the
 :ref:`property_drsim_maximum_shots` property. Execution time is limited by the
-the value you specified in the :ref:`parameter_drsim_time_limit` parameter (or
+value you specified in the :ref:`parameter_drsim_time_limit` parameter (or
 the default value of the :ref:`property_drsim_default_time_limit_s` property).
 
 The default value is to measure the number of times specified by the
 :ref:`property_drsim_default_shots` property.
 
-This example executes the circuit 15 times.
+This example executes the circuit 1000 times.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     shots=15)
+...     shots=1000)
 >>> result = future.result().result         # doctest: +SKIP
 
 .. _parameter_drsim_time_limit:
@@ -1475,14 +1483,14 @@ The specified time must be between the values of the
 The default runtime limit is specified by the
 :ref:`property_drsim_default_time_limit_s` property.
 
-This example sets a maximum runtime of 20 seconds.
+This example sets a maximum runtime of 10 minutes.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     time_limit=20)
+...     time_limit=10*60)
 >>> result = future.result().result         # doctest: +SKIP
 
 .. _parameter_drsim_transpile:
@@ -1509,6 +1517,7 @@ simulator.
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
+...     noise_model=True,
 ...     transpile=False)
 >>> result = future.result().result         # doctest: +SKIP
 
@@ -1653,7 +1662,8 @@ Maximum number of qubits for QCDL circuits, as an integer.
 maximum_shots
 -------------
 
-Maximum number of times the circuit can be executed, as an integer.
+Maximum value of the :ref:`parameter_drsim_shots` you can specify, as an
+integer.
 
 >>> from dwave.gate.qcdl.leap import LeapQCDLSimulator
 ...
