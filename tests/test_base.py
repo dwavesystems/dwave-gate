@@ -18,8 +18,9 @@ import numpy as np
 import pytest
 from asteval import Interpreter
 
-from dwave.gate.qcdl import print_qcdl, procedure, qcdl
+from dwave.gate.qcdl import procedure, qcdl
 from dwave.gate.qcdl.base import Variable, VariableExpression
+from dwave.gate.utils.display import print_qcdl
 
 
 def test_QCDLArguments():

@@ -18,11 +18,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .components import QCDLModule, Scope, procedure
-from .constants import LogicalOutcomeToInteger
+from dwave.gate.qcdl.components import QCDLModule, Scope, procedure
+from dwave.gate.qcdl.constants import LogicalOutcomeToInteger
 
 if TYPE_CHECKING:
-    from .registers import Register
+    from dwave.gate.qcdl.registers import Register
 
 
 def _get_receivers(
@@ -71,7 +71,7 @@ def mirror_bool_register(
         .. testcode::
 
             from dwave.gate.qcdl import qcdl, Scope
-            from dwave.gate.qcdl.implementations import mirror_bool_register
+            from dwave.gate.implementations import mirror_bool_register
             from dwave.gate.qcdl.operations import h, mced, x
 
             @qcdl(3)
@@ -110,7 +110,7 @@ def mirror_measurement_register(
     qubits.
 
     May be useful for a :class:`~dwave.gate.qcdl.registers.Register` object used
-    for the outcome of a :func:`~dwave.gate.qcdl.operations.measurement`
+    for the outcome of a :func:`~dwave.gate.qcdl.operations.measure`
     operation. See the :ref:`qcdl_advanced_registers_mirroring` section to learn
     about mirroring.
 
@@ -137,7 +137,7 @@ def mirror_measurement_register(
         .. testcode::
 
             from dwave.gate.qcdl import qcdl, Scope
-            from dwave.gate.qcdl.implementations import mirror_measurement_register
+            from dwave.gate.implementations import mirror_measurement_register
             from dwave.gate.qcdl.operations import h, measure, x
 
             @qcdl(3)

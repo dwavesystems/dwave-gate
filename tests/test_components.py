@@ -22,10 +22,10 @@ from dwave.gate.qcdl import (
     QCDLUserError,
     Register,
     Scope,
-    print_qcdl,
     procedure,
     qcdl,
 )
+from dwave.gate.utils.display import print_qcdl
 from dwave.gate.qcdl.components import (
     IndexerMixin,
     Procedure,
@@ -33,8 +33,8 @@ from dwave.gate.qcdl.components import (
     QCDLStatementBridge,
     objwalk,
 )
-from dwave.gate.qcdl.qcdl_circuit import QCDLCircuit
-from dwave.gate.qcdl.qcdl_models import QCDLStatement
+from dwave.gate.qcdl.circuit import QCDLCircuit
+from dwave.gate.qcdl.models import QCDLStatement
 
 
 def _check_serializable(data):

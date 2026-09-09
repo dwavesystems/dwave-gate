@@ -25,7 +25,8 @@ from dwave.cloud.computation import Future
 from dwave.cloud.solver import StructuredSolver, QCDLSolver
 from dwave.cloud.testing.mocks import qpu_clique_solver_data, qcdl_solver_data
 
-from dwave.gate.qcdl import LeapQCDLSimulator, qcdl
+from dwave.gate.leap import LeapQCDLSimulator
+from dwave.gate.qcdl import qcdl
 from dwave.gate.results import Result
 
 
@@ -54,7 +55,7 @@ class mock_client_factory:
 
 class TestLeapQCDLSimulator:
 
-    @unittest.mock.patch('dwave.gate.qcdl.leap.Client', mock_client_factory)
+    @unittest.mock.patch('dwave.gate.leap.Client', mock_client_factory)
     def test_solver_selection(self):
         simulator = LeapQCDLSimulator()
         try:
@@ -66,7 +67,7 @@ class TestLeapQCDLSimulator:
         finally:
             simulator.close()
 
-    @unittest.mock.patch('dwave.gate.qcdl.leap.Client', mock_client_factory)
+    @unittest.mock.patch('dwave.gate.leap.Client', mock_client_factory)
     def test_solver_selection_override(self):
         # explicit solver selection takes precedence over the defaults
         simulator = LeapQCDLSimulator(solver=dict(name='qcdl_sim_v1'))
@@ -79,7 +80,7 @@ class TestLeapQCDLSimulator:
         with pytest.raises(TypeError):
             LeapQCDLSimulator(defaults='not-a-mapping')
 
-    @unittest.mock.patch('dwave.gate.qcdl.leap.Client', mock_client_factory)
+    @unittest.mock.patch('dwave.gate.leap.Client', mock_client_factory)
     @unittest.mock.patch('dwave.cloud.solver.BaseUnstructuredSolver.sample_problem')
     @unittest.mock.patch('dwave.cloud.solver.QCDLSolver.decode_response')
     def test_run(self, decode_response, base_sample_problem):
@@ -135,7 +136,7 @@ class TestLeapQCDLSimulator:
         finally:
             simulator.close()
 
-    @unittest.mock.patch('dwave.gate.qcdl.leap.Client', mock_client_factory)
+    @unittest.mock.patch('dwave.gate.leap.Client', mock_client_factory)
     def test_close(self):
         simulator = LeapQCDLSimulator()
         with unittest.mock.patch.object(
@@ -143,7 +144,7 @@ class TestLeapQCDLSimulator:
             simulator.close()
         client_close.assert_called_once()
 
-    @unittest.mock.patch('dwave.gate.qcdl.leap.Client', mock_client_factory)
+    @unittest.mock.patch('dwave.gate.leap.Client', mock_client_factory)
     def test_context_mgr(self):
         simulator = LeapQCDLSimulator()
         with unittest.mock.patch.object(

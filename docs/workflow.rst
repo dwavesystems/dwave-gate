@@ -59,13 +59,13 @@ function ``main()`` returns a
 that you can submit to a compiler or simulator in the |cloud|_ service, as
 described in the :ref:`qcdl_submitting_programs` section.
 
-The :func:`~dwave.gate.qcdl.print_qcdl` function can visualize this structure
+The :func:`~dwave.gate.utils.display.print_qcdl` function can visualize this structure
 as readable text, and if run in a `Jupyter <https://jupyter.org/>`_ notebook,
 as a display object.
 
 .. testcode::
 
-    from dwave.gate.qcdl import print_qcdl
+    from dwave.gate.utils.display import print_qcdl
 
     print_qcdl(qcdl_program)
 
@@ -86,7 +86,7 @@ The code above displays the following QCDL program.
         measure([q1], q1, log=True)
     end quantum
 
-If :func:`~dwave.gate.qcdl.print_qcdl` displays poorly, you can output a
+If :func:`~dwave.gate.utils.display.print_qcdl` displays poorly, you can output a
 string by setting the function's ``to_Display=False`` parameter.
 
 .. [#]
@@ -298,7 +298,7 @@ program. You can measure qubits multiple times in a given shot (usually
 resetting the qubit(s) in between).
 
 .. tip::
-    Using the :attr:`~dwave.gate.Result.tags` property is the recommended way
+    Using the :attr:`~dwave.gate.results.Result.tags` property is the recommended way
     to organize measurement data.
 
 Measurement outcomes are handled in three different ways:
@@ -345,7 +345,7 @@ Measurement outcomes are handled in three different ways:
     number of measurements per shot, you cannot relate measurement outcomes with
     the generating instruction.
 
-By default, the :meth:`~dwave.gate.Result.get_counts` method returns all data,
+By default, the :meth:`~dwave.gate.results.Result.get_counts` method returns all data,
 including erasures. To return only results without the ``*``, thereby
 post-selecting on the detected errors, use the ``post_select=True`` flag.
 
@@ -389,8 +389,8 @@ though it were a cross between a print statement and a breakpoint.
 .. todo:: update for Ocean
 
 If your QCDL uses the :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row`
-method, the :class:`~dwave.gate.Result` output contains records that you may
-retrieve with :meth:`~Result.get_records` method.
+method, the :class:`~dwave.gate.results.Result` output contains records that you may
+retrieve with the :attr:`~dwave.gate.results.Result.records` property.
 
 .. testcode::
     :skipif: True
@@ -447,7 +447,7 @@ with 10 rows, each of which have a value of :math:`13`.
 Yield Handling
 ~~~~~~~~~~~~~~
 
-The :class:`~dwave.gate.YieldHandling` class provides a general way of handling
+The :class:`~dwave.gate.results.YieldHandling` class provides a general way of handling
 result distributions. It supports options for renormalizing distributions,
 ignoring erasures, and others.
 
@@ -488,7 +488,7 @@ Alternatively, a ``YieldHandling`` option may be passed to ``get_counts``.
 .. [#]
     If an application you use, for example, in computing statistical errors,
     is not robust to results containing fewer shots than requested, you can use
-    the :class:`~dwave.gate.YieldHandling` class as a workaround *temporarily and
+    the :class:`~dwave.gate.results.YieldHandling` class as a workaround *temporarily and
     with caution*.
 
 .. _qcdl_basic_initialize_reset:
@@ -813,7 +813,7 @@ Guidelines for Using Conditionals
     used in a conditional. Use with caution.
 -   Since a condition can be a Boolean, if you do not intend that, be careful
     that your Python code does not inadvertently cast the condition to a
-    Boolean. (You may find the output of :func:`~dwave.gate.qcdl.print_qcdl`
+    Boolean. (You may find the output of :func:`~dwave.gate.utils.display.print_qcdl`
     helpful for this.)
 -   Your true and false branches must not contain operations on qubits that are
     not a part of the conditional branch.
@@ -1203,8 +1203,8 @@ Guidance on Mirroring
 
 .. seealso::
 
-    :func:`~dwave.gate.qcdl.implementations.mirror_bool_register` and
-    :func:`~dwave.gate.qcdl.implementations.mirror_measurement_register`
+    :func:`~dwave.gate.implementations.mirror_bool_register` and
+    :func:`~dwave.gate.implementations.mirror_measurement_register`
     functions
 
 .. _qcdl_submitting_programs:

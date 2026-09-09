@@ -55,14 +55,12 @@ Examples:
         qcdl_program = qcdl_module_methods()
 """
 
-from collections.abc import Sequence
 from typing import Any, TypeAlias
 
 import numpy as np
 
-from . import implementations
+from .. import implementations
 from .components import QCDLModule
-from .exceptions import QCDLUserError
 from .registers import FixedPointRegister, Register
 
 AngleType: TypeAlias = float | FixedPointRegister
@@ -107,7 +105,8 @@ def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
 
         .. testcode::
 
-            from dwave.gate.qcdl import print_qcdl, qcdl
+            from dwave.gate.qcdl import qcdl
+            from dwave.gate.utils.display import print_qcdl
             from dwave.gate.qcdl.operations import barrier, measure, x
 
             @qcdl()

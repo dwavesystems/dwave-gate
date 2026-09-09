@@ -43,7 +43,7 @@ that supports QCDL and submit the QCDL program via ``run``:
 
 .. code-block:: python
 
-    from dwave.gate.qcdl.leap import LeapQCDLSimulator
+    from dwave.gate.leap import LeapQCDLSimulator
 
     simulator = LeapQCDLSimulator()
     future = simulator.run(qcdl_program, shots=3)
