@@ -10,4 +10,5 @@ API Reference
     qcdl
     registers
     operations
+    results
     exceptions
