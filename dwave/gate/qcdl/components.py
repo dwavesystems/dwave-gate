@@ -35,7 +35,7 @@ import numpy as np
 from .base import IndexerMixin, QCDLArgument, QCDLModuleContainerBase
 from .constants import MIN_INT_REGISTER_VALUE, NUM_RECS
 from .exceptions import QCDLInternalError, QCDLUserError
-from .qcdl_models import (
+from .models import (
     QCDLModuleName,
     QCDLProcedureDef,
     QCDLSignature,
@@ -51,10 +51,10 @@ from .registers import (
     arbitrary_function,
 )
 from .statement import Statement  # noqa: F401  kept for public API
-from .utils import map_container, objwalk
+from ._utils import map_container, objwalk
 
 if TYPE_CHECKING:
-    from .qcdl_circuit import QCDLCircuit
+    from .circuit import QCDLCircuit
 
 logger = logging.getLogger(__name__)
 
@@ -1158,8 +1158,9 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
 
             .. testcode::
 
-                from dwave.gate.qcdl import print_qcdl, qcdl
+                from dwave.gate.qcdl import qcdl
                 from dwave.gate.qcdl.operations import measure, x
+                from dwave.gate.utils.display import print_qcdl
 
                 @qcdl(2)
                 def add_comment(q0, q1):
@@ -1269,6 +1270,7 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
 
                 from dwave.gate.qcdl import qcdl, Register
                 from dwave.gate.qcdl.operations import measure, x
+                from dwave.gate.utils.display import print_qcdl
 
                 @qcdl(1)
                 def cpu_example(q0):
@@ -2288,7 +2290,8 @@ class Scope(QCDLModuleContainer):
 
             .. testcode::
 
-                from dwave.gate.qcdl import print_qcdl, qcdl, Scope
+                from dwave.gate.qcdl import qcdl, Scope
+                from dwave.gate.utils.display import print_qcdl
                 from dwave.gate.qcdl.operations import measure, sx
 
                 @qcdl(2)

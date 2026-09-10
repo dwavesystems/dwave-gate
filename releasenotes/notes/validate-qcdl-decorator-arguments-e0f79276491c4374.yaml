@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    Validate the arguments of the ``@qcdl`` decorator and the signature of the
+    function it decorates. Because qubits are injected by name, a parameter that
+    is not a ``q<N>`` previously received nothing and Python's own error named
+    only the parameter, giving no hint that qubits were involved, and a
+    generated qubit with no parameter to receive it was dropped from the program
+    silently. Both now raise and explain the ``q<N>`` rule and which qubits were
+    supplied. ``num_qubits`` is checked when the decorator is applied, including
+    a bare ``@qcdl`` that would otherwise be passed the decorated function as
+    the qubit count.

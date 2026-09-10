@@ -40,7 +40,7 @@ from .constants import (
     UNSIGNED_MAX_INT_REGISTER_VALUE,
 )
 from .exceptions import QCDLInternalError, QCDLUserError
-from .utils import is_qubit_or_coupler_name
+from ._utils import is_qubit_or_coupler_name
 
 if TYPE_CHECKING:
     from .components import Procedure, QCDLModule

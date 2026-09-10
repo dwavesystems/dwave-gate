@@ -55,14 +55,12 @@ Examples:
         qcdl_program = qcdl_module_methods()
 """
 
-from collections.abc import Sequence
 from typing import Any, TypeAlias
 
 import numpy as np
 
-from . import implementations
+from .. import implementations
 from .components import QCDLModule
-from .exceptions import QCDLUserError
 from .registers import FixedPointRegister, Register
 
 AngleType: TypeAlias = float | FixedPointRegister
@@ -106,9 +104,9 @@ def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
     Examples:
 
         .. testcode::
-            :skipif: True   # TODO: figure out why this test fails
 
-            from dwave.gate.qcdl import print_qcdl, qcdl
+            from dwave.gate.qcdl import qcdl
+            from dwave.gate.utils.display import print_qcdl
             from dwave.gate.qcdl.operations import barrier, measure, x
 
             @qcdl()
@@ -121,17 +119,22 @@ def barrier(*qubits: QCDLModule, label: str | None = None) -> None:
             qcdl_program = use_barrier()
             print_qcdl(qcdl_program)
 
+        .. testcode::
+            :hide:
+
+            print(print_qcdl(qcdl_program))
+
+
         The code above prints the following QCDL.
 
         .. testoutput::
-            :skipif: True   # TODO: figure out why this test fails
             :options: +NORMALIZE_WHITESPACE
 
             begin quantum
-                x(q0)
+                x([q0], q0)
                 q0.barrier(label="Separate two X gates")
-                x(q0)
-                measure(q0, log=True)
+                x([q0], q0)
+                measure([q0], q0, log=True)
             end quantum
     """
     kwargs = {}
@@ -310,7 +313,6 @@ def y(qubit: QCDLModule) -> None:
 
 def sy(qubit: QCDLModule) -> None:
     r"""SQRT of Y gate.
-    TODO it's not a qiskit gate
 
     Args:
         qubit: Qubit on which to apply the gate.
@@ -334,7 +336,6 @@ def sy(qubit: QCDLModule) -> None:
 
 def sydg(qubit: QCDLModule) -> None:
     r"""SQRT of Y_adjoint gate.
-    TODO it's not a qiskit gate
 
     Args:
         qubit: Qubit on which to apply the gate.

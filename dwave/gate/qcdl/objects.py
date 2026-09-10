@@ -28,7 +28,7 @@ from .base import VariableExpression
 
 # -----------------------------------------------------------------------------
 # custom QCDL parse tree elements
-from .utils import simplify_float
+from ._utils import simplify_float
 
 
 def format_signature(

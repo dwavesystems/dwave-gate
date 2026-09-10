@@ -32,7 +32,7 @@ import polars as pl
 
 from dwave.gate.qcdl import LogicalOutcomeToInteger
 from dwave.gate.qcdl.records import RecordFormat
-from dwave.gate.qcdl.qcdl_models import QCDLProgram
+from dwave.gate.qcdl.models import QCDLProgram
 
 logger = logging.getLogger(__name__)
 
@@ -382,7 +382,7 @@ class Result(BaseModel):
     executed_qcdl: QCDLProgram | None = Field(
         default=None,
         description=(
-            "The :class:`~dwave.gate.qcdl.qcdl_models.QCDLProgram` payload"
+            "The :class:`~dwave.gate.qcdl.models.QCDLProgram` payload"
             " representing the program that was executed."
         ),
     )
