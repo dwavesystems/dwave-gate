@@ -12,6 +12,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+from dwave.gate.utils.display import (
+    blacken_qcdl_str,
+    display_qcdl,
+    print_qcdl,
+)
 from dwave.gate.utils.tunable_noise_model_helpers import (
     create_oneq_gate_noise, 
     create_twoq_gate_noise, 
@@ -22,4 +27,7 @@ __all__ = [
     "create_oneq_gate_noise", 
     "create_twoq_gate_noise", 
     "create_measurement_misassignment_noise",
+    "blacken_qcdl_str",
+    "display_qcdl",
+    "print_qcdl",
 ]

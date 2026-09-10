@@ -17,14 +17,23 @@ Classes
     :show-inheritance:
     :inherited-members:
 
+.. currentmodule:: dwave.gate.leap
+
+.. autoclass:: LeapQCDLSimulator
+    :members:
+    :show-inheritance:
+    :inherited-members:
+
 Utilities
 =========
 
-.. currentmodule:: dwave.gate.qcdl
+.. currentmodule:: dwave.gate.utils.display
 
 .. autofunction:: print_qcdl
 
 .. autofunction:: display_qcdl
+
+.. currentmodule:: dwave.gate.qcdl
 
 .. autoclass:: LogicalOutcomeToInteger
     :members:
@@ -33,7 +42,7 @@ Utilities
 Mirroring Utilities
 ~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: dwave.gate.qcdl.implementations
+.. automodule:: dwave.gate.implementations
    :members:
 
 Decorators
@@ -58,14 +67,14 @@ These classes are of interest mostly to developers of QCDL.
     :members: QCDLProgram, QCDLModule, QCDLModuleContainer, QCDLProcedureDef,
         QCDLStatement
 
-.. automodule:: dwave.gate.qcdl.qcdl_circuit
+.. automodule:: dwave.gate.qcdl.circuit
     :show-inheritance:
     :members: QCDLCircuit
 
 .. automodule:: dwave.gate.qcdl.components
     :show-inheritance:
-    :members: Procedure, QCDLModuleName
+    :members: Procedure
 
-.. automodule:: dwave.gate.qcdl.qcdl_models
+.. automodule:: dwave.gate.qcdl.models
     :show-inheritance:
-    :members: QCDLSignature
+    :members: QCDLModuleName, QCDLSignature
