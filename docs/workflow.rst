@@ -167,11 +167,6 @@ transpilation collapses your QCDL.
         barrier(q0)
         x(q0)
 
-.. note::
-    A :func:`~dwave.gate.qcdl.operations.barrier` instruction does not necessarily
-    imply a :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` (see the
-    :ref:`qcdl_advanced_synchronization` section).
-
 .. [#]
     When the transpiler is not used, the :func:`~dwave.gate.qcdl.operations.barrier`
     instruction might affect some circuit modifications.
@@ -1207,13 +1202,559 @@ Guidance on Mirroring
     :func:`~dwave.gate.implementations.mirror_measurement_register`
     functions
 
+
+.. _qcdl_simulator:
+
+QPU Simulator
+=============
+
+the |cloud|_ service provides a Monte Carlo simulator of QCDL programs. This is
+built on top of Qiskit's
+`AerStatevector <https://qiskit.github.io/qiskit-aer/stubs/qiskit_aer.quantum_info.AerStatevector.html>`_.
+
+This simulator closely models the classical and quantum operation of the QPU
+with varying approximations. It instantiates a "state" representing both
+classical and quantum components of the hardware and then executes your QCDL
+instructions one at a time to update that state. As a Monte Carlo simulator, it
+is significantly slower than a "sampling" simulator and scales linearly with the
+number of shots; however, its operation is
+`embarrassingly parallel <https://en.m.wikipedia.org/wiki/Embarrassingly_parallel>`_.
+
+.. tip::
+    Accuracy bears a simulation cost and error handling increases circuit
+    complexity. It is advisable to start circuit development against the ideal
+    simulator and then introduce error modeling.
+
+    .. for future consideration
+        in a controlled way. For example, start by simulating full-precision
+        registers before simulating reduced-precision registers; start with
+        ideal quantum operations before introducing erasures.
+
+        Amos: Update the above paragraph as new features become available
+
+The simulator in the |cloud|_ service supports two modes of simulations. The
+following table compares these two simulation modes.
+
+.. list-table::
+    :header-rows: 1
+
+    *   -   Characteristic
+        -   Statevector Simulation
+        -   Dual-Rail Erasure Simulation
+    *   -   Noise model.
+        -   Solver parameter :ref:`parameter_drsim_noise_model` set to
+            ``False``.
+
+            Useful during initial testing of QCDL programs before introducing
+            noise.
+        -   Solver parameter :ref:`parameter_drsim_noise_model` set to
+            ``True``.
+
+            This simulation is useful for exploring the impact of erasures on
+            QCDL programs. It operates by randomly applying Pauli errors,
+            leakages, and seepages after quantum gates and idles.
+    *   -   Runtime.
+        -   Scales as :math:`O(s*g*2^n)` where :math:`n` is the number of qubits,
+            :math:`s` the number of shots, and :math:`g` the number of gates.
+
+        -   Slower but same scaling.
+    *   -   Supported gates.
+        -   All gates available in Qiskit (no transpilation required).
+        -   Subset of gates (transpilation required).
+    *   -   Support for errors.
+        -   No support. (Returns :math:`0` for ``mced``, signifying no leak.)
+        -   Supports the ``mced`` instruction to detect if the qubit has been
+            erased, and the ``leak`` and ``seep`` instructions to simulate
+            leakage and seepage errors.
+
+
+
 .. _qcdl_submitting_programs:
 
 Submitting Programs
 ===================
 
-.. todo:: add references to places such as
-    https://docs.dwavequantum.com/en/latest/quantum_research/index_get_started.html
+The :ref:`QPU simulator <qcdl_simulator>` in the |cloud|_ service is intended to
+simulate :ref:`gate-model quantum computers <qpu_gate_model_intro>` by executing
+programs formulated as QCDL.
+
+The following documentation describes how to work with the |cloud|_ service:
+
+*   The :ref:`index_leap_sapi` section describes the |cloud|_ service.
+*   The :ref:`ocean_leap_authorization` section walks you through authorizing
+    your Ocean client to access the simulator in the |cloud|_ service.
+*   The :ref:`ocean_install` section explains how to install Ocean software.
+
+Descriptions of the supported parameters and simulator properties are provided
+in the :ref:`qcdl_simulator_parameters` and :ref:`qcdl_simulator_properties`
+sections.
+
+.. _qcdl_submitting_programs_example:
+
+Example Submission
+------------------
+
+The example below submits the following
+`Bell state <https://en.wikipedia.org/wiki/Bell_state>`_ QCDL program.
+
+.. testcode::
+
+    from dwave.gate.qcdl import qcdl
+    from dwave.gate.qcdl.operations import cx, h, measure
+
+    @qcdl(2)
+    def bell_program(q0, q1):
+        h(q0)
+        cx(q0, q1)
+        measure(q0)
+        measure(q1)
+
+    simulator_job_submission = bell_program()
+
+Submit the program above to a simulator for a dual-rail QPU with 17 qubits,
+``DRsim_17qubits``, in the |cloud|_ service.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
+>>> future = simulator.run(                 # doctest: +SKIP
+...     simulator_job_submission,
+...     qpu='DRsim_17qubits')
+>>> result = future.result().result         # doctest: +SKIP
+
+The returned result is a 3D array of ``(measurements per shot, shots, qubits)``.
+
+>>> print(result.get_memory().shape)        # doctest: +SKIP
+(1, 1000, 2)
+
+.. todo:: describe the results
+
+.. _qcdl_simulator_parameters:
+
+Simulator Parameters
+====================
+
+The examples in this section submit the QCDL program defined in the
+:ref:`qcdl_submitting_programs_example` section.
+
+
+.. _parameter_drsim_noise_model:
+
+noise_model
+-----------
+
+Boolean flag that applies a noise model.
+
+*   ``noise_model=True``: Apply a noise model.
+*   ``noise_model=False``: Do not apply a noise model (simulate an ideal QPU,
+    as described in the :ref:`qcdl_simulator` section).
+
+The default value is specified by the :ref:`property_drsim_default_noise_model`
+property.
+
+This example applies a noise model for the program submitted to the simulator.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
+>>> future = simulator.run(                 # doctest: +SKIP
+...     simulator_job_submission,
+...     noise_model=True)
+>>> result = future.result().result         # doctest: +SKIP
+
+.. _parameter_drsim_qpu:
+
+qpu
+---
+
+The QPU to simulate, formatted as a string.
+
+The :ref:`property_drsim_supported_qpu_strings` property lists the supported
+values. The default QPU to simulate is specified by the
+:ref:`property_drsim_default_qpu` property.
+
+This example submits a QCDL program to a dual-rail QPU simulator with 21 qubits,
+``DRsim_21qubits`` .
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
+>>> future = simulator.run(                 # doctest: +SKIP
+...     simulator_job_submission,
+...     qpu='DRsim_21qubits')
+>>> result = future.result().result         # doctest: +SKIP
+
+
+.. _parameter_drsim_repeat_until_shots_requested:
+
+repeat_until_shots_requested
+----------------------------
+
+Boolean flag to run the circuit repeatedly until a target number of
+non-erased measurements are accumulated.
+
+Running a circuit might return, under noisy conditions, measurements that are
+declared to be “erased”, as described in the :ref:`qcdl_basic_measurements`
+section. To try to achieve the required number of non-erasure measurements
+indicted by the :ref:`parameter_drsim_shots` parameter, as counted after
+post-selection to remove "splats" (see the :ref:`qcdl_basic_result_records`
+section), you can select to repeatedly run the circuit. With yield defined as
+the percentage of shots without erasures, the required number of executions (and
+runtime) is proportional to the value of the :ref:`parameter_drsim_shots`
+parameter and the reciprocal of the yield, and grows exponentially with
+increased noise.
+
+*   ``repeat_until_shots_requested=True``: Repeatedly run the circuit until
+    the requested number of non-erasure measurements, indicated by the
+    :ref:`parameter_drsim_shots` parameter, is accumulated with
+    ``post_select=True``. Under noisy conditions the circuit might be executed a
+    greater number of times than set by the :ref:`parameter_drsim_shots`
+    parameter.
+*   ``repeat_until_shots_requested=False``: Run the circuit the number of times
+    set by the :ref:`parameter_drsim_shots` parameter. Under noisy conditions,
+    fewer non-erasure measurements than indicated by the
+    :ref:`parameter_drsim_shots` parameter might be accumulated with
+    ``post_select=True``.
+
+The default value is set by the
+:ref:`property_drsim_default_repeat_until_shots_requested` property.
+
+If runtime exceeds the value you specified in the
+:ref:`parameter_drsim_time_limit` parameter (or the default value of the
+:ref:`property_drsim_default_time_limit_s` property), execution
+terminates.
+
+This example repeatedly executes the circuit, under noisy conditions, to
+accumulate 10 non-erasure measurements.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
+>>> future = simulator.run(                 # doctest: +SKIP
+...     simulator_job_submission,
+...     shots=10,
+...     noise_model=True,
+...     repeat_until_shots_requested=True)
+>>> result = future.result().result         # doctest: +SKIP
+
+The sum of non-splat states in the returned results is the requested number of
+shots:
+
+>>> print(sum(result.get_counts(post_select=True)[0].values())) # doctest: +SKIP
+10
+
+.. _parameter_drsim_shots:
+
+shots
+-----
+
+The number of measurements to run, formatted as an integer.
+
+Your QCDL program is executed once for each requested measurement.
+
+The specified value must not exceed the value of the
+:ref:`property_drsim_maximum_shots` property. Execution time is limited by the
+value you specified in the :ref:`parameter_drsim_time_limit` parameter (or
+the default value of the :ref:`property_drsim_default_time_limit_s` property).
+
+The default value is to measure the number of times specified by the
+:ref:`property_drsim_default_shots` property.
+
+This example executes the circuit 1000 times.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
+>>> future = simulator.run(                 # doctest: +SKIP
+...     simulator_job_submission,
+...     shots=1000)
+>>> result = future.result().result         # doctest: +SKIP
+
+.. _parameter_drsim_time_limit:
+
+time_limit
+----------
+
+Specifies the maximum runtime, in seconds, the solver is allowed to work on the
+given program. Can be a float or integer.
+
+The specified time must be between the values of the
+:ref:`property_drsim_maximum_time_limit_s` and
+:ref:`property_drsim_minimum_time_limit_s` properties.
+
+The default runtime limit is specified by the
+:ref:`property_drsim_default_time_limit_s` property.
+
+This example sets a maximum runtime of 10 minutes.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
+>>> future = simulator.run(                 # doctest: +SKIP
+...     simulator_job_submission,
+...     time_limit=10*60)
+>>> result = future.result().result         # doctest: +SKIP
+
+.. _parameter_drsim_transpile:
+
+transpile
+---------
+
+Boolean flag to rewrite the submitted QCDL circuit to use the QPU's supported
+basis gates and topology, as described in the :ref:`qcdl_basic_transpilation`
+section.
+
+*   ``transpile=True``: Transpile the circuit.
+*   ``transpile=False``: Run the circuit exactly as specified in the submitted
+    QCDL or return an error.
+
+The default value is specified by the :ref:`property_drsim_default_transpile`
+property.
+
+This example requires that the QCDL circuit be submitted as written to the
+simulator.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
+>>> future = simulator.run(                 # doctest: +SKIP
+...     simulator_job_submission,
+...     noise_model=True,
+...     transpile=False)
+>>> result = future.result().result         # doctest: +SKIP
+
+
+.. _qcdl_simulator_properties:
+
+Simulator Properties
+====================
+
+.. _property_drsim_category:
+
+category
+--------
+
+Type of solver, as a string.
+
+*   ``software-gate``: Gate-model simulator.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()     # doctest: +SKIP
+>>> simulator.properties["category"]    # doctest: +SKIP
+'software-gate'
+
+.. _property_drsim_default_noise_model:
+
+default_noise_model
+-------------------
+
+Default setting for the application of a noise model, as a Boolean.
+
+*   ``True``: A noise model is applied.
+*   ``False``: Simulates an ideal QPU, as described in the
+    :ref:`qcdl_simulator` section.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
+>>> simulator.properties["default_noise_model"]     # doctest: +SKIP
+False
+
+.. _property_drsim_default_qpu:
+
+default_qpu
+-----------
+
+Default selection of the QPU to simulate, as a string.
+
+Supported QPUs are listed in the :ref:`property_drsim_supported_qpu_strings`
+property.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
+>>> simulator.properties["default_qpu"]     # doctest: +SKIP
+'DRsim_21qubits'
+
+.. _property_drsim_default_repeat_until_shots_requested:
+
+default_repeat_until_shots_requested
+------------------------------------
+
+Default setting, as a Boolean, for rerunning the circuit until the requested
+number of measurements is accumulated, where the accumulated measurements do not
+include erasures (see the :ref:`qcdl_basic_result_records` section).
+
+*   ``True``: Repeatedly rerun the circuit.
+*   ``False``: Run the circuit the number of times set by the
+    :ref:`parameter_drsim_shots` parameter.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()                                 # doctest: +SKIP
+>>> simulator.properties["default_repeat_until_shots_requested"]    # doctest: +SKIP
+False
+
+.. _property_drsim_default_shots:
+
+default_shots
+-------------
+
+Default setting for the number of measurements to run (times to execute your
+QCDL circuit), as an integer. With dual-rail QPUs, a measurement result can be a
+"splat" (see the :ref:`qcdl_basic_measurements` section).
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
+>>> simulator.properties["default_shots"]   # doctest: +SKIP
+1000
+
+.. _property_drsim_default_time_limit_s:
+
+default_time_limit_s
+--------------------
+
+Default maximum runtime, in seconds, the solver is allowed to work on the
+given program, as a float.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
+>>> simulator.properties["default_time_limit_s"]      # doctest: +SKIP
+2700
+
+.. _property_drsim_default_transpile:
+
+default_transpile
+-----------------
+
+Default setting, as a Boolean, for :ref:`transpiling <qcdl_basic_transpilation>`
+the submitted QCDL program.
+
+*   ``True``: Transpile the program.
+*   ``False``: Run the circuit exactly as specified in the submitted
+    QCDL or return an error.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
+>>> simulator.properties["default_transpile"]       # doctest: +SKIP
+True
+
+.. _property_drsim_maximum_num_qubits:
+
+maximum_num_qubits
+------------------
+
+Maximum number of qubits for QCDL circuits, as an integer.
+
+.. note:: :ref:`Transpilation <qcdl_basic_transpilation>` can add and remove
+    qubits in your QCDL.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()                     # doctest: +SKIP
+>>> simulator.properties["maximum_num_qubits"]          # doctest: +SKIP
+21
+
+.. _property_drsim_maximum_shots:
+
+maximum_shots
+-------------
+
+Maximum value of the :ref:`parameter_drsim_shots` you can specify, as an
+integer.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()             # doctest: +SKIP
+>>> simulator.properties["maximum_shots"]       # doctest: +SKIP
+1000000
+
+.. _property_drsim_maximum_time_limit_s:
+
+maximum_time_limit_s
+--------------------
+
+Maximum time, in seconds as a float, that your submitted circuit can run.
+
+This value limits the range of values you can set on the
+:ref:`parameter_drsim_time_limit` parameter.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
+>>> simulator.properties["maximum_time_limit_s"]    # doctest: +SKIP
+2700
+
+.. _property_drsim_minimum_shots:
+
+minimum_shots
+-------------
+
+Minimum number of times the circuit can be executed, as an integer.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()             # doctest: +SKIP
+>>> simulator.properties["minimum_shots"]       # doctest: +SKIP
+1
+
+.. _property_drsim_minimum_time_limit_s:
+
+minimum_time_limit_s
+--------------------
+
+Minimum time, in seconds as a float, you can specify for the runtime limit (the
+:ref:`parameter_drsim_time_limit` parameter) on your submitted circuit.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
+>>> simulator.properties["minimum_time_limit_s"]    # doctest: +SKIP
+1
+
+.. _property_drsim_quota_conversion_rate:
+
+quota_conversion_rate
+---------------------
+
+Rate at which user or project quota is consumed for the solver as a ratio to
+QPU solver usage. Different solver types may consume quota at different rates.
+
+Time is deducted from your quota according to:
+
+.. math::
+
+    \frac{num\_seconds}{quota\_conversion\_rate}
+
+See the :ref:`leap_hybrid_usage_charges` section for more information.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
+>>> simulator.properties["quota_conversion_rate"]   # doctest: +SKIP
+1
+
+.. _property_drsim_supported_qpu_strings:
+
+supported_qpu_strings
+---------------------
+
+Names of supported simulators, as a list of strings.
+
+Available QPUs are the following:
+
+*   ``DRsim_17qubits``: Dual-rail QPU with 17 qubits.
+*   ``DRsim_21qubits``: Dual-rail QPU with 21 qubits.
+
+>>> from dwave.gate.leap import LeapQCDLSimulator
+...
+>>> simulator = LeapQCDLSimulator()                 # doctest: +SKIP
+>>> simulator.properties["supported_qpu_strings"]   # doctest: +SKIP
+['DRsim_17qubits', 'DRsim_21qubits']
 
 .. unsupported currently
 
@@ -1241,108 +1782,8 @@ Submitting Programs
         calibrated parameters are used. Some applications may be able to reuse a
         previously compiled ``.jmz`` to save time but ``.jmz`` files may expire.
 
-Execution
----------
-
 .. compilation unsupported currently
 
     You can simulate either the QCDL itself directly or a compiled version of the
     QCDL (a ``.jmz`` file).
-
-.. todo:: update for Ocean
-
-.. _qcdl_submitting_simulator:
-
-Simulator
----------
-
-Ocean software provides a Monte Carlo simulator of QCDL programs. This is an
-ideal simulator built on top of Qiskit's
-`AerStatevector <https://qiskit.github.io/qiskit-aer/stubs/qiskit_aer.quantum_info.AerStatevector.html>`_.
-
-This simulator closely models the classical and quantum operation of the QPU
-with varying approximations. It instantiates a "state" representing both
-classical and quantum components of the hardware and then executes your QCDL
-instructions one at a time to update that state. As a Monte Carlo simulator, it
-is significantly slower than a "sampling" simulator and scales linearly with the
-number of shots; however, its operation is
-`embarrassingly parallel <https://en.m.wikipedia.org/wiki/Embarrassingly_parallel>`_.
-
-.. tip::
-    Accuracy bears a simulation cost and error handling increases circuit
-    complexity. It is advisable to start circuit development against the ideal
-    simulator and then introduce error modeling in a controlled way. For
-    example, start by simulating full-precision registers before simulating
-    reduced-precision registers; start with ideal quantum operations before
-    introducing erasures.
-
-The simulator in the |cloud|_ service supports two modes of simulations:
-
-*   Statevector Simulation
-
-    This simulation is useful during initial testing of
-    QCDL programs before introducing noise.
-*   Dual-Rail Erasure Simulation
-
-    This simulation is useful for exploring the impact of erasures on QCDL
-    programs. It represents the quantum state as a Statevector with an array of
-    booleans (which mark whether a qubit has leaked or not). It operates by
-    randomly applying Pauli errors, leakages, and seepages after quantum gates
-    and idles.
-
-The following table compares these two simulation modes.
-
-.. list-table::
-    :header-rows: 1
-
-    *   -   Characteristic
-        -   Statevector Simulation
-        -   Dual-Rail Erasure Simulation
-    *   -   Run time
-        -   Scales as :math:`O(2^n)` where :math:`n` is the number of qubits.
-        -   Slightly slower than statevector simulation but same scaling.
-    *   -   Topology
-        -   No restrictions.
-        -   Depends on the noise model and the coupling map, options which model the selected QPU by default.
-    *   -   Depends on the noise model but which will represent the selected QPU by default.
-        -   All basis gates available in Qiskit (no transpilation require).
-        -   Subset of basis gates (transpilation required).
-    *   -   Support for errors
-        -   No support.
-        -   Supports the ``mced`` instruction to detect if the qubit has been
-            erased, and the ``leak`` and ``seep`` instructions to simulate
-            leakage and seepage errors.
-
-Simulator Configuration
-~~~~~~~~~~~~~~~~~~~~~~~
-
-..  todo:: Update the rest once I can test in Leap
-
-.. list-table::
-    :header-rows: 1
-
-    *   -   Option
-        -   Description
-        -   Type
-        -   Default
-    *   -   ``transpile``
-        -   To run the circuit verbatim (error if incompatible), set
-            ``transpile=False``.
-        -   bool
-        -   True
-    *   -   ``timeout``
-        -   For faster feedback, use a lower timeout (in seconds) when
-            troubleshooting circuits with loops.
-        -   float
-        -   45 minutes
-    *   -   ``noise_model``
-        -   If ``noise_model=None``, no noise model is used; otherwise, specify
-            the name of the noise model to use.
-        -   ``None``, ``"conservative_c8"``, ``"simple_default_model"``
-        -   ``"conservative_c8"``
-    *   -   ``use_registers``
-        -   If true, the bit-width restrictions are simulated; otherwise, the
-            classical calculations are done in full precision.
-        -   bool
-        -   False
 
