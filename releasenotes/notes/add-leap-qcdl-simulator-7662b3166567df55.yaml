@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    Add ``dwave.gate.qcdl.LeapQCDLSimulator``, a client for running QCDL
+    programs on the Dual-Rail simulator hosted in the Leap service. By default,
+    it selects the latest accessible QCDL software solver, with solver
+    selection and connection configurable via standard
+    ``dwave.cloud.client.Client`` options. Its ``run`` method submits a QCDL
+    program together with solver-specific job parameters and returns the
+    decoded ``dwave.gate.results.Result`` in a ``concurrent.futures.Future``.

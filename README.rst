@@ -38,21 +38,16 @@ that can be passed to a compiler or simulator:
 
     qcdl_program = main()
 
-To run the program on a solver, use the Ocean SDK's cloud client to locate a solver
-that supports QCDL and submit the dictionary via ``sample_qcdl``:
+To run the program on a solver, use the ``LeapQCDLSimulator`` to locate a solver
+that supports QCDL and submit the QCDL program via ``run``:
 
 .. code-block:: python
 
-    import orjson
-    from dwave.cloud import Client
-    from dwave.gate.results import Result
+    from dwave.gate.leap import LeapQCDLSimulator
 
-    client = Client.from_config()
-    solver = client.get_solver(supported_problem_types__contains="qcdl")
-
-    response = solver.sample_qcdl(qcdl_program, shots=3)
-    answer = orjson.loads(response.answer_data.read())
-    result = Result(**answer)
+    simulator = LeapQCDLSimulator()
+    future = simulator.run(qcdl_program, shots=3)
+    result = future.result().result
 
 Access measurements and sample counts by calling 
 ``result.measurements`` or ``result.get_counts()`` respectively.
