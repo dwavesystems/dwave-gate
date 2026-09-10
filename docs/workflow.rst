@@ -167,11 +167,6 @@ transpilation collapses your QCDL.
         barrier(q0)
         x(q0)
 
-.. note::
-    A :func:`~dwave.gate.qcdl.operations.barrier` instruction does not necessarily
-    imply a :meth:`~dwave.gate.qcdl.QCDLModuleContainer.sync` (see the
-    :ref:`qcdl_advanced_synchronization` section).
-
 .. [#]
     When the transpiler is not used, the :func:`~dwave.gate.qcdl.operations.barrier`
     instruction might affect some circuit modifications.
@@ -1235,6 +1230,8 @@ number of shots; however, its operation is
         registers before simulating reduced-precision registers; start with
         ideal quantum operations before introducing erasures.
 
+        Amos: Update the above paragraph as new features become available
+
 The simulator in the |cloud|_ service supports two modes of simulations. The
 following table compares these two simulation modes.
 
@@ -1257,7 +1254,8 @@ following table compares these two simulation modes.
             QCDL programs. It operates by randomly applying Pauli errors,
             leakages, and seepages after quantum gates and idles.
     *   -   Runtime.
-        -   Scales as :math:`O(2^n)` where :math:`n` is the number of qubits.
+        -   Scales as :math:`O(s*g*2^n)` where :math:`n` is the number of qubits,
+            :math:`s` the number of shots, and :math:`g` the number of gates.
 
             Faster.
         -   Slower but same scaling.
@@ -1265,7 +1263,7 @@ following table compares these two simulation modes.
         -   All gates available in Qiskit (no transpilation required).
         -   Subset of gates (transpilation required).
     *   -   Support for errors.
-        -   No support.
+        -   No support. (Returns :math:`0` for ``mced``, signifying no leak.)
         -   Supports the ``mced`` instruction to detect if the qubit has been
             erased, and the ``leak`` and ``seep`` instructions to simulate
             leakage and seepage errors.
@@ -1324,6 +1322,11 @@ Submit the program above to a simulator for a dual-rail QPU with 17 qubits,
 ...     simulator_job_submission,
 ...     qpu='DRsim_17qubits')
 >>> result = future.result().result         # doctest: +SKIP
+
+The returned result is a 3D array of ``(measurements per shot, shots, qubits)``.
+
+>>> print(result.get_memory().shape)        # doctest: +SKIP
+(1, 1000, 2)
 
 .. todo:: describe the results
 
@@ -1399,7 +1402,7 @@ post-selection to remove "splats" (see the :ref:`qcdl_basic_result_records`
 section), you can select to repeatedly run the circuit. With yield defined as
 the percentage of shots without erasures, the required number of executions (and
 runtime) is proportional to the value of the :ref:`parameter_drsim_shots`
-parameter and the reciprocal of the yield, and can grow exponentially with
+parameter and the reciprocal of the yield, and grows exponentially with
 increased noise.
 
 *   ``repeat_until_shots_requested=True``: Repeatedly run the circuit until
