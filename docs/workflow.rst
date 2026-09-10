@@ -1209,7 +1209,7 @@ QPU Simulator
 =============
 
 the |cloud|_ service provides a Monte Carlo simulator of QCDL programs. This is
-an ideal simulator built on top of Qiskit's
+built on top of Qiskit's
 `AerStatevector <https://qiskit.github.io/qiskit-aer/stubs/qiskit_aer.quantum_info.AerStatevector.html>`_.
 
 This simulator closely models the classical and quantum operation of the QPU
@@ -1257,7 +1257,6 @@ following table compares these two simulation modes.
         -   Scales as :math:`O(s*g*2^n)` where :math:`n` is the number of qubits,
             :math:`s` the number of shots, and :math:`g` the number of gates.
 
-            Faster.
         -   Slower but same scaling.
     *   -   Supported gates.
         -   All gates available in Qiskit (no transpilation required).
