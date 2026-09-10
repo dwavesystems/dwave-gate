@@ -512,11 +512,11 @@ You can also reset qubits individually.
 .. testcode::
 
     from dwave.gate.qcdl import qcdl
-    from dwave.gate.qcdl.operations import initialize
+    from dwave.gate.qcdl.operations import reset
 
     @qcdl(1)
     def reset_example(q0):
-        q0.reset()
+        reset(q0)
 
 
 .. _qcdl_basic_transpilation:
@@ -821,7 +821,7 @@ This example detects and resets a qubit if it has been erased.
 .. testcode::
 
     from dwave.gate.qcdl import qcdl
-    from dwave.gate.qcdl.operations import mced
+    from dwave.gate.qcdl.operations import mced, reset
 
     @qcdl(1)
     def detect_erasure_example(q0):
@@ -829,7 +829,7 @@ This example detects and resets a qubit if it has been erased.
         erased <<= 0
         mced(q0, register=erased)
         with q0.If(erased == 1):
-            q0.reset()
+            reset(q0)
 
 This example conditions on a classical register.
 

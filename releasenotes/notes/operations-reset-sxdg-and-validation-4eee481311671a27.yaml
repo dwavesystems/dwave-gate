@@ -1,0 +1,31 @@
+---
+features:
+  - |
+    Add the ``reset`` operation to ``dwave.gate.qcdl.operations``, which resets
+    a single qubit to :math:`|0\rangle`. Unlike ``initialize``, which resets
+    every qubit in the program, ``reset`` acts on one qubit and has
+    deterministic duration, so it can be used inside a conditional branch.
+  - |
+    Add the ``sxdg`` operation to ``dwave.gate.qcdl.operations``, the adjoint
+    of the ``sx`` (:math:`\sqrt X`) gate.
+  - |
+    Validate the qubit arguments of every operation in
+    ``dwave.gate.qcdl.operations``, raising ``QCDLUserError`` when an argument
+    is not a qubit, when an operation taking a variable number of qubits is
+    given none, or when an operation requiring distinct qubits is given the
+    same qubit for more than one of them.
+upgrade:
+  - |
+    Operations in ``dwave.gate.qcdl.operations`` now raise ``QCDLUserError``
+    for invalid qubit arguments at the point of the call. Programs that
+    previously built successfully and were rejected by the solver---such as a
+    two-qubit gate applied to the same qubit twice---now fail while the circuit
+    is being constructed. Passing a non-qubit argument, which previously
+    surfaced as an ``AttributeError`` naming an internal attribute, now raises
+    ``QCDLUserError``.
+  - |
+    ``dwave.gate.qcdl.operations`` now defines ``__all__``, so
+    ``from dwave.gate.qcdl.operations import *`` imports the operations only.
+    Names that were previously reachable through the wildcard import as an
+    implementation detail, such as ``np`` and ``QCDLModule``, must now be
+    imported explicitly.
