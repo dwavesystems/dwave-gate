@@ -12,7 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-"""Utilities for handling results returned by the simulator or QPU."""
+"""Utilities for handling results returned by a gate-model simulator or QPU."""
 
 from __future__ import annotations
 
@@ -42,18 +42,18 @@ DEFAULT_TAG = ""
 
 
 def get_default_register(qubits: Iterable[str]) -> RegisterType:
-    """The register used if none is provided.
+    """Return the register used when none is specified.
 
-    This register will include all qubits in the circuit, regardless of which
-    have measurements. This is usually not what is desired.
+    This register includes all qubits in the circuit, regardless of which
+    have measurements. Specifying a register is preferable.
 
-    Sorts qubits to have the highest index first, e.g., ``[q2, q1, q0]``
+    Sorts qubits from highest to lowest index; e.g., ``[q2, q1, q0]``
 
     Args:
-        qubits: list of qubits in system
+        qubits: List of qubits in the QPU.
 
     Returns:
-        Qubits sorted highest index to lowest.
+        Qubits sorted from highest index to lowest.
     """
     return cast(
         RegisterType, sorted(qubits, key=lambda qubit: int(qubit[1:]), reverse=True)
@@ -89,39 +89,39 @@ def format_memory(
     register: RegisterType | None = None,
     unmeasured_value: int | str = "_",
 ) -> np.ndarray:
-    """Shape results
+    """Shape results.
 
-    The measurement input is simply a flat array of all the measurements on each
-    qubit over the entire calculation (i.e., for all shots). This data structure
-    itself is naive to how many measurements occurred per shot. If a tag was
-    provided to the `measure` instructions, then this method would be called
-    once for each tag.
+    The measurement input is a flat array of all the measurements on each
+    qubit over the entire circuit execution (i.e., for all shots), and does not
+    indicate how many measurements occurred per shot. If you specify a tag for
+    the :func:`~dwave.gate.qcdl.operations.measure` operations, this method is
+    called once for each tag.
 
-    The primary purpose of this method is to handle the possibility that each
-    qubit may have been measured multiple times per shot and that the number can
-    be different between qubits. This method will add padding to the
-    measurements if the number of measurements is different so that we can make
-    a dict of bitstrings from the data.
+    This method handles results where each qubit may have been measured multiple
+    times per shot with the number of measurements varying among qubits. The
+    method adds padding to the measurements if those numbers differ to enable
+    the formation of a dict of bitstrings from the data.
 
-    NOTE: after converting the individual measurement arrays to a numpy array of
-    type str, it will update the input measurements data structure in-place.
+    .. note:: After converting individual measurement arrays to a NumPy array of
+        type str, it updates the input-measurements data structure in-place.
 
     Args:
-        measurements: The measurements 2D array or dict of arrays from either
-            the simulator or qpu. If a 2D array is passed the qubit name is
+        measurements: Measurements, as a 2D array or dict of arrays, from either
+            the simulator or QPU. If a 2D array is passed, the qubit name is
             inferred from the index in the array.
-        shots: The number of shots to produce this data.
-        register: List of qubit names (or None) to go into the register. A None in 
-            the list will fill in the unmeasured_value. If a register is not
-            provided, get_default_register will be used to create one.
-        unmeasured_value: What to put in the register if a requested qubit wasn't measured.
-            Defaults to "_".
+        shots: Number of shots to produce this data.
+        register: List of qubit names (or None) to go into the register. A None
+            in the list fills in the value to set through the
+            ``unmeasured_value`` argument. If a register is not provided,
+            the :func:`.get_default_register` creates one.
+        unmeasured_value: Value to put in the register if a requested qubit is
+            not measured. Defaults to "_".
 
     Raises:
-        ValueError: register mismatch with results
+        ValueError: Register mismatch with results.
 
     Returns:
-        A 3D array of str with shape (measurements per shot, shots, qubits)
+        A 3D array of str with shape ``(measurements per shot, shots, qubits)``.
     """
     if isinstance(measurements, dict):
         qubit_name_to_loc: dict[str, Any] = {qn: qn for qn in measurements}
@@ -214,37 +214,38 @@ def count_measurements(
 ) -> dict[int | str, int]:
     """Convert memory to a dict of observation counts.
 
-    Raw data (memory) is just 0, 1, or ``"*"`` (called "splat") for each qubit,
-    for each shot. This method will convert that into a count of each set of
+    Raw data (memory) contains values :math:`0, 1` or ``"*"`` ("splat") for each
+    qubit, for each shot. This method converts that into a count of each set of
     measurements. The key for the dict is customizable.
 
-    When converting to int/bin, this treats the qubit register as big endian,
-    i.e., that the register has the least significant bit last in the array for
-    each shot.
+    When converting to int/bin, the qubit register is treated as big endian;
+    i.e., the least-significant bit is last in the array for each shot.
 
     :data:`key_format` values:
-        * ``"bin"``: keys will be binary numbers with width taken from the memory
-        * ``"hex"``: keys will be hexadecimal strings (e.g., ``'0x3'``)
-        * ``None``: keys will be integers
-
-    Examples:
-        >>> count_measurements([[0,1,0,0]]*10, key_format='bin')
-        {'0100': 10}
-        >>> count_measurements([[0,1,0,0]]*10, key_format='hex')
-        {'0x4': 10}
-        >>> count_measurements([[0,1,0,0]]*10, key_format=None)
-        {4: 10}
+        * ``"bin"``: keys are binary numbers with width taken from the memory.
+        * ``"hex"``: keys are hexadecimal strings (e.g., ``'0x3'``).
+        * ``None``: keys are integers.
 
     Args:
-        memory: a shots x qubits 2D array, sorted least significant
-            bit is last / on the right.
-        key_format: how to format the ints which will be used
-            as keys. This is ignored if the memory consists of strings.
+        memory: 2D array of size ``shots x qubits`` sorted with the
+            least-significant bit last (on the right).
+        key_format: Formats the ints used as dict keys. Ignored if the memory
+            consists of strings.
         post_select: If True, any bitstrings that have ``"*"`` in them
-            will be excluded.
+            are excluded.
+
+    Examples:
+        >>> from dwave.gate.results import count_measurements
+        ...
+        >>> count_measurements([[0,1,0,0]]*10, key_format='bin')
+        {'0100': 10}
+        >>> count_measurements([[0,1,0,0]]*10, key_format='hex')    # doctest: +SKIP
+        {'0x4': 10}
+        >>> count_measurements([[0,1,0,0]]*10, key_format=None)     # doctest: +SKIP
+        {4: 10}
 
     Returns:
-        A dict counting occurrences of each formatted shots value
+        A dict counting occurrences of each value of formatted shots.
 
     """
     if isinstance(memory, list):
@@ -312,25 +313,24 @@ def count_measurements(
 
 
 class Result(BaseModel):
-    """Schema and API for a result returned by the simulator or QPU.
-
-    This model permits unknown keys (``extra='allow'``) so newly added service
-    fields do not cause validation failures.
+    """Result returned by a gate-model simulator or QPU.
 
     Attributes:
-        num_shots: Total number of shots executed.
+        num_shots: Total number of times the circuit was executed.
         start_time: Timestamp for when execution began.
         end_time: Timestamp for when execution ended.
-        seconds_per_shot: Average wall-clock time per shot, in seconds.
+        seconds_per_shot: Total time, in seconds, divided by the number of shots.
         num_qubits: Number of qubits used in the circuit.
-        simulated_qcdl: Label describing which QCDL was simulated.
+        simulated_qcdl: Label describing the simulated QCDL.
         record_format: Serialization format used for ``records``.
-        measurements: Raw measurement data keyed by tag.
+        measurements: Raw measurement data, keyed by tag.
         records: Table data or raw QIR log output.
         executed_qcdl: QCDL payload representing the executed program.
     """
+    # This model permits unknown keys (``extra='allow'``) so newly added service
+    # fields do not cause validation failures.
     model_config = ConfigDict(extra="allow", frozen=True, arbitrary_types_allowed=True)
-    
+
     num_shots: int = Field(description="Total number of shots executed.")
     start_time: datetime.datetime | None = Field(
         default=None, description="ISO-8601 string for when execution began."
@@ -419,13 +419,11 @@ class Result(BaseModel):
     def default_tag(self) -> str:
         """The default tag, if defined.
 
-        If there is only one tag, then this method will return it. This is
-        sufficient for many experiments which only have one measurement per
-        qubit.
+        If there is only one tag, this method returns it. This is sufficient for
+        many experiments which only have one measurement per qubit.
 
-        If there are multiple tags present in the data or no tag, then there is
-        no "default" tag. In either of these cases this method will raise
-        ValueError.
+        If there are multiple tags present in the data or no tag, there is no
+        default tag, and the method raises a :class:`ValueError`.
 
         Returns:
             The default tag.
@@ -442,20 +440,19 @@ class Result(BaseModel):
     def get_measurements_register(
         self, tag: str | None = None, descending: bool = True
     ) -> list[str]:
-        """Get the register inferred from the measurements data for a particular
-        tag.
+        """Return the register inferred from the measurements data for the tag.
 
-        This method will include a qubit in the register if and only if it has
+        This method includes a qubit in the register if and only if it has
         measurements in the log data. It determines the name of the qubit from
         its index in the measurements array.
 
         Args:
-            tag: Which data set to load. Defaults to
-                :attr:`dwave.gate.results.Result.default_tag`.
+            tag: The data set to load. Defaults to
+                :attr:`~dwave.gate.results.Result.default_tag`.
             descending: Whether qubits are in descending order. Defaults to True.
 
         Returns:
-            A list of qubit names.
+            List of qubit names.
         """
         if tag is None:
             tag = self.default_tag
@@ -475,17 +472,17 @@ class Result(BaseModel):
         unmeasured_value: int | str = "_",
         shots: int | None = None,
     ) -> np.ndarray:
-        """Memory is the 3D array of measurements per shot x shots x qubits
+        """Memory is the 3D array of ``measurements per shot, shots, qubits``.
 
-        These are the raw bits returned from a statement like ``q0.measure()``.
+        The raw bits returned from a statement such as ``q0.measure()``.
 
         Args:
-            tag: Which data set to load. Defaults to
-                :attr:`dwave.gate.results.Result.default_tag`.
+            tag: The data set to load. Defaults to
+                :attr:`~dwave.gate.results.Result.default_tag`.
             register: List of qubit names to include in the register; determines
                 the inner dimension of the returned value.
-            unmeasured_value: What to put in the register if a requested qubit
-                wasn't measured.
+            unmeasured_value: Value to put in the register if a requested qubit
+                is not measured.
             shots: Overrides the shots in the result object.
 
         Returns:
@@ -495,6 +492,11 @@ class Result(BaseModel):
             tag = self.default_tag
         if self.measurements is None:
             raise RuntimeError("measurements are not available for this result")
+        if register is None:
+            # A qubit with no measurements has no bit to contribute, and padding
+            # one in makes the bitstring look like an outcome. Fall back to every
+            # qubit only when nothing was measured at all.
+            register = cast(RegisterType, self.get_measurements_register(tag)) or None
         return format_memory(
             self.measurements[tag],
             register=register,
@@ -517,7 +519,8 @@ class Result(BaseModel):
         Args:
             tag: Which data set to load. Defaults to
                 :attr:`dwave.gate.results.Result.default_tag`.
-            register: Forwarded to get_memory.
+            register: Forwarded to :meth:`.get_memory`, which defaults to
+                :meth:`.get_measurements_register`.
             post_select: If the counts dict should include splats or not.
             unmeasured_value: What to put in the register if a requested qubit
                 wasn't measured.
@@ -541,7 +544,8 @@ class Result(BaseModel):
 
     @functools.cached_property
     def records(self) -> dict | str | None:
-        """Records are the data generated by append_table_row"""
+        """Data generated by the :meth:`~dwave.gate.qcdl.Scope.append_table_row`
+        method."""
         records = copy.deepcopy(self.encoded_records)
 
         if records and self.record_format is RecordFormat.POLARS:
@@ -557,7 +561,7 @@ class Result(BaseModel):
 
     @functools.cached_property
     def measurements(self) -> dict[str, list[np.ndarray]] | None:
-        """Measurements are the data generated by log=True"""
+        """Data generated by ``log=True``."""
         if measurements := copy.deepcopy(self.encoded_measurements):
             for data in measurements.values():
                 for loc, meas in enumerate(data):
@@ -597,39 +601,49 @@ class Result(BaseModel):
 
 
 class YieldHandling(enum.StrEnum):
-    """If an error was detected during an end-of-line measurement,
-    it is marked with a ``"*"`` (splat) instead of a 0 or 1. Qiskit can not
-    accept splats in the counts dict it is given, so they must be removed. This
-    is an enumeration of some techniques offered.
+    """Handling of erasure measurement.
+
+    Errors detected during an end-of-line measurement are marked with a ``"*"``
+    (splat) instead of a :math:`0` or :math:`1`, as described in the
+    :ref:`qcdl_basic_measurements` section. You might need to remove these
+    splats, for example, to work with Qiskit, which does not accept splats in a
+    counts dict. This class enumerates some removal techniques.
     """
 
     only_post_selected_counts = enum.auto()
-    """This means that only the post-selected shots are returned (i.e., results
-    with only 0 and 1). The number of shots returned may be fewer than the
-    number of shots requested."""
+    """Return only post-selected shots; i.e., only results of :math:`0` and
+    :math:`1`.
+
+    The number of returned shots may be lower than the number of requested
+    shots.
+    """
 
     renormalize_distribution = enum.auto()
-    """After post selecting the distribution, this option will normalize it so
-    that the sum of the values equals the number of shots requested (we divide
-    by the yield).
+    """Renormalize the post-selected distribution.
 
-    This approach may be necessary for code which can not handle a different
-    number of shots returned than what was requested. The counts become floats.
+    After post selecting the distribution, normalize it so that the sum of
+    values equals the number of shots requested (by dividing by the yield).
 
-    .. WARNING::
+    This approach may be necessary for code that can not handle a  number of
+    returned shots different from requested. The counts become floats.
+
+    .. warning::
         This approach misrepresents the statistical errors, and in the case
-        of low yield, disastrously so.
+        of low yield, significantly.
 
-    .. WARNING::
-        This will raise an exception if no shots are returned.
+    .. warning::
+        Raises an exception if no shots are returned.
     """
 
     renormalize_distribution_or_raise = enum.auto()
-    """This is the same as ``renormalize_distribution``, but it will raise an
-    exception if the yield is below 10%."""
+    """Renormalize the post-selected distribution for yield greater than 10%.
+
+    Similar to the :attr:`.renormalize_distribution` technique, but raises an
+    exception if the yield is below 10%.
+    """
 
     ignore_splats = enum.auto()
-    """Don't alter the distribution."""
+    """Do not alter the distribution."""
 
     @staticmethod
     def from_name(name: str | YieldHandling) -> YieldHandling:
@@ -638,16 +652,53 @@ class YieldHandling(enum.StrEnum):
         else:
             return YieldHandling[name]
 
+    @staticmethod
+    def _is_erasure(key: Any) -> bool:
+        """Whether a counts key records an erasure.
+
+        Only the string key formats can hold a splat: the
+        :func:`.count_measurements` function produces integer keys only for
+        memory that is entirely 0s and 1s.
+        """
+        return isinstance(key, str) and "*" in key
+
     def apply(
         self, distribution: dict[Any, int]
     ) -> tuple[dict[Any, float | int], float]:
+        """Apply this yield handling to a counts dict.
+
+        Args:
+            distribution: Counts, as returned by the
+                :func:`.count_measurements` function or the
+                :meth:`.Result.get_counts` method. Keys may be in any of the
+                formats that function produces.
+
+        Raises:
+            :exception:`ValueError`: If the distribution is empty, or if the
+                yield is too low for
+                :attr:`.renormalize_distribution_or_raise`.
+            :exception:`ZeroDivisionError`: If nothing survives post selection
+                and the distribution has to be renormalized.
+
+        Returns:
+            The handled distribution and the observed yield.
+        """
+        if not distribution:
+            raise ValueError("can not apply yield handling to an empty distribution")
+
         num_executed_shots: int = sum(distribution.values())
-        post_selected = {k: v for k, v in distribution.items() if "*" not in k}
+        post_selected = {
+            k: v for k, v in distribution.items() if not self._is_erasure(k)
+        }
         if not post_selected:
             # Put one key in the dict at least. Use a previously existing key as
             # a template so that the formatting is correct.
-            template_key: str = next(iter(distribution))
-            zeros_key = template_key.replace("1", "0").replace("*", "0")
+            template_key: Any = next(iter(distribution))
+            zeros_key = (
+                template_key.replace("1", "0").replace("*", "0")
+                if isinstance(template_key, str)
+                else 0
+            )
             post_selected[zeros_key] = 0
 
         num_post_selected_shots: int = sum(post_selected.values())
