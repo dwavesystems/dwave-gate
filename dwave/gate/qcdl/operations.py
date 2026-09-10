@@ -63,6 +63,7 @@ import numpy as np
 
 from .. import implementations
 from .components import QCDLModule
+from .exceptions import QCDLUserError
 from .registers import FixedPointRegister, Register
 
 AngleType: TypeAlias = float | FixedPointRegister
