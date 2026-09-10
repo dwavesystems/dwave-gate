@@ -25,6 +25,7 @@ from dwave.gate.qcdl import (
     QCDLModule,
     QCDLUserError,
     Register,
+    Scope,
     arbitrary_function,
     procedure,
     qcdl,
@@ -559,6 +560,300 @@ def test_find_modules():
         assert set(
             [q.qcdl_module_name for q in QCDLModule.find_modules(reg, q1)]
         ) == set(["q0", "q1"])
+
+    assert main()
+
+
+def test_duplicate_register_name_raises():
+    """The compiler keeps the first allocation, so the second value is lost."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(1, name="dup")
+        q0.Register(2, name="dup")
+
+    with pytest.raises(QCDLUserError) as cm:
+        main()
+    assert "'dup' is already allocated on q0" in str(cm.value)
+
+
+def test_duplicate_register_name_reports_the_dtype_it_has():
+    @qcdl(1)
+    def main(q0):
+        q0.Register(name="clash")
+        q0.FixedPointRegister(name="clash")
+
+    with pytest.raises(QCDLUserError, match="with dtype int"):
+        main()
+
+
+def test_duplicate_register_name_allowed_by_ignore_reallocation():
+    """Opting in gets you a handle on the register that is already there."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(1, name="dup")
+        q0.Register(name="dup", ignore_reallocation=True)
+        q0.measure()
+
+    allocations = [
+        s for s in main().program.statements if s.op == "allocate_memory"
+    ]
+    assert len(allocations) == 2
+    assert allocations[0].kwargs["initial_value"] == 1
+    assert allocations[1].kwargs["ignore_reallocation"] is True
+
+
+def test_ignore_reallocation_still_rejects_an_initial_value():
+    """The second value is explicit information the compiler would discard."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(1, name="dup")
+        q0.Register(2, name="dup", ignore_reallocation=True)
+
+    with pytest.raises(QCDLUserError) as cm:
+        main()
+    message = str(cm.value)
+    assert "would never reach the qubit" in message
+    assert "drop the initial value" in message
+
+
+def test_an_explicit_zero_counts_as_an_initial_value():
+    """0 is the default, but passing it is still saying something."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(name="dup")
+        q0.Register(0, name="dup", ignore_reallocation=True)
+
+    with pytest.raises(QCDLUserError, match="would never reach the qubit"):
+        main()
+
+
+def test_ignore_reallocation_on_a_fresh_name_may_carry_a_value():
+    """Nothing is discarded when the name is not already allocated."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(7, name="fresh", ignore_reallocation=True)
+
+    allocations = [
+        s for s in main().program.statements if s.op == "allocate_memory"
+    ]
+    assert [a.kwargs["initial_value"] for a in allocations] == [7]
+
+
+def test_alias_rejects_an_initial_value():
+    """An alias is never initialized, so its value is dead on arrival."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.FixedPointRegister(1.0, name="fr")
+        q0.Register(3, name="fr", alias=True)
+
+    with pytest.raises(QCDLUserError, match="is an alias"):
+        main()
+
+
+def test_alias_rejects_an_initial_value_on_a_fresh_name_too():
+    """This is where alias and ignore_reallocation part ways.
+
+    An alias never allocates, so its value is discarded whether or not the
+    name is already taken, whereas ignore_reallocation is a no-op only for a
+    name that is already allocated and so may carry a value otherwise.
+    """
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(3, name="fresh", alias=True)
+
+    with pytest.raises(QCDLUserError, match="is an alias"):
+        main()
+
+
+def test_duplicate_array_name_with_ignore_reallocation_still_raises():
+    """An Array always carries contents, so it can never opt in."""
+
+    @qcdl(1)
+    def main(q0):
+        Array(q0, [1, 2], name="arr")
+        Array(q0, [3, 4], name="arr", ignore_reallocation=True)
+
+    with pytest.raises(QCDLUserError, match="would never reach the qubit"):
+        main()
+
+
+@pytest.mark.parametrize(
+    "register_type,expected", [("Register", 0), ("FixedPointRegister", 0.0)]
+)
+def test_omitted_initial_value_still_allocates_zero(register_type, expected):
+    """The sentinel default has to resolve per dtype, not leak out as None."""
+
+    @qcdl(1)
+    def main(q0):
+        getattr(q0, register_type)(name="r")
+
+    allocation = next(
+        s for s in main().program.statements if s.op == "allocate_memory"
+    )
+    value = allocation.kwargs["initial_value"]
+    assert value == expected
+    assert isinstance(value, type(expected))
+
+
+def test_aliasing_an_allocated_register_is_not_a_duplicate():
+    """alias=True deliberately names memory that already exists."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.FixedPointRegister(initial_value=1, name="fr")
+        integer_view = q0.Register(name="fr", alias=True)
+        integer_view += integer_view & 4
+
+    allocations = [
+        s for s in main().program.statements if s.op == "allocate_memory"
+    ]
+    assert len(allocations) == 1
+
+
+def test_alias_of_another_register_is_still_tracked():
+    """A string alias allocates a new name, so redeclaring it is a duplicate."""
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(name="original")
+        q0.Register(name="punned", alias="original")
+        q0.Register(name="punned")
+
+    with pytest.raises(QCDLUserError, match="'punned' is already allocated"):
+        main()
+
+
+def test_a_scope_register_may_be_narrowed_with_an_alias():
+    """The documented way to write to one qubit's copy of a shared register."""
+
+    @qcdl(2)
+    def main(q0, q1):
+        scope = Scope(q0, q1)
+        scope.Register(name="bit")
+        q0.measure(register=q0.Register(name="bit", alias=True))
+
+    allocations = [
+        s for s in main().program.statements if s.op == "allocate_memory"
+    ]
+    assert len(allocations) == 1
+    assert [str(q) for q in allocations[0].modules] == ["q0", "q1"]
+
+
+def test_same_register_name_on_different_qubits_is_fine():
+    @qcdl(2)
+    def main(q0, q1):
+        q0.Register(1, name="r0")
+        q1.Register(2, name="r0")
+
+    allocations = [
+        s for s in main().program.statements if s.op == "allocate_memory"
+    ]
+    assert [a.kwargs["initial_value"] for a in allocations] == [1, 2]
+
+
+def test_duplicate_array_name_raises():
+    @qcdl(1)
+    def main(q0):
+        Array(q0, [1, 2], name="arr")
+        Array(q0, [3, 4], name="arr")
+
+    with pytest.raises(QCDLUserError, match="'arr' is already allocated"):
+        main()
+
+
+def test_register_names_are_global_across_procedures():
+    """A procedure does not get its own namespace; the memory is the qubit's."""
+
+    @procedure
+    def inner(qa):
+        qa.Register(name="local")
+        qa.rx(0.123)
+
+    @qcdl(1)
+    def main(q0):
+        q0.Register(name="local")
+        inner(q0)
+
+    with pytest.raises(QCDLUserError) as cm:
+        main()
+    message = str(cm.value)
+    assert "'local' is already allocated on q0" in message
+    # the clash is with a register declared in another procedure, so the
+    # message has to say which one rather than naming the current procedure
+    assert "in procedure main" in message
+
+
+def test_a_clash_reports_the_procedure_that_allocated_first():
+    @procedure
+    def inner(qa):
+        qa.Register(name="shared")
+        qa.rx(0.123)
+
+    @qcdl(1)
+    def main(q0):
+        inner(q0)
+        q0.Register(name="shared")
+
+    with pytest.raises(QCDLUserError, match="in procedure inner_q0"):
+        main()
+
+
+def test_calling_a_procedure_twice_is_not_a_duplicate():
+    """Each call re-runs the body, but the procedure is emitted once."""
+
+    @procedure
+    def inner(qa):
+        qa.Register(3, name="local")
+        qa.rx(0.123)
+
+    @qcdl(1)
+    def main(q0):
+        inner(q0)
+        inner(q0)
+
+    program = main()
+    allocations = [
+        s for s in program.procedures["inner_q0"].statements
+        if s.op == "allocate_memory"
+    ]
+    assert [a.kwargs["initial_value"] for a in allocations] == [3]
+
+
+def test_a_procedure_still_may_not_declare_a_name_twice_itself():
+    """The re-run allowance must not blind the check inside one body."""
+
+    @procedure
+    def inner(qa):
+        qa.Register(1, name="local")
+        qa.Register(2, name="local")
+
+    @qcdl(1)
+    def main(q0):
+        inner(q0)
+
+    with pytest.raises(QCDLUserError, match="'local' is already allocated"):
+        main()
+
+
+def test_two_procedures_may_use_a_name_on_different_qubits():
+    """Names are global to the circuit but still per qubit."""
+
+    @procedure
+    def inner(qa):
+        qa.Register(name="local")
+        qa.rx(0.123)
+
+    @qcdl(2)
+    def main(q0, q1):
+        inner(q0)
+        inner(q1)
 
     assert main()
 
