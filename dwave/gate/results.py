@@ -319,7 +319,7 @@ class Result(BaseModel):
         num_shots: Total number of times the circuit was executed.
         start_time: Timestamp for when execution began.
         end_time: Timestamp for when execution ended.
-        seconds_per_shot: Average per-shot wall-clock time, in seconds.
+        seconds_per_shot: Total time, in seconds, divided by the number of shots.
         num_qubits: Number of qubits used in the circuit.
         simulated_qcdl: Label describing the simulated QCDL.
         record_format: Serialization format used for ``records``.
