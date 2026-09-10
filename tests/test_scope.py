@@ -412,7 +412,7 @@ def test_one_to_all_rejects_a_non_module_in_a_sequence():
         send_register = q0.Register(name="reg123")
         q0.one_to_all([q1, 7], send_register == 1)
 
-    with pytest.raises(QCDLUserError, match="every item in destinations"):
+    with pytest.raises(QCDLUserError, match="every item must be a"):
         main()
 
 

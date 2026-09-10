@@ -1669,7 +1669,7 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
 
 
 def _as_modules(
-    qubits: QCDLModuleContainerBase | Sequence[QCDLModuleContainerBase], argument: str
+    qubits: QCDLModuleContainerBase | Sequence[QCDLModuleContainerBase],
 ) -> tuple[list[QCDLModule], int | None]:
     """Normalize a group of qubits into modules and a scope id.
 
@@ -1691,12 +1691,12 @@ def _as_modules(
     if isinstance(qubits, QCDLModuleContainer):
         modules = list(qubits.qcdl_modules)
         if not modules:
-            raise QCDLUserError(f"{argument} {qubits} does not hold any qubits")
+            raise QCDLUserError(f"{qubits} does not hold any qubits")
         return modules, qubits.scope_id
 
     if isinstance(qubits, str) or not isinstance(qubits, Sequence):
         raise QCDLUserError(
-            f"{argument} must be a Scope, a QCDLModule, or a sequence of them,"
+            f"must be a Scope, a QCDLModule, or a sequence of them,"
             f" not {type(qubits).__name__} ({qubits!r})"
         )
 
@@ -1705,14 +1705,14 @@ def _as_modules(
     for item in qubits:
         if not isinstance(item, QCDLModuleContainer):
             raise QCDLUserError(
-                f"every item in {argument} must be a Scope or a QCDLModule, not"
+                f"every item must be a Scope or a QCDLModule, not"
                 f" {type(item).__name__} ({item!r})"
             )
         for module in item.qcdl_modules:
             by_name[module.qcdl_module_name] = module
 
     if not by_name:
-        raise QCDLUserError(f"{argument} does not hold any qubits")
+        raise QCDLUserError(f"does not hold any qubits")
 
     # a bare sequence has no identity of its own, so it carries no scope_id
     return list(by_name.values()), None
@@ -1910,7 +1910,7 @@ class QCDLModule(QCDLModuleContainer):
             :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If
                 ``destinations`` does not hold any qubits.
         """
-        modules, scope_id = _as_modules(destinations, "destinations")
+        modules, scope_id = _as_modules(destinations)
         self._multi_qubit_statement(
             "one_to_all",
             send=send,
