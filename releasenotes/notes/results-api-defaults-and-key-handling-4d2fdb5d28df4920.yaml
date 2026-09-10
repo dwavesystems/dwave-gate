@@ -1,10 +1,5 @@
 ---
 features:
-  - |
-    Re-export ``Result`` and ``YieldHandling`` from the package root, so that
-    ``dwave.gate.Result`` and ``dwave.gate.YieldHandling``, as the user guide
-    refers to them, now resolve. Both remain importable from
-    ``dwave.gate.results``, which is still where they are defined.
 upgrade:
   - |
     The ``Result.get_memory`` and ``Result.get_counts`` methods now default to
