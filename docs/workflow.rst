@@ -11,6 +11,16 @@ package's quantum circuit description language (QCDL), described here.
 
 .. _QuantumCircuit: https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.QuantumCircuit
 
+.. _qcdl_onboarding:
+
+Onboarding for Beta Testers
+===========================
+
+.. important::
+    Features for real-time control, which are being phased into dual-rail
+    quantum computing systems, are already available on the simulator in the
+    |cloud|_ service for prototyping and learning.
+
 
 .. _qcdl_programming_basic:
 
