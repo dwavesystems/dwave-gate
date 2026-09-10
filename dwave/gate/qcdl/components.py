@@ -334,9 +334,11 @@ class Procedure(IndexerMixin):
             qubit=QCDLModuleName.model_validate(qubit) if qubit is not None else None,
             args=list(args) if args else [],
             kwargs=dict(kwargs) if kwargs else {},
-            caller_qubits=[QCDLModuleName.model_validate(q) for q in caller_qubits]
-            if caller_qubits
-            else [],
+            caller_qubits=(
+                [QCDLModuleName.model_validate(q) for q in caller_qubits]
+                if caller_qubits
+                else []
+            ),
         )
 
         if not stmt.qubits:
@@ -1666,7 +1668,9 @@ class QCDLModuleContainer(QCDLModuleContainerBase):
         return shape, table_row
 
 
-def _as_modules(qubits: Any, argument: str) -> tuple[list[QCDLModule], int | None]:
+def _as_modules(
+    qubits: QCDLModuleContainerBase | Sequence[QCDLModuleContainerBase], argument: str
+) -> tuple[list[QCDLModule], int | None]:
     """Normalize a group of qubits into modules and a scope id.
 
     Accepts a :class:`.Scope`, a single :class:`.QCDLModule`, or a sequence of
