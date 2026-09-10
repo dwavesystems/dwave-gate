@@ -35,7 +35,6 @@ from dwave.gate.results import (
 
 logger = logging.getLogger(__name__)
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -85,7 +84,8 @@ def test_result_allows_extra_keys():
 
 
 def test_result_valid_timestamps():
-    r = Result.model_validate({
+    r = Result.model_validate(
+        {
             "num_shots": 1,
             "start_time": "2026-01-01T00:00:00",
             "end_time": "2026-01-01T01:00:00",
@@ -415,6 +415,60 @@ def test_none_in_register(nones, shots=10):
     counts = count_measurements(memory)
     assert counts == {expected: shots}
 
+
+# ---------------------------------------------------------------------------
+# The register Result uses when none is given
+# ---------------------------------------------------------------------------
+
+
+def _result_with(measurements, shots=10) -> Result:
+    return Result.model_validate(
+        {"num_shots": shots, "measurements": {"": measurements}}
+    )
+
+
+def test_get_counts_uses_the_measured_register():
+    """An unmeasured qubit has no bit, so it must not be padded into the key."""
+    result = _result_with([[], [1] * 3, [0] * 3], shots=3)
+
+    assert result.get_measurements_register() == ["q2", "q1"]
+    assert result.get_counts() == [{"01": 3}]
+
+
+def test_get_memory_uses_the_measured_register():
+    result = _result_with([[], [1] * 3, [0] * 3], shots=3)
+
+    assert result.get_memory().shape == (1, 3, 2)
+
+
+def test_default_register_is_still_reachable():
+    """Padding is available for callers that want every qubit."""
+    result = _result_with([[], [1] * 3, [0] * 3], shots=3)
+    register = get_default_register(["q0", "q1", "q2"])
+
+    assert result.get_counts(register=register) == [{"01_": 3}]
+
+
+def test_an_explicit_register_still_wins():
+    result = _result_with([[1] * 3, [0] * 3], shots=3)
+
+    assert result.get_counts(register=["q0"]) == [{"1": 3}]
+
+
+def test_get_counts_when_every_qubit_was_measured():
+    result = _result_with([[0, 1, 0, 1], [0, 1, 0, 1]], shots=4)
+
+    assert result.get_counts() == [{"00": 2, "11": 2}]
+    assert result.get_memory().shape == (1, 4, 2)
+
+
+def test_get_counts_when_nothing_was_measured():
+    result = _result_with([[], []], shots=3)
+
+    assert result.get_measurements_register() == []
+    assert result.get_counts() == []
+
+
 def test_encode_decode_measurements():
     size = 1000
     arr = np.random.randint(-1, 1, size=size)
@@ -464,3 +518,47 @@ def test_yield_handling():
 
     with pytest.raises(ValueError):
         YieldHandling.renormalize_distribution_or_raise.apply(yield_5pct)
+
+
+@pytest.mark.parametrize("key_format", ["bin", "hex", None, "{0:>03b}"])
+def test_yield_handling_accepts_every_count_key_format(key_format):
+    """count_measurements and YieldHandling have to compose.
+
+    ``key_format=None`` produces integer keys, which cannot hold a splat but
+    used to raise ``TypeError`` on the ``"*" not in key`` test.
+    """
+    distribution = count_measurements([[0, 1, 1]] * 4, key_format=key_format)
+
+    handled, observed_yield = YieldHandling.only_post_selected_counts.apply(
+        distribution
+    )
+    assert handled == distribution
+    assert observed_yield == 1.0
+
+
+def test_yield_handling_with_integer_keys_renormalizes():
+    distribution = count_measurements([[0, 1]] * 4, key_format=None)
+
+    assert YieldHandling.renormalize_distribution.apply(distribution) == (
+        {1: 4.0},
+        1.0,
+    )
+
+
+def test_yield_handling_zeros_key_for_non_string_keys():
+    """The all-erasures fallback needs a key of the caller's own format."""
+    handled, observed_yield = YieldHandling.only_post_selected_counts.apply({"0*": 10})
+    assert handled == {"00": 0}
+    assert observed_yield == 0
+
+    # an integer-keyed distribution can not contain erasures, so the fallback is
+    # only reachable by handing apply() a key it did not produce
+    handled, observed_yield = YieldHandling.ignore_splats.apply({7: 10})
+    assert handled == {7: 10}
+    assert observed_yield == 1.0
+
+
+def test_yield_handling_rejects_an_empty_distribution():
+    """post_select can empty a counts dict; StopIteration is not a useful error."""
+    with pytest.raises(ValueError, match="empty distribution"):
+        YieldHandling.only_post_selected_counts.apply({})

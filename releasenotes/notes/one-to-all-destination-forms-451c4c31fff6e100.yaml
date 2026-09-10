@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    ``QCDLModule.one_to_all`` now accepts any group of qubits as its
+    ``destinations``: a ``Scope``, a single ``QCDLModule``, or a sequence of
+    either. Qubits are deduplicated by name, preserving the order in which they
+    are given.
+fixes:
+  - |
+    Fix ``QCDLModule.one_to_all`` raising an ``AttributeError`` when
+    ``destinations`` is a sequence of qubits, such as the ``qcdl_modules`` of a
+    ``Scope``, rather than the ``Scope`` itself.
