@@ -595,39 +595,49 @@ class Result(BaseModel):
 
 
 class YieldHandling(enum.StrEnum):
-    """If an error was detected during an end-of-line measurement,
-    it is marked with a ``"*"`` (splat) instead of a 0 or 1. Qiskit can not
-    accept splats in the counts dict it is given, so they must be removed. This
-    is an enumeration of some techniques offered.
+    """Handling of erasure measurement.
+
+    Errors detected during an end-of-line measurement are marked with a ``"*"``
+    (splat) instead of a :math:`0` or :math:`1`, as described in the
+    :ref:`qcdl_basic_measurements` section. You might need to remove these
+    splats, for example, to work with Qiskit, which does not accept splats in a
+    counts dict. This class enumerates some removal techniques.
     """
 
     only_post_selected_counts = enum.auto()
-    """This means that only the post-selected shots are returned (i.e., results
-    with only 0 and 1). The number of shots returned may be fewer than the
-    number of shots requested."""
+    """Return only post-selected shots; i.e., only results of :math:`0` and
+    :math:`1`.
+
+    The number of returned shots may be lower than the number of requested
+    shots.
+    """
 
     renormalize_distribution = enum.auto()
-    """After post selecting the distribution, this option will normalize it so
-    that the sum of the values equals the number of shots requested (we divide
-    by the yield).
+    """Renormalize the post-selected distribution.
 
-    This approach may be necessary for code which can not handle a different
-    number of shots returned than what was requested. The counts become floats.
+    After post selecting the distribution, normalize it so that the sum of
+    values equals the number of shots requested (by dividing by the yield).
 
-    .. WARNING::
+    This approach may be necessary for code that can not handle a  number of
+    returned shots different from requested. The counts become floats.
+
+    .. warning::
         This approach misrepresents the statistical errors, and in the case
-        of low yield, disastrously so.
+        of low yield, significantly.
 
-    .. WARNING::
-        This will raise an exception if no shots are returned.
+    .. warning::
+        Raises an exception if no shots are returned.
     """
 
     renormalize_distribution_or_raise = enum.auto()
-    """This is the same as ``renormalize_distribution``, but it will raise an
-    exception if the yield is below 10%."""
+    """Renormalize the post-selected distribution for yield greater than 10%.
+
+    Similar to the :attr:`.renormalize_distribution` technique, but raises an
+    exception if the yield is below 10%.
+    """
 
     ignore_splats = enum.auto()
-    """Don't alter the distribution."""
+    """Do not alter the distribution."""
 
     @staticmethod
     def from_name(name: str | YieldHandling) -> YieldHandling:
