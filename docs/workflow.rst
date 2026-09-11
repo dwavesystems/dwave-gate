@@ -56,7 +56,7 @@ submitting your programs:
 .. note::
     Installing the SDK is recommended. If you chose to install only the
     :ref:`index_gate` package, see the installation instructions
-    `here <https://github.com/dwavesystems/dwave-gate/blob/main/README.rst#installation>`_.
+    `here <https://github.com/dwavesystems/dwave-gate/blob/main/README.rst>`_.
 
 .. _qcdl_onboarding_previous_users:
 
