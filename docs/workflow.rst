@@ -1347,7 +1347,8 @@ returned.
 >>> print(result.get_counts())              # doctest: +SKIP
 [{'11': 203, '*1': 14, '00': 230, '0*': 22, '*0': 19, '1*': 10, '**': 2}]
 
-The execution time for that submission is about a tenth of a second.
+The execution time on the simulator (excluding any queuing time, for example)
+for that job submission is about a tenth of a second.
 
 >>> print(result.run_time)                  # doctest: +SKIP
 0.093493
