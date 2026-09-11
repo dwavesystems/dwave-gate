@@ -1311,23 +1311,50 @@ The example below submits the following
 
     simulator_job_submission = bell_program()
 
-Submit the program above to a simulator for a dual-rail QPU with 17 qubits,
-``DRsim_17qubits``, in the |cloud|_ service.
+Submit the program above to a simulator for a dual-rail QPU with 21 qubits,
+``DRsim_21qubits``, in the |cloud|_ service.
 
 >>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     qpu='DRsim_17qubits')
+...     qpu='DRsim_21qubits',
+...     noise_model=True,
+...     shots=500,
+...     label="SDK Examples - Bell-Program Job Submission")
 >>> result = future.result().result         # doctest: +SKIP
 
+.. _qcdl_submitting_programs_results:
+
+Example Results
+---------------
+
+Results are returned as a :class:`~dwave.gate.results.Result` class, that also
+includes information such as execution time and provides methods for analyzing
+the measurements.
+
 The returned result is a 3D array of ``(measurements per shot, shots, qubits)``.
+For the previous example, one measurement is taken per shot, for 500 shots, on
+two qubits.
 
 >>> print(result.get_memory().shape)        # doctest: +SKIP
-(1, 1000, 2)
+(1, 500, 2)
 
-.. todo:: describe the results
+For one particular execution of the program above, the following counts are
+returned.
+
+>>> print(result.get_counts())              # doctest: +SKIP
+[{'11': 203, '*1': 14, '00': 230, '0*': 22, '*0': 19, '1*': 10, '**': 2}]
+
+The execution time on the simulator (excluding any queuing time, for example)
+for that job submission is about a tenth of a second.
+
+>>> print(result.run_time)                  # doctest: +SKIP
+0.093493
+
+See the :ref:`gate_results` section for information about the returned results
+and supported methods.
 
 .. _qcdl_simulator_parameters:
 
