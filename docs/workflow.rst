@@ -4,7 +4,7 @@
 Using dwave-gate
 ================
 
-The |cloud| quantum cloud service provides access to a simulator that enables
+The |cloud|_ quantum cloud service provides access to a simulator that enables
 you to test gate-model circuits intended to be executed on a dual-rail quantum
 processing unit (QPU). You describe your circuits using the ``dwave-gate``
 package's quantum circuit description language (QCDL), described here.
@@ -21,6 +21,89 @@ Onboarding for Beta Testers
     quantum computing systems, are already available on the simulator in the
     |cloud|_ service for prototyping and learning.
 
+To construct :term:`QCDL` programs and submit to the dual-rail simulator in the
+|cloud|_ service you need the following:
+
+1.  A |cloud|_ account that has been invited to beta test the dual-rail
+    simulator.
+2.  A development environment with the :ref:`index_ocean_sdk`.
+
+.. _qcdl_onboarding_new_users:
+
+New Users
+---------
+
+If you are already using Ocean software for an existing |cloud|_ service
+account, see the :ref:`qcdl_onboarding_previous_users` section for working with
+another project.
+
+If you have accepted an invitation to the |cloud|_ service for the first time to
+use the dual-rail simulator, the following documentation gets you started with
+submitting your programs:
+
+*   The :ref:`index_leap_sapi` section.
+
+    This section describes the |cloud|_ service: the dashboard where you can see
+    your access to :term:`solver`\ s such as the dual-rail simulator, the API
+    token you need to submit programs to the simulator, whitelisting information
+    if required by your organization, and more.
+
+*   The :ref:`ocean_index_get_started` section.
+
+    This section explains how to start using the :ref:`index_ocean_sdk`, which
+    lets you write :term:`QCDL` programs and submit them to the simulator.
+
+.. note::
+    Installing the SDK is recommended. If you chose to install only the
+    :ref:`index_gate` package, see the installation instructions
+    `here <https://github.com/dwavesystems/dwave-gate/blob/main/README.rst#installation>`_.
+
+.. _qcdl_onboarding_previous_users:
+
+Previous Users
+--------------
+
+To submit programs to the dual-rail simulator in the |cloud|_ service, you must
+accept the emailed invitation to a new project. You use the API token from this
+project to access and send jobs to the simulator.
+
+The :ref:`ocean_leap_authorization` section describes how to work with multiple
+projects (see the "Multiple Leap Projects" tab).
+
+The following are two simple ways to use the beta-tester project's API token
+from your existing development environment.
+
+*   Add a section to your ``dwave.conf`` file.
+
+    You can see your ``dwave.conf`` file using the methods described in the
+    :ref:`cloud_configuration` or using the :ref:`D-Wave CLI <ocean_dwave_cli>`
+    section.
+
+    For example, add a ``beta`` section::
+
+        [defaults]
+        token = ABC-123456789123456789123456789
+
+        [beta]
+        token = BETA-123456789123456789123456789
+
+    You can then set ``profile="beta"`` to use the beta-tester project's API
+    token when accessing the simulator.
+
+    >>> from dwave.gate.leap import LeapQCDLSimulator
+    ...
+    >>> simulator = LeapQCDLSimulator(profile="beta")         # doctest: +SKIP
+
+*   Set the ``DWAVE_API_TOKEN`` environment variable.
+
+    You can set this environment variable for a Unix operating system with a
+    Bash command such as,
+    ``export DWAVE_API_TOKEN="BETA-123456789123456789123456789"``, for example,
+    or for a Windows system with a command such as
+    ``set DWAVE_API_TOKEN=BETA-123456789123456789123456789``.
+
+    Remember to delete that environment variable when you return to your
+    work on your previous project.
 
 .. _qcdl_programming_basic:
 
