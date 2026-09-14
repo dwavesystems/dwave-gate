@@ -376,15 +376,15 @@ Results are a Python dictionary where keys are set by the
 :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row` method and values are
 tables formatted as a
 `Polars <https://docs.pola.rs/api/python/stable/reference/index.html>`_
-`DataFrame <https://docs.pola.rs/api/python/stable/reference/dataframe/index.html>`_.
+`DataFrame <https://docs.pola.rs/api/python/stable/reference/dataframe/index.html>`_
+and returned from the |cloud|_ service in a :class:`~dwave.gate.results.Result`
+class.
 
 The :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row` method retrieves
 the values of registers in runtime. When you invoke the method, register data
 is written to a set of tables that your application can retrieve. In addition to
 using this functionality in algorithms, you can use it for troubleshooting, as
 though it were a cross between a print statement and a breakpoint.
-
-.. todo:: update for Ocean
 
 If your QCDL uses the :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row`
 method, the :class:`~dwave.gate.results.Result` output contains records that you may
@@ -393,24 +393,37 @@ retrieve with the :attr:`~dwave.gate.results.Result.records` property.
 .. testcode::
     :skipif: True
 
-    import pandas as pd
     from dwave.gate.qcdl import qcdl
-    from aqumen import Aqumen       # Replace with Leap service's class
+    from dwave.gate.leap import LeapQCDLSimulator
 
+    # Create a QCDL program:
     @qcdl(1)
-    def main(q0):
+    def results_record_example(q0):
         r = q0.Register(name="some_classical_data")
         r <<= 13
         q0.append_table_row(r, table_name="my_table")
 
-    aq = Aqumen("simulator", simulate=True)
+    simulated_example = results_record_example()
 
-    results = await aq.execute(program=main(), shots=10)
+    # Submit the QCDL to a simulator:
+    simulator = LeapQCDLSimulator()
 
-    df : pl.DataFrame = res.get_records()["q0"]["my_table"]
+    future = simulator.run(
+        simulated_example,
+        qpu='DRsim_21qubits',
+        noise_model=True,
+        shots=500,
+        label="SDK Examples - Results Record Job Submission")
 
-The result is a ``DataFrame`` containing 1 column named ``some_classical_data``
-with 10 rows, each of which have a value of :math:`13`.
+    # View the returned records:
+    result = future.result().result
+
+    record_as_a_dataframe = result.records["q0"]["my_table"]
+
+The result is a
+`Polars DataFrame <https://docs.pola.rs/api/python/stable/reference/dataframe/index.html>`_
+containing 1 column named ``some_classical_data`` with 500 rows, each of which
+have a value of :math:`13`.
 
 .. Leniency control might be added in a later update.
 
@@ -445,6 +458,13 @@ with 10 rows, each of which have a value of :math:`13`.
 Yield Handling
 ~~~~~~~~~~~~~~
 
+A significant feature of the simulator in the |cloud|_ service is that it flags
+detected errors by returning ``*`` as a third measurement outcome in addition to
+:math:`0` and :math:`1`, as described in the :ref:`qcdl_basic_measurements`
+section. Qiskit does not handle these values so you must remove individual shots
+containing a ``*`` when passing information to Qiskit. Consequently, fewer shots
+are likely to be returned than the number of shots you requested.\ [#]_
+
 The :class:`~dwave.gate.results.YieldHandling` class provides a general way of handling
 result distributions. It supports options for renormalizing distributions,
 ignoring erasures, and others.
@@ -455,39 +475,15 @@ ignoring erasures, and others.
     half_splats = {"00": 100, "0*": 100}
     assert YieldHandling.only_post_selected_counts.apply(half_splats) == ({"00": 100}, 0.5)
 
-A significant feature of the D-Wave simulator is that it flags detected errors
-by returning ``*`` as a third measurement outcome in addition to :math:`0` and
-:math:`1`, as described in the :ref:`qcdl_basic_measurements` section. Qiskit
-does not handle these values so you must remove individual shots containing a
-``*`` when passing information to Qiskit. Consequently, fewer shots are likely
-to be returned than the number of shots you requested.\ [#]_
 
-.. todo:: update for Ocean
-
-.. testcode::
-    :skipif: True
-
-    from dwave.gate.results import YieldHandling
-
-    provider = AqumenProvider(yield_handling=YieldHandling.renormalize_distribution)
-    simulator_noisy_backend = provider.simulator_noisy
-    shots = 1000
-    job: AqumenJob = simulator_noisy_backend.run(qc, shots=shots)
-    result: AqumenQiskitResult = job.result()
-    # no splats here!
-    counts: dict[str, float] = result.get_counts()
-    assert abs(sum(counts.values()) - shots) < 1e-8
-
-The code above divides the values in the ``counts`` dict by the yield, trading
-statistical accuracy for convenience.
-
-Alternatively, a ``YieldHandling`` option may be passed to ``get_counts``.
+Alternatively, the :meth:`~dwave.gate.results.Result.get_counts` method supports
+a ``post_select`` argument.
 
 .. [#]
     If an application you use, for example, in computing statistical errors,
     is not robust to results containing fewer shots than requested, you can use
-    the :class:`~dwave.gate.results.YieldHandling` class as a workaround *temporarily and
-    with caution*.
+    the :class:`~dwave.gate.results.YieldHandling` class as a workaround
+    *temporarily and with caution*.
 
 .. _qcdl_basic_initialize_reset:
 
@@ -1357,7 +1353,8 @@ for that job submission is about a tenth of a second.
 0.093493
 
 See the :ref:`gate_results` section for information about the returned results
-and supported methods.
+and supported methods. The :ref:`qcdl_basic_result_records` section describes
+how you store and retrieve records of measurements.
 
 .. _qcdl_simulator_parameters:
 
