@@ -79,7 +79,7 @@ from your existing development environment.
     :ref:`cloud_configuration` or using the :ref:`D-Wave CLI <ocean_dwave_cli>`
     section.
 
-    For example, add a ``beta`` section::
+    For example, add a ``beta`` section, which is used for your beta testing::
 
         [defaults]
         token = ABC-123456789123456789123456789
@@ -93,6 +93,18 @@ from your existing development environment.
     >>> from dwave.gate.leap import LeapQCDLSimulator
     ...
     >>> simulator = LeapQCDLSimulator(profile="beta")         # doctest: +SKIP
+
+    You can use the following :ref:`D-Wave CLI <ocean_dwave_cli>` commands to
+    authorize Ocean software to access the |cloud|_ service and Configure a
+    ``beta`` profile,::
+
+        $ dwave auth login
+        $ dwave config create --profile beta --auto-token --project "Beta Testing"
+
+    where ``Beta Testing`` should be replaced with the project name as displayed
+    in the |cloud|_ service. The commands locate your existing configuration
+    file, or create one if needed, then create a new profile called ``beta``,
+    and ask you for your SAPI token to create the new profile.
 
 *   Set the ``DWAVE_API_TOKEN`` environment variable.
 
