@@ -1,0 +1,172 @@
+# %% [markdown]
+# # Repeat Until Success with Error Checks
+#
+# Mid-circuit erasure detection (MCED) can be used to build up complex quantum circuits while occasionally *validating* that no error happened. This "repeat-until success" strategy utilizes advanced control flow during quantum algorithms, where the circuit restarts in unpredictable ways.
+#
+# The example below demonstrates this with a simple three qubit circuit which, ideally, is just the identity. The circuit applies a three-qubit unitary $U$ followed by its inverse, back and forth, a given number of times `num_iterations`:
+#
+# $$
+#     U^{-1} U \ldots U^{-1} U \; |\psi_0>
+# $$
+#
+# After each $U$, an optional MCED is performed on all qubits. If any of the outcomes are bad, the circuit is restarted. For example, if `num_iterations=2`, the following timeline might arise which has one failed attempt:
+#
+# ```
+# Reset qubits
+# U
+# mced -> no error detected
+# U^-1
+#
+# U
+# mced -> ERROR DETECTED
+#
+# Reset qubits
+# U
+# mced -> no error detected
+# U^-1
+#
+# U
+# mced -> no error detected
+# U^-1
+#
+# measure qubits
+# ```
+
+# %% [markdown]
+# ## Building the QCDL Program
+#
+# To simplify the QCDL program, we abstract slightly by using procedures. `mced_check` is a procedure that performs MCEDs on all qubits and stores the value `1` into an `error_check_register`. The procedures `unitary` and `unitary_inverse` represent the operator $U$ (and its inverse) for the program.
+#
+# The control flow in this program is handled with a `Goto` expression.
+
+# %%
+from dwave.gate.qcdl import Scope, procedure, qcdl
+from dwave.gate.qcdl.components import QCDLModule
+from dwave.gate.qcdl.operations import cz, mced, measure, rx, ry, rz
+
+
+# QCDL entrypoints start with `@qcdl(num_qubits=...)`
+@qcdl(num_qubits=3)
+def main(repeat_until_success: bool, num_iterations: int = 4, **qubits):
+    """Build up a unitary with optional repeat until success behavior.
+
+    Args:
+        repeat_until_success: When True, the circuit will perform MCED checks throughout and restart whenever an error is detected. When False, this is skipped.
+
+        num_iterations: The number of (U^-1 MCED U) circuit components to perform.
+            The circuit depth is controlled by `num_iterations`.
+
+        **qubits: QCDL will automatically pass qubits here with keys "q0", "q1", and "q2".
+    """
+    sc = Scope(*qubits.values())
+    error_flag = sc.Register(name="error_flag")
+
+    # Retry whenever errors are detected
+    sc.Label("retry")
+    for q in qubits.values():
+        q.reset()
+
+    for _ in range(num_iterations):
+        # Perform the U operation.
+        unitary(**qubits)
+
+        # If RUS is on, check for errors and restart if any are detected.
+        if repeat_until_success:
+            mced_check(qubits, sc, error_flag_register=error_flag)
+            with sc.If(None):
+                # This condition is triggered when any error is detected
+                sc.Goto("retry")
+
+        # Undo the U operation
+        unitary_inverse(**qubits)
+
+    # Measure all qubits
+    for q in qubits.values():
+        measure(q)
+
+
+@procedure
+def unitary(q0, q1, q2):
+    """Three-qubit unitary with no particular meaning."""
+    rx(q0, 1.0)
+    ry(q0, 0.5)
+    ry(q1, -0.2)
+    ry(q2, 4.0)
+    rz(q2, 0.3)
+    cz(q0, q1)
+    cz(q0, q2)
+    cz(q1, q2)
+
+
+@procedure
+def unitary_inverse(q0, q1, q2):
+    """Hard-coded inverse of `unitary`."""
+    cz(q1, q2)
+    cz(q0, q2)
+    cz(q0, q1)
+    rz(q2, -0.3)
+    ry(q2, -4.0)
+    ry(q1, 0.2)
+    ry(q0, -0.5)
+    rx(q0, -1.0)
+
+
+@procedure
+def mced_check(
+    qubits: dict[str, QCDLModule],
+    sc: Scope,
+    error_flag_register,
+):
+    """Perform an MCED on all qubits and check if any have"""
+    for q in qubits.values():
+        mced(q, register=error_flag_register)
+    sc.all_to_all(error_flag_register == 1, reduce_op="|")
+
+
+# %% [markdown]
+# ## SDK Initialization
+
+# %%
+from dwave.cloud import Client
+
+client = Client.from_config()
+solver = client.get_solver(supported_problem_types__contains="qcdl")
+
+# %% [markdown]
+# ## Execute without error checks and RTCF
+
+# %%
+from dwave.gate.leap import LeapQCDLSimulator
+
+shots = 100
+simulator = LeapQCDLSimulator()
+future = simulator.run(main(repeat_until_success=False), shots=shots, noise_model=True)
+results = future.result().result
+
+results.get_counts(post_select=True)
+
+# %% [markdown]
+# ## Execute with error checks and RTCF
+
+# %%
+future = simulator.run(main(repeat_until_success=True), shots=shots, noise_model=True)
+results = future.result().result
+
+results.get_counts(post_select=True)
+
+# %% [markdown]
+# Copyright &copy; 2026 D-Wave Systems, Inc
+#
+# The software is licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This code example is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>
