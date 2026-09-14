@@ -298,21 +298,23 @@ resetting the qubit(s) in between).
 
 Measurement outcomes are handled in three different ways:
 
-.. todo:: Update below for Ocean
-
-1.  If ``log=True`` (the default) the outcome is appended to the array
-    associated with the qubit on which it was measured. Along with the arrays
-    from the other qubits, this data is returned to you in a 3D array
-    (per ``tag``) with shape "number of measurements per shot, number of shots,
-    number of qubits". This data structure may be retrieved using
-    ``Result.get_memory``. For circuits with a deterministic number of
-    measurements per shot consistent for all qubits, this data structure may be
-    converted into a counts dictionary with ``Result.get_counts``
-    (``get_counts`` calls ``get_memory``).
-2.  The outcome may be saved to a register. When doing so, even if the register
-    is defined on multiple qubits, only the register copy on the qubit measured
-    is assigned. This data could be returned with ``append_table_row`` (see the
-    :ref:`qcdl_basic_result_records` section).
+1.  If the :func:`~dwave.gate.qcdl.operations.measure` function has
+    its ``log`` parameter set to true (``log=True``, the default) the outcome is
+    appended to the array associated with the qubit on which it was measured.
+    The :class:`~dwave.gate.results.Result` class returns this data to you in
+    a 3D array (per ``tag`` argument of the
+    :func:`~dwave.gate.qcdl.operations.measure` operation) with shape
+    ``(number of measurements per shot, number of shots, number of qubits)``,
+    along with the arrays from the other qubits. You can retrieve this data
+    structure using the :meth:`~dwave.gate.results.Result.get_memory` method.
+    For circuits with a deterministic number of measurements per shot consistent
+    for all qubits, you can convert this data structure a counts dictionary with
+    the :meth:`~dwave.gate.results.Result.get_counts` method.
+2.  The outcome may be saved to a register. Even if the register is defined on
+    multiple qubits, only the register copy on the measured qubit is assigned.
+    You can return this data with
+    :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row` method (see
+    the :ref:`qcdl_basic_result_records` section).
 3.  Each qubit implicitly stores its most recent measurement outcome and
     this value may be used in conditional statements.
 
@@ -342,7 +344,8 @@ Measurement outcomes are handled in three different ways:
 
 By default, the :meth:`~dwave.gate.results.Result.get_counts` method returns all data,
 including erasures. To return only results without the ``*``, thereby
-post-selecting on the detected errors, use the ``post_select=True`` flag.
+post-selecting on the detected errors, set the method's ``post_select`` argument
+to true.
 
 .. _qcdl_basic_mced:
 
