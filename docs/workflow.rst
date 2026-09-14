@@ -461,13 +461,15 @@ Yield Handling
 A significant feature of the simulator in the |cloud|_ service is that it flags
 detected errors by returning ``*`` as a third measurement outcome in addition to
 :math:`0` and :math:`1`, as described in the :ref:`qcdl_basic_measurements`
-section. Qiskit does not handle these values so you must remove individual shots
-containing a ``*`` when passing information to Qiskit. Consequently, fewer shots
-are likely to be returned than the number of shots you requested.\ [#]_
+section. Tools such as Qiskit do not handle these values so tools such as the
+`dwave-qiskit-plugin <https://github.com/dwavesystems/dwave-qiskit-plugin>`_
+remove individual shots containing a ``*`` when passing information.
+Consequently, fewer shots are likely to be returned than the number of shots you
+requested.\ [#]_
 
-The :class:`~dwave.gate.results.YieldHandling` class provides a general way of handling
-result distributions. It supports options for renormalizing distributions,
-ignoring erasures, and others.
+The :class:`~dwave.gate.results.YieldHandling` class provides a general way of
+handling result distributions. It supports options for renormalizing
+distributions, ignoring erasures, and others.
 
 .. testcode::
 
