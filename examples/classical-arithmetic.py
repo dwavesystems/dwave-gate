@@ -1,6 +1,8 @@
 # %% [markdown]
 # # Real-time Arithmetic on Classical Registers
-# In this notebook, we will show how to implement real-time arithmetic on classical registers attached to the dual-rail qubits, which is a important component for real-time control flow and necessary for error correction.
+# This notebook shows how to implement real-time arithmetic on classical
+# registers attached to dual-rail qubits, which is an important component
+# of real-time control flow and necessary for error correction.
 
 # %%
 import functools
