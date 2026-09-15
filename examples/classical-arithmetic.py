@@ -100,7 +100,7 @@ results.get_counts()
 # %%
 def print_ry_angle(controlling_states: list, data: pl.DataFrame):
     """Helper function to print the empirical y rotation angle,
-    excluding the leakage state
+    excluding the leakage state.
 
     Args:
         controlling_states (list): list representation
