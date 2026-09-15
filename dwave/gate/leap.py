@@ -70,7 +70,7 @@ class LeapQCDLSimulator:
 
     @property
     def default_solver(self) -> dict[str, str]:
-        """Features used to select the latest accessible QCDL solver."""
+        """Features used to select the latest accessible QCDL simulator."""
         return dict(supported_problem_types__contains='qcdl',
                     category='software-gate',
                     order_by='-properties.version')
