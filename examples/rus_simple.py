@@ -146,7 +146,7 @@ client = Client.from_config()
 solver = client.get_solver(supported_problem_types__contains="qcdl")
 
 # %% [markdown]
-# ## Execute without error checks and RTCF
+# ## Execute without Error Checks and RTCF
 
 # %%
 from dwave.gate.leap import LeapQCDLSimulator
@@ -159,7 +159,7 @@ results = future.result().result
 results.get_counts(post_select=True)
 
 # %% [markdown]
-# ## Execute with error checks and RTCF
+# ## Execute with Error Checks and RTCF
 
 # %%
 future = simulator.run(main(repeat_until_success=True), shots=shots, noise_model=True)

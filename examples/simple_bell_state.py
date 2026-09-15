@@ -1,7 +1,9 @@
 # %% [markdown]
-# # Simulating a Bell State Measurement
+# # Simulating a Bell-State Measurement
 #
-# This notebook shows how to construct a Bell state using QCDL and simulate it with our Dual-Rail Qubit simulator. This is a great place to start if you are new to QCDL and Dual-Rail Qubit simulation.
+# This notebook shows how to construct a Bell state using QCDL and
+# simulate it with a dual-rail qubit simulator. Start here if you are new to
+# QCDL and dual-rail qubit simulation.
 
 # %%
 import logging
@@ -12,7 +14,8 @@ logging.basicConfig(level=logging.INFO)
 # %% [markdown]
 # ## Writing QCDL
 #
-# QCDL (Quantum Circuit Description Language) is a powerful way to specify quantum programs. To use it, we use the decorator `@qcdl(num_qubits)`. For example
+# QCDL (Quantum Circuit Description Language) is a powerful way to specify
+# quantum programs. To use it, use the decorator `@qcdl(num_qubits)`. For example,
 #
 # ```python
 # @qcdl(num_qubits=1)
@@ -21,7 +24,9 @@ logging.basicConfig(level=logging.INFO)
 #     q.measure()
 # ```
 #
-# says "perform a Hadamard gate on one qubit and then measure it". The function `main` must have exactly one argument because the `qcdl` decorator was given `num_qubits=1`.
+# says, "perform a Hadamard gate on one qubit and then measure it".
+# The function `main` must have exactly one argument because the
+# `qcdl` decorator is given `num_qubits=1`.
 
 # %% [markdown]
 # ## Bell Circuit in QCDL
@@ -34,22 +39,25 @@ from dwave.gate.qcdl.operations import cx, h, measure
 from dwave.gate.utils.display import print_qcdl
 
 
-# Remember to start with `@qcdl`. The `main` entry-point has two arguments `q0` and `q1` because we use `@qcdl(num_qubits=2)`.
+# Remember to start with `@qcdl`. The `main` entry-point has two
+# arguments `q0` and `q1` because you use `@qcdl(num_qubits=2)`.
 @qcdl(num_qubits=2)
 def main(q0, q1):
 
     h(q0)  # Hadamard
     cx(q0, q1)  # CNOT with q0 as control and q1 as target
 
-    measure(q0)  # Measure
-    measure(q1)  # Measure
+    measure(q0)
+    measure(q1)
 
 
 # %% [markdown]
-# ## Understanding QCDL instructions.
+# ## Understanding QCDL Instructions.
 #
-# The function `main` corresponds to a quantum program specification. To see it, try calling `main` with `main()`.
-# Alternatively, the `print_qcdl` function can be used to inspect a QCDL in a human-readable fashion.
+# The function `main` corresponds to a quantum program specification. 
+# To see it, try calling `main` with `main()`.
+# Alternatively, the `print_qcdl` function can be used to inspect a QCDL
+# in a human-readable fashion.
 
 # %%
 print_qcdl(main())
@@ -58,7 +66,7 @@ print_qcdl(main())
 # print(print_qcdl(main(), to_Display=False))
 
 # %% [markdown]
-# ## Simulate and retrieve results
+# ## Simulate and Retrieve Results
 
 # %%
 from dwave.gate.leap import LeapQCDLSimulator
@@ -82,7 +90,10 @@ print(counts)
 # - Why are fewer than `shots` outcomes returned, and
 # - what is `post_select=True` for?
 #
-# the answer is that Dual-Rail Qubits experience errors, and our simulator discards data with errors when `post_select=True`. To see this, try switching to `post_select=False` to observe all shots including data with errors lableled on specific qubits.
+# The answer is that dual-rail qubits experience errors, and the simulator
+# discards data with errors when `post_select=True`. To see this, try
+# switching to `post_select=False` to observe all shots including data with
+# errors labeled on specific qubits.
 
 # %% [markdown]
 # Copyright &copy; 2026 D-Wave Systems, Inc
