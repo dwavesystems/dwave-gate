@@ -17,13 +17,6 @@ Classes
     :show-inheritance:
     :inherited-members:
 
-.. currentmodule:: dwave.gate.leap
-
-.. autoclass:: LeapQCDLSimulator
-    :members:
-    :show-inheritance:
-    :inherited-members:
-
 Utilities
 =========
 
