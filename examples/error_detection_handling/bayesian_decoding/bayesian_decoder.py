@@ -8,7 +8,7 @@ from math import exp
 class DecoderParams:
     """
     beta : float
-            Controls how strongly distance is penalized.
+        Controls how strongly distance is penalized.
 
     max_distance : int
         Maximum allowed distance from a clean bitstring.
@@ -25,30 +25,30 @@ class DecoderParams:
 
     min_posterior : float or None
         Minimum posterior probability a candidate must have to be considered.
-        
+
         Example::
             {
                 "000": 0.36,
                 "001": 0.34,
                 "010": 0.30,
             }
-            
+
         So "000" is best but it's not a high posterior probability.
-        
+
         If None, place no restriction.
 
     min_margin : float | None
         A required margin for the highest posterior and second highest to account
         for possible ambiguity.
-        
+
         Example::
             {
                 "000": 0.52,
                 "001": 0.48,
             }
-            
+
         so the best answer is "000" but barely.
-        
+
         If None, place no restriction.
     """
 
@@ -73,7 +73,7 @@ def bayesian_decode_counts(counts, decoder_params: DecoderParams | None):
 
     Parameters
     ----------
-    
+
     counts : dict[str, int]
         Example:
         {
@@ -85,7 +85,7 @@ def bayesian_decode_counts(counts, decoder_params: DecoderParams | None):
 
     Returns
     -------
-    
+
     decoded_counts : dict[str, int]
         Clean counts plus accepted starred counts assigned to guesses.
 
