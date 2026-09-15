@@ -1,6 +1,8 @@
 # %% [markdown]
-# # Real-time Arithmetic on Classical Register
-# In this notebook, we will show how to implement real-time arithmetic on classical registers attached to the dual-rail qubits, which is a important component for real-time control flow and necessary for error correction.
+# # Real-time Arithmetic on Classical Registers
+# This notebook shows how to implement real-time arithmetic on classical
+# registers attached to dual-rail qubits, which is an important component
+# of real-time control flow and necessary for error correction.
 
 # %%
 import functools
@@ -17,8 +19,11 @@ from dwave.gate.utils.display import print_qcdl
 logging.basicConfig(level=logging.INFO)
 
 # %% [markdown]
-# ## 5-qubit Example
-# We will prepare a circuit with $n$ `controlling_qubits` and one `main_qubit`. We first apply a set of gates on the `controlling_qubits` and measure them. Denote the measurement outcome as $x_0, x_1, .., x_{n-1}$, we then apply a $R_y(\theta)$ gate on the `main_qubit` with angle
+# ## Five-Qubit Example
+# Prepare a circuit with $n$ `controlling_qubits` and one `main_qubit`.
+# First apply a set of gates on the `controlling_qubits` and measure them.
+# Denote the measurement outcome as $x_0, x_1, .., x_{n-1}$, and then
+# apply a $R_y(\theta)$ gate on the `main_qubit` with angle
 # $$
 # \theta = \pi \sum_{j=0}^{n-1} x_j2^{-j-1}
 # $$
@@ -95,7 +100,7 @@ results.get_counts()
 # %%
 def print_ry_angle(controlling_states: list, data: pl.DataFrame):
     """Helper function to print the empirical y rotation angle,
-    excluding the leakage state
+    excluding the leakage state.
 
     Args:
         controlling_states (list): list representation
@@ -132,9 +137,18 @@ def print_ry_angle(controlling_states: list, data: pl.DataFrame):
 
 
 # %% [markdown]
-# All the classical register data collected with `Scope.append_table_row()` are stored the `records` dictionary returned by `results.get_records()`. For accessing the relevant data, we first need to specify the qubit number. We choose consistent qubit number for the measurement result. (i.e. use `records["q2"]["q2_measurement"]` for the results of `q2`). The main qubit is denoted as `qmain`. The sum is stored in the registers of all the qubits and we choose to access it through `qmain` here (but we can use any qubit for it).
+# All the classical register data collected with `Scope.append_table_row()`
+# are stored in the `records` dictionary returned by `results.get_records()`.
+# For accessing the relevant data, first specify the qubit number. Choose
+# consistent qubit numbers for the measurement results (i.e. use
+# `records["q2"]["q2_measurement"]` for the results of `q2`). The main
+# qubit is denoted as `qmain`. The sum is stored in the registers of all
+# the qubits and you access it through `qmain` here (but can use any
+# qubit).
 #
-# The data of each classical register is a `dictionary` and the key is the name specified at its initialization (e.g. `creg2`). It can be conveniently converted to a `DataFrame` for analysis.
+# The data of each classical register is a dictionary and the key is the
+# name specified at initialization (e.g. `creg2`). Data can be conveniently
+# converted to a `DataFrame` for analysis.
 
 # %%
 # Generate a dataframe for the relevant results
@@ -152,12 +166,12 @@ print(df)
 
 # %%
 def print_n_bit_angles(num_c_qubits: int, c_st_list: list, ii: int):
-    """Recursive function to iterate over all states
+    """Recursive function to iterate over all states.
 
     Args:
-        num_c_qubits (int): number of controlling qubits
-        c_st_list (list): list representation of the controlling state
-        ii (int): qubit index of the current function call
+        num_c_qubits (int): Number of controlling qubits.
+        c_st_list (list): List representation of the controlling state.
+        ii (int): Qubit index of the current function call.
     """
     if ii == num_c_qubits:
         print_ry_angle(c_st_list, df)
