@@ -166,7 +166,7 @@ print(df)
 
 # %%
 def print_n_bit_angles(num_c_qubits: int, c_st_list: list, ii: int):
-    """Recursive function to iterate over all states
+    """Recursive function to iterate over all states.
 
     Args:
         num_c_qubits (int): number of controlling qubits
