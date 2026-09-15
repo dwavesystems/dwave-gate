@@ -19,7 +19,7 @@ from dwave.gate.utils.display import print_qcdl
 logging.basicConfig(level=logging.INFO)
 
 # %% [markdown]
-# ## 5-qubit Example
+# ## Five-Qubit Example
 # We will prepare a circuit with $n$ `controlling_qubits` and one `main_qubit`. We first apply a set of gates on the `controlling_qubits` and measure them. Denote the measurement outcome as $x_0, x_1, .., x_{n-1}$, we then apply a $R_y(\theta)$ gate on the `main_qubit` with angle
 # $$
 # \theta = \pi \sum_{j=0}^{n-1} x_j2^{-j-1}
