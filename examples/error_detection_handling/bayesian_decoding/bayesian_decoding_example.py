@@ -7,7 +7,8 @@ num_shots = 1000
 
 # %% [markdown]
 # ## Create a Circuit
-# This creates a random circuit where every ideal output has a fixed hamming weight (i.e. a fixed number of 1's in the bitstring)
+# This creates a random circuit where every ideal output has a fixed Hamming
+# weight (i.e. a fixed number of 1's in the bitstring).
 
 # %%
 from qiskit import transpile
@@ -23,7 +24,7 @@ qc = transpile(qc, basis_gates=["cz", "rz", "sx"], optimization_level=2)
 qc.count_ops()
 
 # %% [markdown]
-# ## Get the exact result
+# ## Get the Exact Result
 
 # %%
 from qiskit.quantum_info import Statevector
@@ -35,7 +36,7 @@ print(sv.probabilities_dict(decimals=2))
 qc.measure_all()
 
 # %% [markdown]
-# ## Instantiate the DWave qiskit provider and run the circuit
+# ## Instantiate the D-Wave Qiskit Provider and Run the Circuit
 
 # %%
 from pprint import pp
@@ -51,16 +52,16 @@ pp(raw_counts)
 pp(counts)
 
 # %% [markdown]
-# ## Check the yield from performing full post selection
+# ## Check Yield from Performing Full Post Selection
 
 # %%
 job.result().data()["post_selection_yield"]
 
 # %% [markdown]
-# ## Run the circuit on the Leap simulator backend
+# ## Run the Circuit on the Dual-Rail Simulator Backend
 
 # %% [markdown]
-# ## Optimize over the Beta parameter in the Bayesian Decoding
+# ## Optimize over the Beta Parameter in the Bayesian Decoding
 
 # %%
 import numpy as np

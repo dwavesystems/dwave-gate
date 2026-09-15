@@ -1,7 +1,9 @@
 # %% [markdown]
-# # Demonstrating Simple Measurement-Based Feedback
+# # Simple Measurement-Based Feedback
 #
-# This notebook shows how to construct a measurement-based feedback circuit using QCDL and simulate it with our Dual-Rail Qubit simulator. This is a great example that shows basic conditional logic in real-time and sets the stage for more advanced examples in follow-on notebooks.
+# This notebook shows how to construct a measurement-based feedback circuit using QCDL
+# and simulate it with a dual-rail qubit simulator. This example shows basic conditional logic
+# in real time and sets the stage for more advanced examples.
 
 # %%
 import logging
@@ -17,23 +19,22 @@ from dwave.gate.qcdl import qcdl
 from dwave.gate.qcdl.operations import h, measure, x
 
 
-# Remember to start with `@qcdl`. The `main` entry-point has two arguments `q0` and `q1` because we use `@qcdl(num_qubits=2)`.
 @qcdl(num_qubits=2)
 def main(q0, q1):
 
     h(q1)  # Hadamard
-    measure(q1)  # Measure
+    measure(q1)
     q0.sync(q1)  # Synchronize instruction execution of q0 and q1 in time
 
     with q0.If(condition=q1):
         x(q0)  # X gate (bit flip)
 
-    measure(q0)  # Measure
+    measure(q0)
 
 
 # %% [markdown]
 # ## Solver Initialization
-# Initialize the QCDL solver
+# Initialize the QCDL simulator
 
 # %%
 from dwave.gate.leap import LeapQCDLSimulator

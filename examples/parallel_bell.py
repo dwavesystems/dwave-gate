@@ -1,7 +1,7 @@
 # %% [markdown]
 # # Simulating Parallel Circuits
 #
-# For small circuits like a two-qubit Bell circuit, there is an opportunity to
+# For small circuits such as a two-qubit Bell circuit, there is an opportunity to
 # boost throughput by running multiple copies of the same circuit in parallel.
 #
 # This notebook shows how to perform this operation and simulate it. The technique
@@ -30,10 +30,10 @@ logging.basicConfig(level=logging.INFO)
 # %%
 def post_select_and_aggregate(raw_counts: dict):
     """Aggregate raw counts of 2 subcircuits to 2-qubit counts
-    as well as excluding leakage in subcircuits
+    while excluding leakage in subcircuits.
 
     Args:
-        raw_counts (dict): The counts with all information including erasure
+        raw_counts (dict): Counts with all information, including erasure.
 
     """
     aggregated_counts = defaultdict(int)
@@ -52,7 +52,8 @@ def post_select_and_aggregate(raw_counts: dict):
 
 # %% [markdown]
 # ## Parallel Bell Circuits in QCDL
-# We use 4 qubits to run two GHZ circuits. For convenience, we first define a `Bell_circuit` function for a sub-circuit. The use of `procedure` decorator is optional.
+# Use 4 qubits to run two GHz circuits. For convenience, first define a `Bell_circuit`
+# function for a sub-circuit. The use of the `procedure` decorator is optional.
 #
 
 
@@ -77,16 +78,16 @@ def main(**kwargs):
 
 
 # %% [markdown]
-# We then print the QCDL instructions
+# Print the QCDL instructions
 
 # %%
-# print_qcdl(main())
+print_qcdl(main())
 
 # If your notebook doesn't display `print_qcdl` output well, try uncommenting the next line instead.
-print(print_qcdl(main(), to_Display=False))
+# print(print_qcdl(main(), to_Display=False))
 
 # %% [markdown]
-# ## Simulate and retrieve results
+# ## Simulate and Retrieve Results
 #
 #
 
@@ -99,7 +100,8 @@ future = simulator.run(main(), shots=shots, noise_model=True)
 results = future.result().result
 
 # %% [markdown]
-# Simulated measurement outcomes can be retrieved with `results.get_counts`. We print the results without post-selection to show erasure errors.
+# Simulated measurement outcomes can be retrieved with `results.get_counts`.
+# Print the results without post-selection to show erasure errors.
 
 # %%
 # Inspect measurements
@@ -111,13 +113,20 @@ raw_counts = results.get_counts(
 print(raw_counts)
 
 # %% [markdown]
-# We then post process the results to get the counts for 2-qubit groups. When erasure only happens in one of the sub-circuits, the result of the other sub-circuit is still valid (i.e. if we get a result of `*011`, the `11` result is still counted as 'no error'). We also compute the yield of this method and it is roughly two times of the simple version of Bell circuit.
+# Post process the results to get the counts for 2-qubit groups. When
+# erasure only happens in one of the sub-circuits, the result of the other
+# sub-circuit is still valid (i.e. if you get a result of `*011`, the `11` result is
+# still counted as 'no error'). Also compute the yield of this method: it is
+# roughly double the simple version of Bell circuit.
 
 # %%
 aggregated_counts = post_select_and_aggregate(raw_counts)
 
 # %% [markdown]
-# We have shown in this notebook that by running parallel sub-circuits on one QPU, the yield can be greatly boosted and exceeding 1.0. That is very useful in near-term, if one is able to run multiple instances of the same Bell circuit (or another circuit of interest) across different pairs of qubits.
+# This notebook demonstrates that by running parallel sub-circuits on one QPU,
+# yield can be greatly boosted and exceed 1.0. That is very useful in near-term, if
+# one is able to run multiple instances of the same Bell circuit (or another circuit of
+# interest) across different pairs of qubits.
 
 # %% [markdown]
 # Copyright &copy; 2026 D-Wave Systems, Inc

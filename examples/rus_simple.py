@@ -1,15 +1,23 @@
 # %% [markdown]
 # # Repeat Until Success with Error Checks
 #
-# Mid-circuit erasure detection (MCED) can be used to build up complex quantum circuits while occasionally *validating* that no error happened. This "repeat-until success" strategy utilizes advanced control flow during quantum algorithms, where the circuit restarts in unpredictable ways.
+# Mid-circuit erasure detection (MCED) can be used to build up complex
+# quantum circuits while occasionally *validating* that no error happened.
+# This "repeat-until success" strategy utilizes advanced control flow during
+# quantum algorithms, where the circuit restarts in unpredictable ways.
 #
-# The example below demonstrates this with a simple three qubit circuit which, ideally, is just the identity. The circuit applies a three-qubit unitary $U$ followed by its inverse, back and forth, a given number of times `num_iterations`:
+# The example below demonstrates this with a simple three-qubit circuit
+# which, ideally, is just the identity. The circuit applies a three-qubit unitary
+# $U$ followed by its inverse, back and forth, a given number of times `num_iterations`:
 #
 # $$
 #     U^{-1} U \ldots U^{-1} U \; |\psi_0>
 # $$
 #
-# After each $U$, an optional MCED is performed on all qubits. If any of the outcomes are bad, the circuit is restarted. For example, if `num_iterations=2`, the following timeline might arise which has one failed attempt:
+# After each $U$, an optional MCED is performed on all qubits. If any of
+# the outcomes are bad, the circuit is restarted. For example, if
+# `num_iterations=2`, the following timeline might arise which has one
+# failed attempt:
 #
 # ```
 # Reset qubits
@@ -35,7 +43,11 @@
 # %% [markdown]
 # ## Building the QCDL Program
 #
-# To simplify the QCDL program, we abstract slightly by using procedures. `mced_check` is a procedure that performs MCEDs on all qubits and stores the value `1` into an `error_check_register`. The procedures `unitary` and `unitary_inverse` represent the operator $U$ (and its inverse) for the program.
+# To simplify the QCDL program, abstract slightly by using procedures.
+# `mced_check` is a procedure that performs MCEDs on all qubits and
+# stores the value `1` into an `error_check_register`. The procedures
+# `unitary` and `unitary_inverse` represent the operator $U$ (and its
+# inverse) for the program.
 #
 # The control flow in this program is handled with a `Goto` expression.
 
@@ -45,18 +57,19 @@ from dwave.gate.qcdl.components import QCDLModule
 from dwave.gate.qcdl.operations import cz, mced, measure, rx, ry, rz
 
 
-# QCDL entrypoints start with `@qcdl(num_qubits=...)`
 @qcdl(num_qubits=3)
 def main(repeat_until_success: bool, num_iterations: int = 4, **qubits):
-    """Build up a unitary with optional repeat until success behavior.
+    """Build up a unitary with optional repeat-until-success behavior.
 
     Args:
-        repeat_until_success: When True, the circuit will perform MCED checks throughout and restart whenever an error is detected. When False, this is skipped.
+        repeat_until_success: When True, the circuit performs MCED checks
+            throughout and restarts whenever an error is detected. Skipped
+            when False.
 
-        num_iterations: The number of (U^-1 MCED U) circuit components to perform.
-            The circuit depth is controlled by `num_iterations`.
+        num_iterations: Number of (U^-1 MCED U) circuit components to
+            perform. Circuit depth is controlled by `num_iterations`.
 
-        **qubits: QCDL will automatically pass qubits here with keys "q0", "q1", and "q2".
+        **qubits: QCDL automatically passes qubits here with keys "q0", "q1", and "q2".
     """
     sc = Scope(*qubits.values())
     error_flag = sc.Register(name="error_flag")
@@ -117,7 +130,7 @@ def mced_check(
     sc: Scope,
     error_flag_register,
 ):
-    """Perform an MCED on all qubits and check if any have"""
+    """Perform an MCED on all qubits and check if any have errors."""
     for q in qubits.values():
         mced(q, register=error_flag_register)
     sc.all_to_all(error_flag_register == 1, reduce_op="|")

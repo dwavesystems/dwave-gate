@@ -1,7 +1,11 @@
 # %% [markdown]
-# # Demonstrating Real-Time Feedback Using Boolean Expressions
+# # Real-Time Feedback Using Boolean Expressions
 #
-# This notebook shows how to construct a more advanced measurement-based feedback circuit that uses Boolean expressions in QCDL and simulate it with our Dual-Rail Qubit simulator. This example introduces users to the basics of real-time calculations and sets the stage for more advanced arithmetic examples in follow-on notebooks.
+# This notebook shows how to construct an advanced measurement-based
+# feedback circuit, which uses Boolean expressions in QCDL, and simulate it
+# with a dual-rail qubit simulator. This example introduces you to the basics
+# of real-time calculations and sets the stage for more advanced arithmetic
+# examples.
 
 # %%
 import logging
@@ -17,7 +21,6 @@ from dwave.gate.qcdl import Scope, qcdl
 from dwave.gate.qcdl.operations import measure, x
 
 
-# Remember to start with `@qcdl`. The `main` entry-point has two arguments `q0` and `q1` because we use `@qcdl(num_qubits=2)`.
 @qcdl(num_qubits=2)
 def main(q0, q1):
 
@@ -28,7 +31,7 @@ def main(q0, q1):
     )  # Instantiate 18-bit classical register c0 to a value 0
     c1 = sc.Register(
         0, name="creg1"
-    )  # Instantiate 18-bit classical register c1 to a value 0
+    )  # Register for the 2nd qubit
 
     measure(q0, register=c0)  # Measure and store result in c0
     q0.sync(q1)  # Synchronize instruction execution of q0 and q1 in time
@@ -37,11 +40,11 @@ def main(q0, q1):
     with q1.If(c0 | c1 == 1):
         x(q1)  # X gate (bit flip)
 
-    measure(q1)  # Measure
+    measure(q1)
 
 
 # %% [markdown]
-# ## Simulate and retrieve results
+# ## Simulate and Retrieve Results
 
 # %%
 from dwave.gate.leap import LeapQCDLSimulator

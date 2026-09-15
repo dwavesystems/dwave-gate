@@ -1,8 +1,10 @@
 # Bayesian Decoder for Starred Bitstrings
 
-Minimal Bayesian-style decoder for count dictionaries containing incomplete bitstrings with `"*"` characters.
+Minimal Bayesian-style decoder for count dictionaries containing incomplete
+bitstrings with `"*"` characters.
 
-The decoder uses complete bitstrings as candidate states and tries to infer which complete bitstring each starred bitstring most likely represents.
+The decoder uses starred bitstrings as candidate states and tries to infer
+which complete bitstring each starred bitstring most likely represents.
 
 Example input:
 
@@ -17,7 +19,7 @@ counts = {
 }
 ```
 
-## Core idea
+## Core Idea
 
 For each starred pattern, the decoder computes:
 
@@ -47,9 +49,10 @@ The default likelihood uses exponential distance decay:
 likelihood = exp(-beta * distance)
 ```
 
-where `distance` is the Hamming distance between the candidate and the pattern, ignoring `"*"` positions.
+where `distance` is the Hamming distance between the candidate and
+the pattern, ignoring `"*"` positions.
 
-## Main parameters
+## Main Parameters
 
 | Parameter | Meaning |
 |---|---|
@@ -60,7 +63,7 @@ where `distance` is the Hamming distance between the candidate and the pattern, 
 | `min_margin` | Discard if the best candidate does not beat the runner-up by enough |
 | `alpha` | Optional smoothing added to clean counts |
 
-## Example usage
+## Example Usage
 
 ```python
 decoded, assignments, discarded, posteriors = bayesian_decode_counts(
@@ -110,7 +113,8 @@ However, with
 max_distance = 1
 ```
 
-a starred pattern must exactly match all visible bits in every position besides a single position.
+a starred pattern must exactly match all visible bits in every position
+besides a single position.
 
 For example:
 
@@ -144,7 +148,8 @@ With:
 min_posterior = 0.8
 ```
 
-the decoder only accepts a guess if the best candidate has at least 80% posterior probability.
+the decoder only accepts a guess if the best candidate has at least 80%
+posterior probability.
 
 With:
 
@@ -152,7 +157,8 @@ With:
 min_margin = 0.2
 ```
 
-the decoder only accepts a guess if the best candidate beats the second-best candidate by at least 20 percentage points.
+the decoder only accepts a guess if the best candidate beats the second-best
+candidate by at least 20 percentage points.
 
 ## Tuning `beta`
 
@@ -216,4 +222,6 @@ The Bayesian structure is:
 posterior ∝ prior × likelihood
 ```
 
-The thresholds do not make the method Bayesian by themselves. They are practical safeguards that prevent low-quality or ambiguous starred shots from being forced into a decoded state.
+The thresholds do not make the method Bayesian by themselves. They are
+practical safeguards that prevent low-quality or ambiguous starred shots
+from being forced into a decoded state.
