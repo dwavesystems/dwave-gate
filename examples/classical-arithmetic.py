@@ -137,7 +137,14 @@ def print_ry_angle(controlling_states: list, data: pl.DataFrame):
 
 
 # %% [markdown]
-# All the classical register data collected with `Scope.append_table_row()` are stored the `records` dictionary returned by `results.get_records()`. For accessing the relevant data, we first need to specify the qubit number. We choose consistent qubit number for the measurement result. (i.e. use `records["q2"]["q2_measurement"]` for the results of `q2`). The main qubit is denoted as `qmain`. The sum is stored in the registers of all the qubits and we choose to access it through `qmain` here (but we can use any qubit for it).
+# All the classical register data collected with `Scope.append_table_row()`
+# are stored in the `records` dictionary returned by `results.get_records()`.
+# For accessing the relevant data, first specify the qubit number. Choose
+# consistent qubit numbers for the measurement results (i.e. use
+# `records["q2"]["q2_measurement"]` for the results of `q2`). The main
+# qubit is denoted as `qmain`. The sum is stored in the registers of all
+# the qubits and you access it through `qmain` here (but can use any
+# qubit).
 #
 # The data of each classical register is a `dictionary` and the key is the name specified at its initialization (e.g. `creg2`). It can be conveniently converted to a `DataFrame` for analysis.
 
