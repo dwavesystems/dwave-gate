@@ -146,7 +146,9 @@ def print_ry_angle(controlling_states: list, data: pl.DataFrame):
 # the qubits and you access it through `qmain` here (but can use any
 # qubit).
 #
-# The data of each classical register is a `dictionary` and the key is the name specified at its initialization (e.g. `creg2`). It can be conveniently converted to a `DataFrame` for analysis.
+# The data of each classical register is a dictionary and the key is the
+# name specified at initialization (e.g. `creg2`). Data can be conveniently
+# converted to a `DataFrame` for analysis.
 
 # %%
 # Generate a dataframe for the relevant results
