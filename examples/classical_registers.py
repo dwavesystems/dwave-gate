@@ -1,4 +1,21 @@
 # %% [markdown]
+# Copyright &copy; 2026 D-Wave
+#
+# The software is licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This code example is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>
+
+# %% [markdown]
 # # Real-Time Feedback Using Boolean Expressions
 #
 # This notebook shows how to construct an advanced measurement-based
@@ -29,9 +46,7 @@ def main(q0, q1):
     c0 = sc.Register(
         0, name="creg0"
     )  # Instantiate 18-bit classical register c0 to a value 0
-    c1 = sc.Register(
-        0, name="creg1"
-    )  # Register for the 2nd qubit
+    c1 = sc.Register(0, name="creg1")  # Register for the 2nd qubit
 
     measure(q0, register=c0)  # Measure and store result in c0
     q0.sync(q1)  # Synchronize instruction execution of q0 and q1 in time
@@ -62,20 +77,3 @@ results = future.result().result
 counts = results.get_counts(register=["q0", "q1"], post_select=True)
 
 print(counts)
-
-# %% [markdown]
-# Copyright &copy; 2026 D-Wave Systems, Inc
-#
-# The software is licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This code example is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>
