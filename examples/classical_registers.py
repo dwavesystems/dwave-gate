@@ -66,7 +66,11 @@ from dwave.gate.leap import LeapQCDLSimulator
 
 shots = 100
 simulator = LeapQCDLSimulator()
-future = simulator.run(main(), shots=shots, noise_model=True)
+future = simulator.run(
+    main(),
+    shots=shots,
+    noise_model=True,
+    label="Real-Time Feedback Using Boolean Expressions")
 results = future.result().result
 
 # %% [markdown]

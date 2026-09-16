@@ -170,7 +170,11 @@ results.get_counts(post_select=True)
 # ## Execute with Error Checks and RTCF
 
 # %%
-future = simulator.run(main(repeat_until_success=True), shots=shots, noise_model=True)
+future = simulator.run(
+    main(repeat_until_success=True),
+    shots=shots,
+    noise_model=True,
+    label="SDK Examples - Repeat Until Success with Error Checks")
 results = future.result().result
 
 results.get_counts(post_select=True)

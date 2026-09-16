@@ -50,15 +50,19 @@ def main(q0, q1):
 
 
 # %% [markdown]
-# ## Solver Initialization
-# Initialize the QCDL simulator
+# ## Simulate the circuit
+# Initialize the QCDL simulator and run the QCDL
 
 # %%
 from dwave.gate.leap import LeapQCDLSimulator
 
 shots = 100
 simulator = LeapQCDLSimulator()
-future = simulator.run(main(), shots=shots, noise_model=True)
+future = simulator.run(
+    main(),
+    shots=shots,
+    noise_model=True,
+    label="Simple Measurement-Based Feedback")
 results = future.result().result
 
 # %% [markdown]

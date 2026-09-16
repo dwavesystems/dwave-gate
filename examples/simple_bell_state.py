@@ -90,7 +90,11 @@ from dwave.gate.leap import LeapQCDLSimulator
 
 shots = 100
 simulator = LeapQCDLSimulator()
-future = simulator.run(main(), shots=shots, noise_model=True)
+future = simulator.run(
+    main(),
+    shots=shots,
+    noise_model=True,
+    label="SDK Examples - Simulating a Bell-State Measurement")
 results = future.result().result
 
 # %% [markdown]
