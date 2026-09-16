@@ -17,11 +17,21 @@
 
 # %% [markdown]
 # ## Bayesian Decoding
+# This notebook describes a method for recovering shots with
+# erasures using Bayesian statistics and the tradeoff
+# of fidelity incurred by doing so.
 
 # This notebook requires Qiskit and Ocean software's Qiskit plugin.
 # If you installed the Ocean SDK using the `pip install dwave-ocean-sdk[qiskit]`
 # command, both are already installed.
 # Otherwise, run the `pip install dwave-qiskit-plugin` command.
+
+# %%
+import os
+import sys
+
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(parent_dir)
 
 # %%
 num_qubits = 10
@@ -34,8 +44,7 @@ num_shots = 1000
 
 # %%
 from qiskit import transpile
-
-from examples.error_detection_handling.utils.random_circuit_generation import (
+from utils.random_circuit_generation import (
     rand_circ_fixed_hamming_weight,
 )
 
@@ -85,15 +94,20 @@ job.result().data()["post_selection_yield"]
 
 # %% [markdown]
 # ## Optimize over the Beta Parameter in the Bayesian Decoding
+# The beta parameter is essentially the
+# strength of the "penalty" incurred
+# by the difference in Hamming distance between two states.
+# If matplotlib is installed, this creates a bar chart of the
+# counts.
+#
 
 # %%
 import numpy as np
-from qiskit.quantum_info import hellinger_fidelity
-
-from examples.error_detection_handling.bayesian_decoding.bayesian_decoder import (
+from bayesian_decoding.bayesian_decoder import (
     DecoderParams,
     bayesian_decode_counts,
 )
+from qiskit.quantum_info import hellinger_fidelity
 
 best_hf = 0.0
 beta_values = np.linspace(1e-2, 5.0)
@@ -133,11 +147,11 @@ pp(hellinger_fidelity(decoded_counts, sv.probabilities_dict()))
 pp(hellinger_fidelity(counts, sv.probabilities_dict()))
 
 # %%
-from qiskit.visualization import plot_histogram
+# from qiskit.visualization import plot_histogram
 
-plot_histogram(
-    [counts, decoded_counts],
-    legend=["Post Selected", "Bayesian Decoded"],
-    number_to_keep=10,
-    sort="value_desc",
-)
+# plot_histogram(
+#     [counts, decoded_counts],
+#     legend=["Post Selected", "Bayesian Decoded"],
+#     number_to_keep=10,
+#     sort="value_desc",
+# )
