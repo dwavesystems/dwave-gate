@@ -45,9 +45,12 @@ logging.basicConfig(level=logging.INFO)
 # \theta = \pi \sum_{j=0}^{n-1} x_j2^{-j-1}
 # $$
 #
-# We start with a simple case of 5 qubits. q0 to q3 are the `controlling_qubits` and q4 is the `main_qubit`. We will apply Hadamard gates on `controlling_qubits` and measure them. Depending on the outcomes, we apply the $R_y(\theta)$ gate on q4.
+# Start with a simple case of five qubits. Qubits q0 to q3 are the
+# `controlling_qubits` and q4 is the `main_qubit`. Apply Hadamard gates on
+# `controlling_qubits` and measure them. Depending on the outcomes,
+# apply the $R_y(\theta)$ gate on q4.
 #
-# This program is highly non-trivial to implement and the key steps will be explained.
+# This program is highly non-trivial to implement and the key steps are explained.
 
 # %%
 # Specify the number of qubits in the QCDL program
@@ -64,8 +67,8 @@ def main(**kwargs):
     c_sum = sc.FixedPointRegister(
         0, name="cregs"
     )  # Use FixedPointRegister for decimal values.
-    # This initialization will only rest the value before all the shots, but not every shot
-    c_sum <<= 0  # We need to explicitly reset the register to 0 here, otherwise it will carry the results of previous shots
+    # This initialization will only reset the value before all the shots, but not every shot
+    c_sum <<= 0  # You need to explicitly reset the register to 0 here, otherwise it carries the results of previous shots
 
     cregs = []
     for q_id, qubit in enumerate(qubits[:-1]):
@@ -74,7 +77,7 @@ def main(**kwargs):
         measure(qubit, register=cregs[q_id])  # Measure and store result
         # Store the measurement results for convenient post-processing
         sc.append_table_row(cregs[q_id], table_name=f"q{q_id}_measurement")
-        with sc.If(cregs[q_id] == 1):  # when the qubit is measured to be
+        with sc.If(cregs[q_id] == 1):  # when the qubit is measured to be 1
             # Add 2^(-1-j) to the c_sum register of all the qubits
             c_sum += 2 ** (-1 - q_id)
 
@@ -84,7 +87,7 @@ def main(**kwargs):
     # Note that c_sum doesn't carry the factor of pi, but as it is a classical register,
     # when being passed as a argument of a gate, QCDL assumes it is in the unit of pi, so no need
     # to multiply the factor of pi here.
-    # For example, if c_sum==0.5, then the rotation angle here is 0.5pi in radiant
+    # For example, if c_sum==0.5, then the rotation angle here is 0.5pi in radians
     ry(qubits[-1], c_sum)
 
     cm = sc.Register(0, name="creg_main")
@@ -94,12 +97,14 @@ def main(**kwargs):
 
 
 # Method to print out the QCDL for verification
-# print_qcdl(main())
+print_qcdl(main())
 # If your notebook doesn't display `print_qcdl` output well, try uncommenting the next line instead.
-print(print_qcdl(main(), to_Display=False))
+# print(print_qcdl(main(), to_Display=False))
 
 # %% [markdown]
-# For simulation, we simulate the noiseless case to ensure our implementation is effective. Without circuit noise, the empirical rotation angle should be close to the ideal one, and the difference is solely due to shot noise.
+# For simulation, simulate the noiseless case to ensure this implementation
+# is effective. Without circuit noise, the empirical rotation angle should be close
+# to the ideal one, and the difference is solely due to shot noise.
 
 # %%
 from dwave.gate.leap import LeapQCDLSimulator
@@ -107,7 +112,11 @@ from dwave.gate.leap import LeapQCDLSimulator
 shots = 10000  # Use a large number of shots to reduce shot noise
 
 simulator = LeapQCDLSimulator()
-future = simulator.run(main(), shots=shots, noise_model=False)
+future = simulator.run(
+    main(),
+    shots=shots,
+    noise_model=False,
+    label="Real-time Arithmetic on Classical Registers")
 results = future.result().result
 
 # %%

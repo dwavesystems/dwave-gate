@@ -18,13 +18,18 @@
 # %% [markdown]
 # ## Bayesian Decoding
 
+# This notebook requires Qiskit and Ocean software's Qiskit plugin.
+# If you installed the Ocean SDK using the `pip install dwave-ocean-sdk[qiskit]`
+# command, both are already installed.
+# Otherwise, run the `pip install dwave-qiskit-plugin` command.
+
 # %%
 num_qubits = 10
 num_shots = 1000
 
 # %% [markdown]
 # ## Create a Circuit
-# This creates a random circuit where every ideal output has a fixed Hamming
+# Create a random circuit where every ideal output has a fixed Hamming
 # weight (i.e. a fixed number of 1's in the bitstring).
 
 # %%
@@ -77,9 +82,6 @@ pp(counts)
 
 # %%
 job.result().data()["post_selection_yield"]
-
-# %% [markdown]
-# ## Run the Circuit on the Dual-Rail Simulator Backend
 
 # %% [markdown]
 # ## Optimize over the Beta Parameter in the Bayesian Decoding
