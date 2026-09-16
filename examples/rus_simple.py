@@ -137,15 +137,6 @@ def mced_check(
 
 
 # %% [markdown]
-# ## SDK Initialization
-
-# %%
-from dwave.cloud import Client
-
-client = Client.from_config()
-solver = client.get_solver(supported_problem_types__contains="qcdl")
-
-# %% [markdown]
 # ## Execute without Error Checks and RTCF
 
 # %%
