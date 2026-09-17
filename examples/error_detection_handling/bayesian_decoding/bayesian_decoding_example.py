@@ -43,10 +43,10 @@ num_shots = 1000
 # weight (i.e. a fixed number of 1's in the bitstring).
 
 # %%
-from qiskit import transpile
-from utils.random_circuit_generation import (
+from bayesian_decoding.random_circuit_generation import (
     rand_circ_fixed_hamming_weight,
 )
+from qiskit import transpile
 
 qc = rand_circ_fixed_hamming_weight(
     num_qubits=num_qubits,
