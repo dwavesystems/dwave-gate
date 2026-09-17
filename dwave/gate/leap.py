@@ -33,7 +33,7 @@ __all__ = ['LeapQCDLSimulator']
 
 
 class LeapQCDLSimulator:
-    r"""Submits QCDL programs to the Dual-Rail simulator in the Leap service.
+    r"""Submits QCDL programs to the dual-rail simulator in the Leap service.
 
     Examples:
         Construct a simple QCDL program:
@@ -52,7 +52,7 @@ class LeapQCDLSimulator:
 
             qcdl_program = main()
 
-        Submit it to the Leap QCDL simulator:
+        Submit it to the QCDL simulator:
 
         .. code-block:: python
 
@@ -63,13 +63,14 @@ class LeapQCDLSimulator:
             result = future.result().result
 
         Access measurements and sample counts by calling
-        ``result.measurements`` or ``result.get_counts()`` respectively.
+        :attr:`~dwave.gate.results.Result.measurements` property or
+        :meth:`~dwave.gate.results.Result.get_counts` method respectively.
 
     """
 
     @property
     def default_solver(self) -> dict[str, str]:
-        """Features used to select the latest accessible QCDL software solver."""
+        """Features used to select the latest accessible QCDL simulator."""
         return dict(supported_problem_types__contains='qcdl',
                     category='software-gate',
                     order_by='-properties.version')
@@ -166,21 +167,24 @@ class LeapQCDLSimulator:
         return None
 
     class RunResult(NamedTuple):
-        """:meth:`~dwave.gate.leap.LeapQCDLSimulator.run` method future result
+        """:meth:`~dwave.gate.leap.LeapQCDLSimulator.run` method future result.
         """
         result: Result
         # note: use a string annotation to avoid dependency on dwave-system
         info: 'dwave.system.samplers.ResultInfoDict'
 
     def run(self, qcdl: QCDLProgram | Mapping[str, Any], **params) -> Future[RunResult]:
-        """Run the :term:`QCDL` program using the selected Leap simulator,
-        and return the :class:`~dwave.gate.results.Result`, alongside the SAPI
-        job metadata, both wrapped in a :class:`~dwave.gate.leap.LeapQCDLSimulator.RunResult`
-        and returned in a class:`~concurrent.futures.Future`.
+        """Run the :term:`QCDL` program using the selected simulator in the Leap
+        service.
+
+        Returns the :class:`~dwave.gate.results.Result` class, with SAPI job
+        metadata, both wrapped in a
+        :class:`~dwave.gate.leap.LeapQCDLSimulator.RunResult` class and returned
+        in a :class:`~concurrent.futures.Future`.
 
         Args:
             qcdl:
-                The QCDL circuit to upload and simulate.
+                QCDL circuit to upload and simulate.
             **params:
                 Job parameters accepted by the simulator (solver).
 
