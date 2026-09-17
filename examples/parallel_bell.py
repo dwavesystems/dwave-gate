@@ -117,7 +117,8 @@ future = simulator.run(
     main(),
     shots=shots,
     noise_model=True,
-    label="SDK Examples - Simulating Parallel Circuits")
+    label="SDK Examples - Simulating Parallel Circuits",
+)
 results = future.result().result
 
 # %% [markdown]
@@ -137,8 +138,8 @@ print(raw_counts)
 # Post process the results to get the counts for 2-qubit groups. When
 # erasure only happens in one of the sub-circuits, the result of the other
 # sub-circuit is still valid (i.e. if you get a result of `*011`, the `11` result is
-# still counted as 'no error'). Also compute the yield of this method: it is
-# roughly double the simple version of Bell circuit.
+# still counted as 'no error'). Also compute the yield (fraction of shots with no erasures)
+# of this method: it is roughly double the simple version of Bell circuit.
 
 # %%
 aggregated_counts = post_select_and_aggregate(raw_counts)

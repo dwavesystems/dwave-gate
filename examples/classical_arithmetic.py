@@ -116,11 +116,20 @@ future = simulator.run(
     main(),
     shots=shots,
     noise_model=False,
-    label="Real-time Arithmetic on Classical Registers")
+    label="Real-time Arithmetic on Classical Registers",
+)
 results = future.result().result
 
 # %%
 results.get_counts()
+
+
+# %% [markdown]
+## Viewing RY angles
+# The function below prints the ideal rotation angle
+# along with the rotational angle calculated by the
+# real-time control flow. They will not be exactly
+# the same in most cases due to statistical (shot) noise.
 
 
 # %%

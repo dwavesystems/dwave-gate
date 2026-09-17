@@ -165,8 +165,8 @@ future = simulator.run(
     main(repeat_until_success=False),
     shots=shots,
     noise_model=True,
-    label="SDK Examples - Repeat Until Success with Error Checks"
-    )
+    label="SDK Examples - Repeat Until Success without Error Checks",
+)
 results = future.result().result
 
 results.get_counts(post_select=True)
@@ -179,7 +179,18 @@ future = simulator.run(
     main(repeat_until_success=True),
     shots=shots,
     noise_model=True,
-    label="SDK Examples - Repeat Until Success with Error Checks")
+    label="SDK Examples - Repeat Until Success with Error Checks",
+)
 results = future.result().result
 
 results.get_counts(post_select=True)
+
+# %% [markdown]
+# You might notice two things:
+# - Why are fewer than `shots` outcomes returned, and
+# - what is `post_select=True` for?
+#
+# The answer is that dual-rail qubits experience errors, and the simulator
+# discards data with errors when `post_select=True`. To see this, try
+# switching to `post_select=False` to observe all shots including data with
+# errors labeled on specific qubits.

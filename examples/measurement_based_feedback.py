@@ -59,10 +59,8 @@ from dwave.gate.leap import LeapQCDLSimulator
 shots = 100
 simulator = LeapQCDLSimulator()
 future = simulator.run(
-    main(),
-    shots=shots,
-    noise_model=True,
-    label="Simple Measurement-Based Feedback")
+    main(), shots=shots, noise_model=True, label="Simple Measurement-Based Feedback"
+)
 results = future.result().result
 
 # %% [markdown]
@@ -73,3 +71,10 @@ results = future.result().result
 counts = results.get_counts(register=["q0", "q1"], post_select=True)
 
 print(counts)
+
+# %% [markdown]
+# You can see here that a bell-like state is created
+# using real-time control flow. By conditioning the
+# state of the second qubit on the measured state of
+# the first, ideally this circuit outputs equal counts
+# of |00> and |11>.
