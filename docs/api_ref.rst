@@ -10,5 +10,6 @@ API Reference
     qcdl
     registers
     operations
+    simulator
     results
     exceptions

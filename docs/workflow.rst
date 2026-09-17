@@ -4,13 +4,118 @@
 Using dwave-gate
 ================
 
-The |cloud| quantum cloud service provides access to a simulator that enables
+The |cloud|_ quantum cloud service provides access to a simulator that enables
 you to test gate-model circuits intended to be executed on a dual-rail quantum
 processing unit (QPU). You describe your circuits using the ``dwave-gate``
 package's quantum circuit description language (QCDL), described here.
 
 .. _QuantumCircuit: https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.QuantumCircuit
 
+.. _qcdl_onboarding:
+
+Onboarding for Beta Testers
+===========================
+
+.. important::
+    Features for real-time control, which are being phased into dual-rail
+    quantum computing systems, are already available on the simulator in the
+    |cloud|_ service for prototyping and learning.
+
+To construct :term:`QCDL` programs and submit to the dual-rail simulator in the
+|cloud|_ service you need the following:
+
+1.  A |cloud|_ account that has been invited to beta test the dual-rail
+    simulator.
+2.  A development environment with the :ref:`index_ocean_sdk`.
+
+.. _qcdl_onboarding_new_users:
+
+New Users
+---------
+
+If you are already using Ocean software for an existing |cloud|_ service
+account, see the :ref:`qcdl_onboarding_previous_users` section for working with
+another project.
+
+If you have accepted an invitation to the |cloud|_ service for the first time to
+use the dual-rail simulator, the following documentation gets you started with
+submitting your programs:
+
+*   The :ref:`index_leap_sapi` section.
+
+    This section describes the |cloud|_ service: the dashboard where you can see
+    your access to :term:`solver`\ s such as the dual-rail simulator, the API
+    token you need to submit programs to the simulator, whitelisting information
+    if required by your organization, and more.
+
+*   The :ref:`ocean_index_get_started` section.
+
+    This section explains how to start using the :ref:`index_ocean_sdk`, which
+    lets you write :term:`QCDL` programs and submit them to the simulator.
+
+.. note::
+    Installing the SDK is recommended. If you chose to install only the
+    :ref:`index_gate` package, see the installation instructions
+    `here <https://github.com/dwavesystems/dwave-gate/blob/main/README.rst>`_.
+
+.. _qcdl_onboarding_previous_users:
+
+Previous Users
+--------------
+
+To submit programs to the dual-rail simulator in the |cloud|_ service, you must
+accept the emailed invitation to a new project. You use the API token from this
+project to access and send jobs to the simulator.
+
+The :ref:`ocean_leap_authorization` section describes how to work with multiple
+projects (see the "Multiple Leap Projects" tab).
+
+The following are two simple ways to use the beta-tester project's API token
+from your existing development environment.
+
+*   Add a section to your ``dwave.conf`` file.
+
+    You can see your ``dwave.conf`` file using the methods described in the
+    :ref:`cloud_configuration` or using the :ref:`D-Wave CLI <ocean_dwave_cli>`
+    section.
+
+    For example, add a ``beta`` section, which is used for your beta testing::
+
+        [defaults]
+        token = ABC-123456789123456789123456789
+
+        [beta]
+        token = BETA-123456789123456789123456789
+
+    You can then set ``profile="beta"`` to use the beta-tester project's API
+    token when accessing the simulator.
+
+    >>> from dwave.gate.leap import LeapQCDLSimulator
+    ...
+    >>> simulator = LeapQCDLSimulator(profile="beta")         # doctest: +SKIP
+
+    You can use the following :ref:`D-Wave CLI <ocean_dwave_cli>` commands to
+    authorize Ocean software to access the |cloud|_ service and Configure a
+    ``beta`` profile,::
+
+        $ dwave auth login
+        $ dwave config create --profile beta --auto-token --project "Beta Testing"
+
+    where ``Beta Testing`` should be replaced with the project name as displayed
+    in the |cloud|_ service. The commands locate your existing configuration
+    file, or create one if needed, then create a new profile called ``beta``,
+    and ask you for your SAPI token to create the new profile.
+
+*   Set the ``DWAVE_API_TOKEN`` environment variable.
+
+    You can set this environment variable for a Unix operating system with a
+    Bash command such as,
+    ``export DWAVE_API_TOKEN="BETA-123456789123456789123456789"``, for example,
+    or for a Windows system with a command such as
+    ``set DWAVE_API_TOKEN=BETA-123456789123456789123456789``.
+
+    Remember to delete that environment variable when you return to your
+    work on your previous project.
 
 .. _qcdl_programming_basic:
 
@@ -298,21 +403,23 @@ resetting the qubit(s) in between).
 
 Measurement outcomes are handled in three different ways:
 
-.. todo:: Update below for Ocean
-
-1.  If ``log=True`` (the default) the outcome is appended to the array
-    associated with the qubit on which it was measured. Along with the arrays
-    from the other qubits, this data is returned to you in a 3D array
-    (per ``tag``) with shape "number of measurements per shot, number of shots,
-    number of qubits". This data structure may be retrieved using
-    ``Result.get_memory``. For circuits with a deterministic number of
-    measurements per shot consistent for all qubits, this data structure may be
-    converted into a counts dictionary with ``Result.get_counts``
-    (``get_counts`` calls ``get_memory``).
-2.  The outcome may be saved to a register. When doing so, even if the register
-    is defined on multiple qubits, only the register copy on the qubit measured
-    is assigned. This data could be returned with ``append_table_row`` (see the
-    :ref:`qcdl_basic_result_records` section).
+1.  If the :func:`~dwave.gate.qcdl.operations.measure` function has
+    its ``log`` parameter set to true (``log=True``, the default) the outcome is
+    appended to the array associated with the qubit on which it was measured.
+    The :class:`~dwave.gate.results.Result` class returns this data to you in
+    a 3D array (per ``tag`` argument of the
+    :func:`~dwave.gate.qcdl.operations.measure` operation) with shape
+    ``(number of measurements per shot, number of shots, number of qubits)``,
+    along with the arrays from the other qubits. You can retrieve this data
+    structure using the :meth:`~dwave.gate.results.Result.get_memory` method.
+    For circuits with a deterministic number of measurements per shot consistent
+    for all qubits, you can convert this data structure a counts dictionary with
+    the :meth:`~dwave.gate.results.Result.get_counts` method.
+2.  The outcome may be saved to a register. Even if the register is defined on
+    multiple qubits, only the register copy on the measured qubit is assigned.
+    You can return this data with
+    :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row` method (see
+    the :ref:`qcdl_basic_result_records` section).
 3.  Each qubit implicitly stores its most recent measurement outcome and
     this value may be used in conditional statements.
 
@@ -342,7 +449,8 @@ Measurement outcomes are handled in three different ways:
 
 By default, the :meth:`~dwave.gate.results.Result.get_counts` method returns all data,
 including erasures. To return only results without the ``*``, thereby
-post-selecting on the detected errors, use the ``post_select=True`` flag.
+post-selecting on the detected errors, set the method's ``post_select`` argument
+to true.
 
 .. _qcdl_basic_mced:
 
@@ -373,15 +481,15 @@ Results are a Python dictionary where keys are set by the
 :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row` method and values are
 tables formatted as a
 `Polars <https://docs.pola.rs/api/python/stable/reference/index.html>`_
-`DataFrame <https://docs.pola.rs/api/python/stable/reference/dataframe/index.html>`_.
+`DataFrame <https://docs.pola.rs/api/python/stable/reference/dataframe/index.html>`_
+and returned from the |cloud|_ service in a :class:`~dwave.gate.results.Result`
+class.
 
 The :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row` method retrieves
 the values of registers in runtime. When you invoke the method, register data
 is written to a set of tables that your application can retrieve. In addition to
 using this functionality in algorithms, you can use it for troubleshooting, as
 though it were a cross between a print statement and a breakpoint.
-
-.. todo:: update for Ocean
 
 If your QCDL uses the :meth:`~dwave.gate.qcdl.QCDLModuleContainer.append_table_row`
 method, the :class:`~dwave.gate.results.Result` output contains records that you may
@@ -390,24 +498,37 @@ retrieve with the :attr:`~dwave.gate.results.Result.records` property.
 .. testcode::
     :skipif: True
 
-    import pandas as pd
     from dwave.gate.qcdl import qcdl
-    from aqumen import Aqumen       # Replace with Leap service's class
+    from dwave.gate.leap import LeapQCDLSimulator
 
+    # Create a QCDL program:
     @qcdl(1)
-    def main(q0):
+    def results_record_example(q0):
         r = q0.Register(name="some_classical_data")
         r <<= 13
         q0.append_table_row(r, table_name="my_table")
 
-    aq = Aqumen("simulator", simulate=True)
+    simulated_example = results_record_example()
 
-    results = await aq.execute(program=main(), shots=10)
+    # Submit the QCDL to a simulator:
+    simulator = LeapQCDLSimulator()
 
-    df : pl.DataFrame = res.get_records()["q0"]["my_table"]
+    future = simulator.run(
+        simulated_example,
+        qpu='DRsim_21qubits',
+        noise_model=True,
+        shots=500,
+        label="SDK Examples - Results Record Job Submission")
 
-The result is a ``DataFrame`` containing 1 column named ``some_classical_data``
-with 10 rows, each of which have a value of :math:`13`.
+    # View the returned records:
+    result = future.result().result
+
+    record_as_a_dataframe = result.records["q0"]["my_table"]
+
+The result is a
+`Polars DataFrame <https://docs.pola.rs/api/python/stable/reference/dataframe/index.html>`_
+containing 1 column named ``some_classical_data`` with 500 rows, each of which
+have a value of :math:`13`.
 
 .. Leniency control might be added in a later update.
 
@@ -442,9 +563,18 @@ with 10 rows, each of which have a value of :math:`13`.
 Yield Handling
 ~~~~~~~~~~~~~~
 
-The :class:`~dwave.gate.results.YieldHandling` class provides a general way of handling
-result distributions. It supports options for renormalizing distributions,
-ignoring erasures, and others.
+A significant feature of the simulator in the |cloud|_ service is that it flags
+detected errors by returning ``*`` as a third measurement outcome in addition to
+:math:`0` and :math:`1`, as described in the :ref:`qcdl_basic_measurements`
+section. Tools such as Qiskit do not handle these values so tools such as the
+`dwave-qiskit-plugin <https://github.com/dwavesystems/dwave-qiskit-plugin>`_
+remove individual shots containing a ``*`` when passing information.
+Consequently, fewer shots are likely to be returned than the number of shots you
+requested.\ [#]_
+
+The :class:`~dwave.gate.results.YieldHandling` class provides a general way of
+handling result distributions. It supports options for renormalizing
+distributions, ignoring erasures, and others.
 
 .. testcode::
 
@@ -452,39 +582,15 @@ ignoring erasures, and others.
     half_splats = {"00": 100, "0*": 100}
     assert YieldHandling.only_post_selected_counts.apply(half_splats) == ({"00": 100}, 0.5)
 
-A significant feature of the D-Wave simulator is that it flags detected errors
-by returning ``*`` as a third measurement outcome in addition to :math:`0` and
-:math:`1`, as described in the :ref:`qcdl_basic_measurements` section. Qiskit
-does not handle these values so you must remove individual shots containing a
-``*`` when passing information to Qiskit. Consequently, fewer shots are likely
-to be returned than the number of shots you requested.\ [#]_
 
-.. todo:: update for Ocean
-
-.. testcode::
-    :skipif: True
-
-    from dwave.gate.results import YieldHandling
-
-    provider = AqumenProvider(yield_handling=YieldHandling.renormalize_distribution)
-    simulator_noisy_backend = provider.simulator_noisy
-    shots = 1000
-    job: AqumenJob = simulator_noisy_backend.run(qc, shots=shots)
-    result: AqumenQiskitResult = job.result()
-    # no splats here!
-    counts: dict[str, float] = result.get_counts()
-    assert abs(sum(counts.values()) - shots) < 1e-8
-
-The code above divides the values in the ``counts`` dict by the yield, trading
-statistical accuracy for convenience.
-
-Alternatively, a ``YieldHandling`` option may be passed to ``get_counts``.
+Alternatively, the :meth:`~dwave.gate.results.Result.get_counts` method supports
+a ``post_select`` argument.
 
 .. [#]
     If an application you use, for example, in computing statistical errors,
     is not robust to results containing fewer shots than requested, you can use
-    the :class:`~dwave.gate.results.YieldHandling` class as a workaround *temporarily and
-    with caution*.
+    the :class:`~dwave.gate.results.YieldHandling` class as a workaround
+    *temporarily and with caution*.
 
 .. _qcdl_basic_initialize_reset:
 
@@ -1311,23 +1417,51 @@ The example below submits the following
 
     simulator_job_submission = bell_program()
 
-Submit the program above to a simulator for a dual-rail QPU with 17 qubits,
-``DRsim_17qubits``, in the |cloud|_ service.
+Submit the program above to a simulator for a dual-rail QPU with 21 qubits,
+``DRsim_21qubits``, in the |cloud|_ service.
 
 >>> from dwave.gate.leap import LeapQCDLSimulator
 ...
 >>> simulator = LeapQCDLSimulator()         # doctest: +SKIP
 >>> future = simulator.run(                 # doctest: +SKIP
 ...     simulator_job_submission,
-...     qpu='DRsim_17qubits')
+...     qpu='DRsim_21qubits',
+...     noise_model=True,
+...     shots=500,
+...     label="SDK Examples - Bell-Program Job Submission")
 >>> result = future.result().result         # doctest: +SKIP
 
+.. _qcdl_submitting_programs_results:
+
+Example Results
+---------------
+
+Results are returned as a :class:`~dwave.gate.results.Result` class, that also
+includes information such as execution time and provides methods for analyzing
+the measurements.
+
 The returned result is a 3D array of ``(measurements per shot, shots, qubits)``.
+For the previous example, one measurement is taken per shot, for 500 shots, on
+two qubits.
 
 >>> print(result.get_memory().shape)        # doctest: +SKIP
-(1, 1000, 2)
+(1, 500, 2)
 
-.. todo:: describe the results
+For one particular execution of the program above, the following counts are
+returned.
+
+>>> print(result.get_counts())              # doctest: +SKIP
+[{'11': 203, '*1': 14, '00': 230, '0*': 22, '*0': 19, '1*': 10, '**': 2}]
+
+The execution time on the simulator (excluding any queuing time, for example)
+for that job submission is about a tenth of a second.
+
+>>> print(result.run_time)                  # doctest: +SKIP
+0.093493
+
+See the :ref:`gate_results` section for information about the returned results
+and supported methods. The :ref:`qcdl_basic_result_records` section describes
+how you store and retrieve records of measurements.
 
 .. _qcdl_simulator_parameters:
 
