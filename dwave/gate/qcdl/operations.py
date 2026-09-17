@@ -592,7 +592,7 @@ def p(qubit: QCDLModule, theta: AngleType) -> None:
 
     Args:
         qubit: Qubit on which to apply the gate.
-        phi: :math:`\theta` angle of rotation about the Z axis.
+        theta: :math:`\theta` angle of rotation about the Z axis.
 
     Examples:
 
