@@ -88,33 +88,32 @@ def bayesian_decode_counts(counts, decoder_params: DecoderParams | None):
     """
     Decode counts containing '*' using clean counts as priors.
 
-    Parameters
-    ----------
+    Args:
+        counts (dict[str, int]): Count dictionary.
+            Example:
+                {
+                    "000": 10,
+                    "001": 30,
+                    "00*": 8,
+                    "0**": 4,
+                }
+        decoder_params (DecoderParams | None): Parameters to go into the
+            Bayesian decoding algorithm.
 
-    counts : dict[str, int]
-        Example:
-        {
-            "000": 10,
-            "001": 30,
-            "00*": 8,
-            "0**": 4,
-        }
+    Returns:
+        decoded_counts : dict[str, int]
+            Clean counts plus accepted starred counts assigned to guesses.
 
-    Returns
-    -------
+        assignments : dict[str, str]
+            Mapping from starred patterns to chosen clean bitstrings.
 
-    decoded_counts : dict[str, int]
-        Clean counts plus accepted starred counts assigned to guesses.
+        discarded_counts : dict[str, int]
+            Starred patterns that were discarded.
 
-    assignments : dict[str, str]
-        Mapping from starred patterns to chosen clean bitstrings.
-
-    discarded_counts : dict[str, int]
-        Starred patterns that were discarded.
-
-    posteriors : dict[str, dict[str, float]]
-        Posterior probabilities for accepted starred patterns.
+        posteriors : dict[str, dict[str, float]]
+            Posterior probabilities for accepted starred patterns.
     """
+
     if decoder_params is None:
         decoder_params = DecoderParams(
             alpha=0.0,
