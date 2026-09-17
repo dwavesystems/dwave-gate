@@ -27,7 +27,24 @@ def rand_circ_fixed_hamming_weight(
     seed: int | None = None,
     measure: bool = True,
 ) -> QuantumCircuit:
+    """Generates a quantum circuit with all output bitstrings in
+        the ideal distribution having a fixed hamming weight.
 
+    Args:
+        num_qubits : Number of qubits
+        hamming_weight : Desired hamming weight of ideal outputs
+        depth: Circuit depth
+        seed : Seed for RNG. Defaults to None.
+        measure : Add measurements to end of circuit. Defaults to True.
+
+    Raises:
+        ValueError: Invalid hamming weight
+        ValueError: Invalid depth
+
+    Returns:
+        QuantumCircuit: Random quantum circuit outputting a state
+            with the hamming weight specified
+    """
     if not 0 <= hamming_weight <= num_qubits:
         raise ValueError("hamming_weight must be between 0 and num_qubits")
 

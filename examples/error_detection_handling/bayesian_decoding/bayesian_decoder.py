@@ -77,19 +77,21 @@ class DecoderParams:
     min_margin: float | None
 
 
-def distance_to_pattern(bitstring, pattern):
+def distance_to_pattern(bitstring: str, pattern: str) -> int:
     """
     Hamming distance, ignoring '*' positions.
     """
     return sum(b != p for b, p in zip(bitstring, pattern) if p != "*")
 
 
-def bayesian_decode_counts(counts, decoder_params: DecoderParams | None):
+def bayesian_decode_counts(
+    counts: dict[str, int], decoder_params: DecoderParams | None
+) -> tuple[dict[str, int], dict[str, str], dict[str, int], dict[str, dict[str, float]]]:
     """
     Decode counts containing '*' using clean counts as priors.
 
     Args:
-        counts (dict[str, int]): Count dictionary.
+        counts : Count dictionary.
             Example:
                 {
                     "000": 10,
@@ -97,21 +99,16 @@ def bayesian_decode_counts(counts, decoder_params: DecoderParams | None):
                     "00*": 8,
                     "0**": 4,
                 }
-        decoder_params (DecoderParams | None): Parameters to go into the
-            Bayesian decoding algorithm.
+        decoder_params: Parameters to go into the Bayesian decoding algorithm.
 
     Returns:
-        decoded_counts : dict[str, int]
-            Clean counts plus accepted starred counts assigned to guesses.
+        decoded_counts : Clean counts plus accepted starred counts assigned to guesses.
 
-        assignments : dict[str, str]
-            Mapping from starred patterns to chosen clean bitstrings.
+        assignments : Mapping from starred patterns to chosen clean bitstrings.
 
-        discarded_counts : dict[str, int]
-            Starred patterns that were discarded.
+        discarded_counts : Starred patterns that were discarded.
 
-        posteriors : dict[str, dict[str, float]]
-            Posterior probabilities for accepted starred patterns.
+        posteriors : Posterior probabilities for accepted starred patterns.
     """
 
     if decoder_params is None:

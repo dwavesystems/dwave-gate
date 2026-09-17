@@ -45,12 +45,19 @@ logging.basicConfig(level=logging.INFO)
 
 
 # %%
-def post_select_and_aggregate(raw_counts: dict):
+def post_select_and_aggregate(raw_counts: dict[str, int]) -> defaultdict[int]:
     """Aggregate raw counts of 2 subcircuits to 2-qubit counts
     while excluding leakage in subcircuits.
 
     Args:
-        raw_counts (dict): Counts with all information, including erasure.
+        raw_counts : Counts with all information, including erasure.
+
+    Args:
+        raw_counts : Count dict with erasure counts.
+
+    Returns:
+        Count dict of counts where one of the parallel bell states
+            had no erasures
 
     """
     aggregated_counts = defaultdict(int)

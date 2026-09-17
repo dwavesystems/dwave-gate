@@ -133,14 +133,17 @@ results.get_counts()
 
 
 # %%
-def print_ry_angle(controlling_states: list, data: pl.DataFrame):
+def print_ry_angle(controlling_states: list, data: pl.DataFrame) -> None:
     """Helper function to print the empirical y rotation angle,
-    excluding the leakage state.
+        excluding the leakage state.
 
     Args:
-        controlling_states (list): list representation
+        controlling_states : list representation
         of the controlling state
-        data (pd.DataFrame): measurement data
+        data : measurement data
+
+    Raises:
+        ValueError : Check that exact rotation angles are correct.
     """
     print(
         "The state of the controlling qubits is |{}>".format(
@@ -155,7 +158,7 @@ def print_ry_angle(controlling_states: list, data: pl.DataFrame):
         ]
         + [pl.col("creg_main") != LogicalOutcomeToInteger.SPLAT.value],
     )
-    sub_df = df.filter(expr)
+    sub_df = data.filter(expr)
 
     ideal_angle = sub_df.item(row=0, column="cregs")
     all_close = np.all(
@@ -164,7 +167,7 @@ def print_ry_angle(controlling_states: list, data: pl.DataFrame):
     if all_close:
         print(f"The ideal rotation angle is {ideal_angle:.4f} pi")
     else:
-        raise ValueError("Some of the rotation angles have wong value!")
+        raise ValueError("Some of the rotation angles have wrong value!")
     frac_of_1 = sub_df["creg_main"].mean()
     theta = np.arcsin(np.sqrt(frac_of_1)) * 2 / np.pi
     print(f"The empirical y rotation angle is {theta:.4f} pi")
@@ -204,9 +207,9 @@ def print_n_bit_angles(num_c_qubits: int, c_st_list: list, ii: int):
     """Recursive function to iterate over all states.
 
     Args:
-        num_c_qubits (int): Number of controlling qubits.
-        c_st_list (list): List representation of the controlling state.
-        ii (int): Qubit index of the current function call.
+        num_c_qubits : Number of controlling qubits.
+        c_st_list : List representation of the controlling state.
+        ii : Qubit index of the current function call.
     """
     if ii == num_c_qubits:
         print_ry_angle(c_st_list, df)
