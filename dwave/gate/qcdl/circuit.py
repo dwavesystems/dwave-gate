@@ -27,7 +27,7 @@ from typing import Any, Callable, Literal, TypeAlias, overload, Protocol
 import numpy as np
 
 from .base import IndexerMixin
-from .components import Procedure, QCDLModule
+from .components import Procedure, QCDLModule, RegisterAllocation
 from .exceptions import QCDLInternalError, QCDLUserError
 from .models import QCDLProgram, QCDLModuleName, QCDLProcedureDef
 from .transformer import transform_program_to_qcdl_str, transform_qcdl
@@ -117,6 +117,11 @@ class QCDLCircuit(IndexerMixin):
         self._main: Procedure | None = None
         self._program: QCDLProcedureDef | None = None
         self._procedures: dict[str, QCDLProcedureDef] = {}
+
+        # register names are global to a circuit rather than local to a
+        # procedure, so they are tracked here rather than on Procedure
+        self._allocated_registers: dict[str, dict[str, RegisterAllocation]] = {}
+
         self._validate_non_deterministic_qubits_mid = (
             validate_non_deterministic_qubits_mid
         )
@@ -481,6 +486,18 @@ class QCDLCircuit(IndexerMixin):
     @property
     def procedures(self) -> dict[str, QCDLProcedureDef]:
         return self._procedures
+
+    @property
+    def allocated_registers(self) -> dict[str, dict[str, RegisterAllocation]]:
+        """Register names allocated so far, by module name then register name.
+
+        Register names are global to a circuit: a name allocated in one
+        procedure is the same memory as that name in another, and only the
+        first allocation of it takes effect. The
+        :meth:`~dwave.gate.qcdl.components.Procedure.register_memory_allocation`
+        method maintains this, and raises an exception on a second allocation.
+        """
+        return self._allocated_registers
 
     def get_procedure(self, procedure_name: str) -> QCDLProcedureDef | None:
         return self.procedures.get(procedure_name)
