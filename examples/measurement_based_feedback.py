@@ -1,4 +1,3 @@
-# %% [markdown]
 # Copyright 2026 D-Wave
 #
 # The software is licensed under the Apache License, Version 2.0 (the "License");
@@ -57,7 +56,10 @@ from dwave.gate.leap import LeapQCDLSimulator
 shots = 100
 simulator = LeapQCDLSimulator()
 future = simulator.run(
-    main(), shots=shots, noise_model=True, label="SDK Examples - Simple Measurement-Based Feedback"
+    main(),
+    shots=shots,
+    noise_model=True,
+    label="SDK Examples - Simple Measurement-Based Feedback",
 )
 results = future.result().result
 
