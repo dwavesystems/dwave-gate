@@ -57,7 +57,7 @@ from dwave.gate.leap import LeapQCDLSimulator
 shots = 100
 simulator = LeapQCDLSimulator()
 future = simulator.run(
-    main(), shots=shots, noise_model=True, label="Simple Measurement-Based Feedback"
+    main(), shots=shots, noise_model=True, label="SDK Examples - Simple Measurement-Based Feedback"
 )
 results = future.result().result
 

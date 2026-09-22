@@ -55,7 +55,7 @@ def post_select_and_aggregate(raw_counts: dict[str, int]) -> defaultdict[int]:
 
     Returns:
         Count dict of counts where one of the parallel bell states
-            had no erasures
+        had no erasures
 
     """
     aggregated_counts = defaultdict(int)

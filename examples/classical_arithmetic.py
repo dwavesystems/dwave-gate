@@ -114,7 +114,7 @@ future = simulator.run(
     main(),
     shots=shots,
     noise_model=False,
-    label="Real-time Arithmetic on Classical Registers",
+    label="SDK Examples - Real-time Arithmetic on Classical Registers",
 )
 results = future.result().result
 

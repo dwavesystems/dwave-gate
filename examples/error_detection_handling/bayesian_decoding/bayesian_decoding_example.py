@@ -1,4 +1,3 @@
-# %% [markdown]
 # Copyright 2026 D-Wave
 #
 # The software is licensed under the Apache License, Version 2.0 (the "License");

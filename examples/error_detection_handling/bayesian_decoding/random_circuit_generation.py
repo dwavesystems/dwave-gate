@@ -41,7 +41,7 @@ def rand_circ_fixed_hamming_weight(
 
     Returns:
         QuantumCircuit: Random quantum circuit outputting a state
-            with the hamming weight specified
+        with the hamming weight specified
     """
     if not 0 <= hamming_weight <= num_qubits:
         raise ValueError("hamming_weight must be between 0 and num_qubits")
