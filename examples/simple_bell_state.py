@@ -33,9 +33,9 @@ logging.basicConfig(level=logging.INFO)
 #
 # ```python
 # @qcdl(num_qubits=1)
-# def main(q):
-#     q.h()
-#     q.measure()
+# def main(q0):
+#     h(q0)
+#     measure(q0)
 # ```
 #
 # says, "perform a Hadamard gate on one qubit and then measure it".
