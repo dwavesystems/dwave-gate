@@ -70,7 +70,7 @@ def post_select_and_aggregate(raw_counts: dict[str, int]) -> defaultdict[int]:
 
 # %% [markdown]
 # ## Parallel Bell Circuits in QCDL
-# Use 4 qubits to run two GHz circuits. For convenience, first define a `Bell_circuit`
+# Use 4 qubits to run two GHZ circuits. For convenience, first define a `Bell_circuit`
 # function for a sub-circuit. The use of the `procedure` decorator is optional.
 #
 
