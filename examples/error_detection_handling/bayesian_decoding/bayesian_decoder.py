@@ -21,6 +21,8 @@ from math import exp
 @dataclass(frozen=True, slots=True)
 class DecoderParams:
     """
+    Parameters to be used by the Bayesian decoder
+
     beta : float
         Controls how strongly distance is penalized.
 
