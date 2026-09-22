@@ -50,9 +50,6 @@ def post_select_and_aggregate(raw_counts: dict[str, int]) -> defaultdict[int]:
     Args:
         raw_counts : Counts with all information, including erasure.
 
-    Args:
-        raw_counts : Count dict with erasure counts.
-
     Returns:
         Count dict of counts where one of the parallel bell states
         had no erasures
