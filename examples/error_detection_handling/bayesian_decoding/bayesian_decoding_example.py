@@ -60,7 +60,10 @@ qc.count_ops()
 # ## Get the Exact Result
 
 # %%
+import numpy
 from qiskit.quantum_info import Statevector
+
+numpy.set_printoptions(legacy="1.25")
 
 sv = Statevector.from_instruction(qc)
 print(sv.probabilities_dict(decimals=2))
@@ -78,7 +81,12 @@ from dwave.plugins.qiskit import DWaveProvider
 
 with DWaveProvider() as provider:
     backend = provider.get_backend()
-    job = backend.run(qc, shots=1000, noise_model=True)
+    job = backend.run(
+        qc,
+        shots=1000,
+        noise_model=True,
+        label="SDK Examples - Bayesian Decoding",
+    )
     raw_counts = job.result().data()["raw_counts"]
     counts = job.result().get_counts()
 pp(raw_counts)
