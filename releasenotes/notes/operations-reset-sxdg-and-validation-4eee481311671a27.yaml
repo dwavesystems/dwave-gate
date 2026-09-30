@@ -17,12 +17,7 @@ features:
 upgrade:
   - |
     Operations in ``dwave.gate.qcdl.operations`` now raise ``QCDLUserError``
-    for invalid qubit arguments at the point of the call. Programs that
-    previously built successfully and were rejected by the solver---such as a
-    two-qubit gate applied to the same qubit twice---now fail while the circuit
-    is being constructed. Passing a non-qubit argument, which previously
-    surfaced as an ``AttributeError`` naming an internal attribute, now raises
-    ``QCDLUserError``.
+    for invalid qubit arguments at the point of the call.
   - |
     ``dwave.gate.qcdl.operations`` now defines ``__all__``, so
     ``from dwave.gate.qcdl.operations import *`` imports the operations only.

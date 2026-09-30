@@ -68,9 +68,6 @@ from .registers import FixedPointRegister, Register
 
 AngleType: TypeAlias = float | FixedPointRegister
 
-# Everything else in this module, including the names imported above, is an
-# implementation detail: ``from dwave.gate.qcdl.operations import *`` brings in
-# the operations only.
 __all__ = [
     "AngleType",
     "barrier",
@@ -136,7 +133,7 @@ def _validate_qubit_args(operation: _Operation) -> _Operation:
     may not be the same module, whereas a ``*qubits`` parameter is a set of
     qubits to act on, where a repeat is harmless.
 
-    A ``*qubits`` parameter also binds happily to nothing at all, so python
+    A ``*qubits`` parameter also binds happily to nothing at all, so Python
     raises no arity error for it and the empty call fails later with an
     ``IndexError``; an operation with one is therefore also checked for having
     been given a qubit.
