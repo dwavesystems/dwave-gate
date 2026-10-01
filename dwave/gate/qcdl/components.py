@@ -313,26 +313,25 @@ class Procedure(IndexerMixin):
                 module.qcdl_module_name, {}
             )
             previous = allocated.get(name)
-            if previous is not None and self._is_rerun_of(previous.procedure):
-                previous = None
-            if previous is not None and not (
-                allow_existing and not initial_value_specified
-            ):
-                where = (
-                    f"register {name!r} is already allocated on"
-                    f" {module.qcdl_module_name} with dtype {previous.dtype}"
-                    f" in procedure {previous.procedure.name}"
-                )
-                if allow_existing:
-                    raise QCDLUserError(
-                        f"{where}, so this initial value would never reach the"
-                        f" qubit; drop the initial value"
+            if previous is not None:
+                if self._is_rerun_of(previous.procedure):
+                    previous = None
+                elif not (allow_existing and not initial_value_specified):
+                    where = (
+                        f"register {name!r} is already allocated on"
+                        f" {module.qcdl_module_name} with dtype {previous.dtype}"
+                        f" in procedure {previous.procedure.name}"
                     )
-                raise QCDLUserError(
-                    f"{where}, so this declaration would be discarded; reuse"
-                    f" that register, pick another name, or pass alias=True or"
-                    f" ignore_reallocation=True with no initial value"
-                )
+                    if allow_existing:
+                        raise QCDLUserError(
+                            f"{where}, so this initial value would never reach the"
+                            f" qubit; drop the initial value"
+                        )
+                    raise QCDLUserError(
+                        f"{where}, so this declaration would be discarded; reuse"
+                        f" that register, pick another name, or pass alias=True or"
+                        f" ignore_reallocation=True with no initial value"
+                    )
             allocated[name] = RegisterAllocation(dtype, self)
 
     def _is_rerun_of(self, other: Procedure) -> bool:
