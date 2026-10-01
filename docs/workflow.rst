@@ -723,7 +723,7 @@ Scope
 
 The :class:`~dwave.gate.qcdl.Scope` class enables you to define a set of
 operations you can *consistently* reuse on multiple qubits, which is especially
-beneficial for for classical and control-flow instructions.
+beneficial for classical and control-flow instructions.
 
 This class is a client-side convenience feature used to generate qubit-level
 instructions---it is not represented in the generated QCDL. You may declare any
