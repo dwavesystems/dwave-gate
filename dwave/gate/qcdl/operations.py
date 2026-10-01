@@ -146,12 +146,13 @@ def _validate_qubit_args(operation: _Operation) -> _Operation:
     """
     signature = inspect.signature(operation)
     names: list[str] = []
-    variadic: str | None = None
+    variadic_name: str | None = None
     for name, parameter in signature.parameters.items():
         if parameter.annotation is not QCDLModule:
             continue
         if parameter.kind is parameter.VAR_POSITIONAL:
-            variadic = name
+            # only one is possible
+            variadic_name = name
         else:
             names.append(name)
 
@@ -168,14 +169,17 @@ def _validate_qubit_args(operation: _Operation) -> _Operation:
         qubits = [
             (name, bound.arguments[name]) for name in names if name in bound.arguments
         ]
-        if variadic is not None:
+        if variadic_name is not None:
             qubits += [
-                (f"{variadic}[{index}]", qubit)
-                for index, qubit in enumerate(bound.arguments.get(variadic, ()))
+                (f"{variadic_name}[{index}]", qubit)
+                for index, qubit in enumerate(bound.arguments.get(variadic_name, ()))
             ]
 
         _check_qubit_args(
-            operation.__name__, qubits, distinct=distinct, required=variadic is not None
+            operation.__name__,
+            qubits,
+            distinct=distinct,
+            required=variadic_name is not None,
         )
         return operation(*args, **kwargs)
 
