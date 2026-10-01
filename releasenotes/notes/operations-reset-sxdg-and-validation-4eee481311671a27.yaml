@@ -8,19 +8,7 @@ features:
   - |
     Add the ``sxdg`` operation to ``dwave.gate.qcdl.operations``, the adjoint
     of the ``sx`` (:math:`\sqrt X`) gate.
-  - |
-    Validate the qubit arguments of every operation in
-    ``dwave.gate.qcdl.operations``, raising ``QCDLUserError`` when an argument
-    is not a qubit, when an operation taking a variable number of qubits is
-    given none, or when an operation requiring distinct qubits is given the
-    same qubit for more than one of them.
 upgrade:
   - |
     Operations in ``dwave.gate.qcdl.operations`` now raise ``QCDLUserError``
     for invalid qubit arguments at the point of the call.
-  - |
-    ``dwave.gate.qcdl.operations`` now defines ``__all__``, so
-    ``from dwave.gate.qcdl.operations import *`` imports the operations only.
-    Names that were previously reachable through the wildcard import as an
-    implementation detail, such as ``np`` and ``QCDLModule``, must now be
-    imported explicitly.
