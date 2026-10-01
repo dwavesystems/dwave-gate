@@ -313,11 +313,11 @@ class Procedure(IndexerMixin):
                 module.qcdl_module_name, {}
             )
             previous = allocated.get(name)
-            if previous is not None and self._is_rerun_of(previous.procedure):
+            if previous is None:
+                continue
+            if self._is_rerun_of(previous.procedure):
                 previous = None
-            if previous is not None and not (
-                allow_existing and not initial_value_specified
-            ):
+            elif not (allow_existing and not initial_value_specified):
                 where = (
                     f"register {name!r} is already allocated on"
                     f" {module.qcdl_module_name} with dtype {previous.dtype}"
