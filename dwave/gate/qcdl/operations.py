@@ -428,6 +428,7 @@ def mced(qubit: QCDLModule, register: Register, mirror: bool = True) -> None:
                 mced(q0, register=r0)
                 rx(q0, phi=0.1)
                 measure(q0)
+                q0.append_table_row(r0)
 
             qcdl_program = mced_use()
     """
