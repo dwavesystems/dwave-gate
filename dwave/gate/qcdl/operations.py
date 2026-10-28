@@ -1004,11 +1004,12 @@ def rzz(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     qubit1.procedure.add_statement(None, "rzz", [qubit1, qubit2, theta], None)
 
 
-def leak(qubit: QCDLModule) -> None:
+def leak(qubit: QCDLModule, probability: float = 1.0) -> None:
     """Forces a qubit into a "leaked" state, i.e. forces a qubit out of the codespace.
 
     Args:
         qubit : A qubit to be forced into a leakage state.
+        probability : The probability that the qubit is leaked. Defaults to 1.0.
 
     Examples:
 
@@ -1024,16 +1025,17 @@ def leak(qubit: QCDLModule) -> None:
 
             qcdl_program = forced_leak()
     """
-    qubit.procedure.add_statement(None, "leak", [qubit], None)
+    qubit.procedure.add_statement(None, "leak", [qubit, probability], None)
 
 
-def seep(qubit: QCDLModule) -> None:
+def seep(qubit: QCDLModule, probability: float = 1.0) -> None:
     """Forces a qubit out of the codespace back into the codespace randomly into |0> or |1> state.
        Note that this assumes the qubit is in a leakage state. If the qubit is in the codespace,
        nothing happens.
 
     Args:
         qubit : A qubit to be forced from a leakage state into the codespace.
+        probability : The probability that the leaked qubit seeps. Defaults to 1.0.
 
     Examples:
 
@@ -1050,4 +1052,4 @@ def seep(qubit: QCDLModule) -> None:
 
             qcdl_program = forced_seep()
     """
-    qubit.procedure.add_statement(None, "seep", [qubit], None)
+    qubit.procedure.add_statement(None, "seep", [qubit, probability], None)
