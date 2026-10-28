@@ -1002,3 +1002,52 @@ def rzz(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
             qcdl_program = rzz_gate()
     """
     qubit1.procedure.add_statement(None, "rzz", [qubit1, qubit2, theta], None)
+
+
+def leak(qubit: QCDLModule) -> None:
+    """Forces a qubit into a "leaked" state, i.e. forces a qubit out of the codespace.
+
+    Args:
+        qubit : A qubit to be forced into a leakage state.
+
+    Examples:
+
+        .. testcode::
+
+            from dwave.gate.qcdl import qcdl
+            from dwave.gate.qcdl.operations import leak, measure
+
+            @qcdl(1)
+            def forced_leak(q0):
+                leak(q0)
+                measure(q0)
+
+            qcdl_program = forced_leak()
+    """
+    qubit.procedure.add_statement(None, "leak", [qubit], None)
+
+
+def seep(qubit: QCDLModule) -> None:
+    """Forces a qubit out of the codespace back into the codespace randomly into |0> or |1> state.
+       Note that this assumes the qubit is in a leakage state. If the qubit is in the codespace,
+       nothing happens.
+
+    Args:
+        qubit : A qubit to be forced from a leakage state into the codespace.
+
+    Examples:
+
+        .. testcode::
+
+            from dwave.gate.qcdl import qcdl
+            from dwave.gate.qcdl.operations import leak, measure, seep
+
+            @qcdl(1)
+            def forced_seep(q0):
+                leak(q0)
+                seep(q0)
+                measure(q0)
+
+            qcdl_program = forced_seep()
+    """
+    qubit.procedure.add_statement(None, "seep", [qubit], None)
