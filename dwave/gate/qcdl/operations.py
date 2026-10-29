@@ -1015,6 +1015,8 @@ def rzz(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
 
 def leak(qubit: QCDLModule, probability: ProbabilityType = 1.0) -> None:
     """Forces a qubit into a "leaked" state, i.e. forces a qubit out of the codespace.
+       Note that this assumes the qubit is not already in a leakgage state.
+       If the qubit is in a leakage state already, nothing happens.
 
     Args:
         qubit : A qubit to be forced into a leakage state.
