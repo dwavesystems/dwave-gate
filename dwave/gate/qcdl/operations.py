@@ -61,22 +61,17 @@ from collections.abc import Callable
 from typing import Annotated, Any, TypeAlias, TypeVar
 
 import numpy as np
-from pydantic import Field, ValidationError, validate_call
+from pydantic import Field, TypeAdapter, ValidationError
 
 from .. import implementations
 from .components import QCDLModule
 from .exceptions import QCDLUserError
 from .registers import FixedPointRegister, Register
 
-ProbabilityType = Annotated[float, Field(ge=0.0, le=1.0)]
-
-
-@validate_call
-def process_probability(p: ProbabilityType) -> str:
-    return f"Valid probability received: {p}"
-
-
 AngleType: TypeAlias = float | FixedPointRegister
+ProbabilityType: TypeAlias = Annotated[float, Field(ge=0.0, le=1.0)]
+
+_probability_adapter = TypeAdapter(ProbabilityType)
 
 __all__ = [
     "AngleType",
@@ -92,6 +87,7 @@ __all__ = [
     "cz",
     "h",
     "initialize",
+    "leak",
     "mced",
     "measure",
     "p",
@@ -104,6 +100,7 @@ __all__ = [
     "rzz",
     "s",
     "sdg",
+    "seep",
     "swap",
     "sx",
     "sxdg",
@@ -241,6 +238,29 @@ def _check_qubit_args(
                 f" and {name!r} are both {module}"
             )
         used[module] = name
+
+
+def _check_probability(op: str, probability: Any) -> float:
+    """Validate the probability argument of operation ``op``.
+
+    Args:
+        op: Name of the operation, used in error messages.
+        probability: The value passed as the probability.
+
+    Returns:
+        The probability as a float.
+
+    Raises:
+        :exception:`~dwave.gate.qcdl.exceptions.QCDLUserError`: If
+            ``probability`` is not a number between 0 and 1.
+    """
+    try:
+        return _probability_adapter.validate_python(probability)
+    except ValidationError:
+        raise QCDLUserError(
+            f"{op}() parameter 'probability' must be a number between 0 and 1,"
+            f" not {type(probability).__name__} ({probability!r})"
+        ) from None
 
 
 # Operations
@@ -1272,9 +1292,10 @@ def rzz(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     qubit1.procedure.add_statement(None, "rzz", [qubit1, qubit2, theta], None)
 
 
+@_validate_qubit_args
 def leak(qubit: QCDLModule, probability: ProbabilityType = 1.0) -> None:
     """Forces a qubit into a "leaked" state, i.e. forces a qubit out of the codespace.
-       Note that this assumes the qubit is not already in a leakgage state.
+       Note that this assumes the qubit is not already in a leakage state.
        If the qubit is in a leakage state already, nothing happens.
 
     Args:
@@ -1295,14 +1316,11 @@ def leak(qubit: QCDLModule, probability: ProbabilityType = 1.0) -> None:
 
             qcdl_program = forced_leak()
     """
-    try:
-        process_probability(probability)
-    except ValidationError as e:
-        print("Invalid probability entered")
-        print(e)
+    probability = _check_probability("leak", probability)
     qubit.procedure.add_statement(None, "leak", [qubit, probability], None)
 
 
+@_validate_qubit_args
 def seep(qubit: QCDLModule, probability: ProbabilityType = 1.0) -> None:
     """Forces a qubit out of the codespace back into the codespace randomly into |0> or |1> state.
        Note that this assumes the qubit is in a leakage state. If the qubit is in the codespace,
@@ -1327,9 +1345,5 @@ def seep(qubit: QCDLModule, probability: ProbabilityType = 1.0) -> None:
 
             qcdl_program = forced_seep()
     """
-    try:
-        process_probability(probability)
-    except ValidationError as e:
-        print("Invalid probability entered")
-        print(e)
+    probability = _check_probability("seep", probability)
     qubit.procedure.add_statement(None, "seep", [qubit, probability], None)
