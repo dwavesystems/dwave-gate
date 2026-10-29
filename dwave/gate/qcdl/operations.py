@@ -57,7 +57,8 @@ Examples:
 
 import functools
 import inspect
-from typing import Any, Callable, TypeAlias, TypeVar
+from collections.abc import Callable
+from typing import Annotated, Any, TypeAlias, TypeVar
 
 import numpy as np
 from pydantic import Field, ValidationError, validate_call
@@ -79,6 +80,7 @@ AngleType: TypeAlias = float | FixedPointRegister
 
 __all__ = [
     "AngleType",
+    "ProbabilityType",
     "barrier",
     "cp",
     "crx",
