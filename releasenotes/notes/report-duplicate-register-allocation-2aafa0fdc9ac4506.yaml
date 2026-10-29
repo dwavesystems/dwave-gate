@@ -1,0 +1,30 @@
+---
+upgrade:
+  - |
+    Allocating a register name twice on the same module now raises
+    ``QCDLUserError``. Register names are global to a circuit rather than local
+    to a procedure, and the compiler keeps only the first allocation of a name,
+    so a second declaration was previously discarded without a word. A program
+    that re-declared a name to get another handle on the same memory now has to
+    say so: pass ``alias=True`` to reuse the memory the name already has, or
+    ``ignore_reallocation=True`` with no initial value. A declaration reached
+    through a later run of the *same* procedure is not a re-declaration and is
+    still accepted.
+  - |
+    The ``initial_value`` argument of ``Register`` and ``FixedPointRegister``
+    now defaults to ``None`` rather than to ``0`` and ``0.0``, so that a value
+    the caller gave can be told from one that was omitted. Omitting it still
+    allocates zero. Passing ``0`` or ``0.0`` explicitly now counts as giving a
+    value, and so is rejected for a name that is already allocated.
+fixes:
+  - |
+    An ``initial_value`` that could never reach the qubit is now reported rather
+    than silently dropped. An ``alias`` never allocates memory, so it never
+    takes a value at all, and ``ignore_reallocation`` accepts a name that is
+    already allocated only when no value is given. A name that is not yet
+    allocated is allocated as usual and may carry a value.
+features:
+  - |
+    Add the ``QCDLCircuit.allocated_registers`` property, which reports the
+    register names allocated so far by module name and then register name,
+    together with each one's dtype and the procedure that allocated it.

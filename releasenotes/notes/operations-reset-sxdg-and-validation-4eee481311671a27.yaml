@@ -1,0 +1,14 @@
+---
+features:
+  - |
+    Add the ``reset`` operation to ``dwave.gate.qcdl.operations``, which resets
+    a single qubit to :math:`|0\rangle`. Unlike ``initialize``, which resets
+    every qubit in the program, ``reset`` acts on one qubit and has
+    deterministic duration, so it can be used inside a conditional branch.
+  - |
+    Add the ``sxdg`` operation to ``dwave.gate.qcdl.operations``, the adjoint
+    of the ``sx`` (:math:`\sqrt X`) gate.
+upgrade:
+  - |
+    Operations in ``dwave.gate.qcdl.operations`` now raise ``QCDLUserError``
+    for invalid qubit arguments at the point of the call.
