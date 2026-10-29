@@ -55,13 +55,22 @@ Examples:
         qcdl_program = qcdl_module_methods()
 """
 
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 import numpy as np
+from pydantic import Field, ValidationError, validate_call
 
 from .. import implementations
 from .components import QCDLModule
 from .registers import FixedPointRegister, Register
+
+ProbabilityType = Annotated[float, Field(ge=0.0, le=1.0)]
+
+
+@validate_call
+def process_probability(p: ProbabilityType) -> str:
+    return f"Valid probability received: {p}"
+
 
 AngleType: TypeAlias = float | FixedPointRegister
 
@@ -1004,7 +1013,7 @@ def rzz(qubit1: QCDLModule, qubit2: QCDLModule, theta: AngleType) -> None:
     qubit1.procedure.add_statement(None, "rzz", [qubit1, qubit2, theta], None)
 
 
-def leak(qubit: QCDLModule, probability: float = 1.0) -> None:
+def leak(qubit: QCDLModule, probability: ProbabilityType = 1.0) -> None:
     """Forces a qubit into a "leaked" state, i.e. forces a qubit out of the codespace.
 
     Args:
@@ -1025,10 +1034,15 @@ def leak(qubit: QCDLModule, probability: float = 1.0) -> None:
 
             qcdl_program = forced_leak()
     """
+    try:
+        process_probability(probability)
+    except ValidationError as e:
+        print("Invalid probability entered")
+        print(e)
     qubit.procedure.add_statement(None, "leak", [qubit, probability], None)
 
 
-def seep(qubit: QCDLModule, probability: float = 1.0) -> None:
+def seep(qubit: QCDLModule, probability: ProbabilityType = 1.0) -> None:
     """Forces a qubit out of the codespace back into the codespace randomly into |0> or |1> state.
        Note that this assumes the qubit is in a leakage state. If the qubit is in the codespace,
        nothing happens.
@@ -1052,4 +1066,9 @@ def seep(qubit: QCDLModule, probability: float = 1.0) -> None:
 
             qcdl_program = forced_seep()
     """
+    try:
+        process_probability(probability)
+    except ValidationError as e:
+        print("Invalid probability entered")
+        print(e)
     qubit.procedure.add_statement(None, "seep", [qubit, probability], None)
