@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    The ``initialize`` and ``measure`` operations in
+    ``dwave.gate.qcdl.operations`` now accept additional keyword arguments and
+    pass them through to the instruction.
