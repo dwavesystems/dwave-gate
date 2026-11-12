@@ -236,7 +236,7 @@ def _check_qubit_args(
 
 
 @_validate_qubit_args
-def initialize(*qubits: QCDLModule) -> None:
+def initialize(*qubits: QCDLModule, **kwargs: Any) -> None:
     """Initialize qubits.
 
     This function has non-deterministic duration because the implementation is
@@ -249,9 +249,10 @@ def initialize(*qubits: QCDLModule) -> None:
     Args:
         *qubits (QCDLModule): Qubits to initialize, at least one. It is not an
             error to do so, but unused qubits should not be included.
+        **kwargs: Additional keyword arguments passed to the instruction.
 
     """
-    qubits[0].initialize(*qubits[1:])
+    qubits[0].initialize(*qubits[1:], **kwargs)
 
 
 @_validate_qubit_args
@@ -348,6 +349,7 @@ def measure(
     tag: str | None = None,
     register: Register | None = None,
     mirror: bool = True,
+    **kwargs: Any,
 ) -> None:
     """Measure a qubit.
 
@@ -367,6 +369,7 @@ def measure(
             all qubits in the register. If False, the register is updated only
             for the selected qubit. Mirroring may be skipped or deferred because
             it can be expensive.
+        **kwargs: Additional keyword arguments passed to the measure statement.
 
     Examples:
 
@@ -383,16 +386,17 @@ def measure(
 
             qcdl_program = measurement()
     """
-    kwargs: dict[str, Any] = dict(log=log)
+    statement_kwargs: dict[str, Any] = dict(log=log)
     if register:
-        kwargs["register"] = register
+        statement_kwargs["register"] = register
     if tag is not None:
         if not isinstance(tag, str):
             raise TypeError(
                 f"tag must be a str, {tag=} of type {type(tag)} is not allowed"
             )
-        kwargs["tag"] = tag
-    qubit.procedure.add_statement(None, "measure", [qubit], kwargs)
+        statement_kwargs["tag"] = tag
+    statement_kwargs.update(kwargs)
+    qubit.procedure.add_statement(None, "measure", [qubit], statement_kwargs)
 
     if register and mirror and len(register.qcdl_modules) > 1:
         implementations.mirror_measurement_register(sender=qubit, register=register)
