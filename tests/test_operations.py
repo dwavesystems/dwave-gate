@@ -329,6 +329,35 @@ def test_measure_register(mirror, mocker: MockerFixture):
     assert spy.called == mirror
 
 
+def test_measure_passes_kwargs_through():
+    @qcdl(1)
+    def main(q0):
+        operations.measure(q0, extra_option=2)
+
+    dump = str(main().model_dump(exclude_unset=True))
+    assert "extra_option" in dump
+
+
+def test_initialize_passes_kwargs_through():
+    @qcdl(1)
+    def main(q0):
+        operations.initialize(q0, extra_option=1)
+
+    dump = str(main().model_dump(exclude_unset=True))
+    assert "extra_option" in dump
+
+
+def test_operations_without_kwargs():
+    """No kwargs given should not add anything."""
+
+    @qcdl(1)
+    def main(q0):
+        operations.initialize(q0)
+        operations.measure(q0)
+
+    assert "extra_option" not in str(main().model_dump(exclude_unset=True))
+
+
 @pytest.mark.parametrize("mirror", [True, False])
 def test_mced_register(mirror, mocker: MockerFixture):
     @qcdl(10)
