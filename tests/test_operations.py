@@ -27,7 +27,7 @@ from dwave.gate.qcdl import (
     procedure,
     qcdl,
 )
-from dwave.gate.qcdl.operations import AngleType
+from dwave.gate.qcdl.operations import AngleType, ProbabilityType
 from dwave.gate.qcdl.models import QCDLStatement
 
 available_operations = [
@@ -71,6 +71,16 @@ def test_operations(op_name):
         ]
     )
 
+    # probabilities have defaults, so the call below leaves them out but the
+    # statement still records them
+    num_probabilities = sum(
+        [
+            1
+            for parameter in sig.parameters.values()
+            if parameter.annotation == ProbabilityType
+        ]
+    )
+
     if num_angles or num_registers:
         assert bool(num_angles) != bool(num_registers)
 
@@ -109,7 +119,7 @@ def test_operations(op_name):
     assert [m.name for m in statement.modules if m.is_qubit] == [
         f"q{i}" for i in range(num_qubits)
     ]
-    assert len(statement.non_module_args) == num_angles or (
+    assert len(statement.non_module_args) == num_angles + num_probabilities or (
         op_name in ["sy", "sydg"] and len(statement.non_module_args) == 1
     )
     if num_registers:
@@ -154,7 +164,33 @@ def test_module_only_exports_operations():
 
 
 def test_all_lists_every_operation():
-    assert sorted(operations.__all__) == sorted(available_operations + ["AngleType"])
+    assert sorted(operations.__all__) == sorted(
+        available_operations + ["AngleType", "ProbabilityType"]
+    )
+
+
+@pytest.mark.parametrize("op_name", ["leak", "seep"])
+@pytest.mark.parametrize("probability", [0, 0.25, 1])
+def test_probability_is_recorded(op_name, probability):
+    @qcdl(1)
+    def main(q0):
+        getattr(operations, op_name)(q0, probability)
+
+    statements = main().model_dump(exclude_unset=True)["program"]["statements"]
+    statement = QCDLStatement.model_validate(statements[-1])
+    assert statement.op == op_name
+    assert statement.non_module_args == [probability]
+
+
+@pytest.mark.parametrize("op_name", ["leak", "seep"])
+@pytest.mark.parametrize("probability", [-0.1, 1.5, "half", None])
+def test_invalid_probability_is_rejected(op_name, probability):
+    @qcdl(1)
+    def main(q0):
+        getattr(operations, op_name)(q0, probability)
+
+    with pytest.raises(QCDLUserError, match="'probability' must be a number"):
+        main()
 
 
 def test_reset_is_an_importable_operation():
