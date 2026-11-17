@@ -104,7 +104,7 @@ def print_qcdl(
         qcdl_str = blacken_qcdl_str(qcdl_str)
 
     if filename:
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(qcdl_str)
 
     if to_Display:

@@ -22,6 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 dynamic = ["version"]
 dependencies = [
@@ -44,10 +45,11 @@ Repository = "https://github.com/dwavesystems/dwave-gate.git"
 dev = [
     "addict==2.4.0",
     "dwave-cloud-client==0.14.7",
-    "numpy==2.4.6",     # latest that support Python 3.11 as of July 2026
+    "numpy==2.4.6; python_version<'3.15'",   # latest that supports Python 3.11
+    "numpy==2.5.5; python_version>='3.15'",
     "orjson==3.12",     # latest that supports 3.10--3.15 as of August 2026
-    "polars==1.43.1",
-    "pydantic==2.13.4", # latest as of July 2026
+    "polars==1.44.2",
+    "pydantic==2.14.3", # latest as of November 2026
     "reno==4.1.0",
 ]
 docs = [
