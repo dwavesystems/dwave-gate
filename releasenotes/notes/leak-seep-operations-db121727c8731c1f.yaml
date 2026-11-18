@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    Add the ``leak`` and ``seep`` operations to ``dwave.gate.qcdl.operations``.
+    ``leak`` moves a qubit out of the codespace into a leaked state, and
+    ``seep`` returns a leaked qubit to the codespace in :math:`|0\rangle` or
+    :math:`|1\rangle` at random. Each takes an optional ``probability`` between
+    0 and 1 (default 1.0); a value outside that range raises
+    ``QCDLUserError``.
